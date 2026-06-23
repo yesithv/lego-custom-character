@@ -2,16 +2,15 @@
 
 ## Flujo de trabajo Git
 
-**Después de cada `git push` a una rama de feature, crear automáticamente un Pull Request.**
+**Desarrollar y hacer push directamente en `main`.**
 
-- Usar las herramientas GitHub MCP (`mcp__github__create_pull_request`) para abrir el PR.
-- El PR apunta siempre a `main` como base.
-- El usuario se encarga del merge; Claude no hace merge nunca de forma autónoma.
-- Incluir en el cuerpo del PR un resumen de los cambios y un checklist de pruebas.
+- No usar ramas de feature ni Pull Requests.
+- Hacer commit y `git push origin main` después de cada cambio significativo.
+- El deploy a GitHub Pages se dispara automáticamente en cada push a `main`.
 
 ## Rama de desarrollo activa
 
-`claude/flutter-hello-world-6u87go` → base: `main`
+`main`
 
 ## Stack técnico
 
@@ -20,3 +19,4 @@
 - TypeAdapters de Hive escritos a mano — **no usar `hive_generator` ni `build_runner`**
 - GitHub Pages vía GitHub Actions (`subosito/flutter-action@v2`)
 - Build web: `flutter build web --release --base-href "/lego-custom-character/"`
+- Audio: `audioplayers ^6.0.0`; archivos MP3 en `assets/audio/`

@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
-      - claude/flutter-hello-world-6u87go   # rama de desarrollo actual
   workflow_dispatch:   # permite lanzar manualmente desde la UI de GitHub
 
 # Permisos necesarios para publicar en Pages
