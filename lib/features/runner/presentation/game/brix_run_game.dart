@@ -76,11 +76,11 @@ class BrixRunGame extends FlameGame
     return RunnerZone.caos;
   }
 
-  double get _zoneSpeedBonus => switch (currentZone) {
-        RunnerZone.inicio => 0,
-        RunnerZone.nucleo => 60,
-        RunnerZone.caos => 160,
-      };
+  double get _zoneSpeedBonus {
+    if (currentZone == RunnerZone.nucleo) return 60;
+    if (currentZone == RunnerZone.caos) return 160;
+    return 0;
+  }
 
   BrixRunGame({
     required this.appearance,
