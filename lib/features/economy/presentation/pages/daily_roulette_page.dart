@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
@@ -37,11 +38,10 @@ int _segmentIndexForReward(Reward reward) {
     return 0;
   }
   if (reward is PartReward) {
-    return switch (reward.rarity) {
-      AccessoryRarity.epic || AccessoryRarity.legendary => 7,
-      AccessoryRarity.rare => 5,
-      _ => 1,
-    };
+    final rarity = reward.rarity;
+    if (rarity == AccessoryRarity.epic || rarity == AccessoryRarity.legendary) return 7;
+    if (rarity == AccessoryRarity.rare) return 5;
+    return 1;
   }
   return 0;
 }

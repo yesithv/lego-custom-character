@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../character_editor/domain/entities/character.dart';
+import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
