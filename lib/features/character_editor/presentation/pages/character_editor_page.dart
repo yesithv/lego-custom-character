@@ -681,7 +681,7 @@ class _AccessoriesTab extends StatelessWidget {
     if (field == 'face') return acc.copyWith(face: value);
     if (field == 'feet') return acc.copyWith(feet: value);
     return acc;
-      };
+  }
 }
 
 class _AccessorySlot extends StatelessWidget {
