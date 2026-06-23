@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/di/injection.dart';
+import '../../../character_editor/domain/entities/character.dart';
+import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
+import '../../../character_editor/presentation/bloc/character_editor_event.dart';
+import '../../../character_editor/presentation/bloc/character_editor_state.dart';
+import '../../../character_editor/presentation/widgets/character_preview.dart';
 
 enum WorldStatus { available, locked }
 
@@ -93,6 +101,18 @@ class WorldSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => sl<CharacterEditorBloc>()..add(const LoadCharacters()),
+      child: const _WorldSelectionView(),
+    );
+  }
+}
+
+class _WorldSelectionView extends StatelessWidget {
+  const _WorldSelectionView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0E8),
       appBar: AppBar(
@@ -103,24 +123,160 @@ class WorldSelectionPage extends StatelessWidget {
         ),
         title: const Text(
           'Elige tu Mundo',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: Colors.black87,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _worlds.length,
-        itemBuilder: (context, i) => _WorldCard(world: _worlds[i]),
+      body: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
+        builder: (context, state) {
+          final characters = state.characters;
+
+          if (characters.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('🧱', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Necesitas un personaje para jugar',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.goNamed('editor-new'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD700),
+                      foregroundColor: Colors.black87,
+                    ),
+                    child: const Text('Crear personaje'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Character selector at top
+          return Column(
+            children: [
+              _CharacterSelector(characters: characters),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _worlds.length,
+                  itemBuilder: (context, i) => _WorldCard(
+                    world: _worlds[i],
+                    characters: characters,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
+class _CharacterSelector extends StatefulWidget {
+  final List<Character> characters;
+  const _CharacterSelector({required this.characters});
+
+  @override
+  State<_CharacterSelector> createState() => _CharacterSelectorState();
+}
+
+class _CharacterSelectorState extends State<_CharacterSelector> {
+  int _selected = 0;
+
+  Character get selectedCharacter => widget.characters[_selected];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFE8E0D0),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        children: [
+          const Text(
+            'Elige tu personaje',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 90,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: widget.characters.length,
+              itemBuilder: (context, i) {
+                final c = widget.characters[i];
+                final isSelected = i == _selected;
+                return GestureDetector(
+                  onTap: () => setState(() => _selected = i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFFFD700)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFFFD700)
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        CharacterPreview(
+                            appearance: c.appearance, size: 40),
+                        const SizedBox(height: 2),
+                        Text(
+                          c.name.isEmpty ? '?' : c.name,
+                          style: const TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          // Store selected character in inherited widget so _WorldCard can access it
+          _SelectedCharacterInherited(
+            character: selectedCharacter,
+            child: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Simple InheritedWidget to pass selected character down
+class _SelectedCharacterInherited extends InheritedWidget {
+  final Character character;
+  const _SelectedCharacterInherited(
+      {required this.character, required super.child});
+
+  static _SelectedCharacterInherited? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_SelectedCharacterInherited>();
+
+  @override
+  bool updateShouldNotify(_SelectedCharacterInherited old) =>
+      character != old.character;
+}
+
 class _WorldCard extends StatelessWidget {
   final WorldData world;
-  const _WorldCard({required this.world});
+  final List<Character> characters;
+
+  const _WorldCard({required this.world, required this.characters});
 
   @override
   Widget build(BuildContext context) {
@@ -132,12 +288,23 @@ class _WorldCard extends StatelessWidget {
         onTap: isLocked
             ? () => ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('¡Mundo bloqueado! Gana monedas para desbloquearlo.'),
+                    content: Text(
+                        '¡Mundo bloqueado! Gana monedas para desbloquearlo.'),
                     behavior: SnackBarBehavior.floating,
                   ),
                 )
             : () {
-                // TODO: navigate to runner with world
+                final character = characters.first;
+                context.goNamed(
+                  'pre-run',
+                  extra: {
+                    'character': character,
+                    'worldId': world.id,
+                    'worldName': world.name,
+                    'worldEmoji': world.emoji,
+                    'worldColor': world.color,
+                  },
+                );
               },
         child: Opacity(
           opacity: isLocked ? 0.6 : 1.0,
@@ -196,9 +363,8 @@ class _WorldCard extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
-                      if (!isLocked)
+                      if (!isLocked) ...[
                         const SizedBox(height: 6),
-                      if (!isLocked)
                         Row(
                           children: [
                             _ZoneChip('Inicio'),
@@ -208,6 +374,7 @@ class _WorldCard extends StatelessWidget {
                             _ZoneChip('Zona Caos'),
                           ],
                         ),
+                      ],
                     ],
                   ),
                 ),
