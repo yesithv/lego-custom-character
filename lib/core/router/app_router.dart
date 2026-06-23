@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/character_editor/domain/entities/character.dart';
 import '../../features/character_editor/presentation/pages/character_editor_page.dart';
 import '../../features/character_editor/presentation/pages/character_gallery_page.dart';
+import '../../features/economy/presentation/pages/daily_roulette_page.dart';
 import '../../features/runner/presentation/pages/pre_run_page.dart';
 import '../../features/runner/presentation/pages/runner_page.dart';
 import '../../features/runner/presentation/pages/world_selection_page.dart';
@@ -32,6 +33,11 @@ class AppRouter {
         path: '/worlds',
         name: 'worlds',
         builder: (context, state) => const WorldSelectionPage(),
+      ),
+      GoRoute(
+        path: '/roulette',
+        name: 'roulette',
+        builder: (context, state) => const DailyRoulettePage(),
       ),
       GoRoute(
         path: '/pre-run',

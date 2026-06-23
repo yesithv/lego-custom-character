@@ -9,36 +9,66 @@ import '../../features/character_editor/domain/usecases/delete_character.dart';
 import '../../features/character_editor/domain/usecases/get_all_characters.dart';
 import '../../features/character_editor/domain/usecases/save_character.dart';
 import '../../features/character_editor/presentation/bloc/character_editor_bloc.dart';
+import '../../features/economy/data/datasources/wallet_local_datasource.dart';
+import '../../features/economy/data/models/wallet_model.dart';
+import '../../features/economy/data/repositories/wallet_repository_impl.dart';
+import '../../features/economy/domain/repositories/wallet_repository.dart';
+import '../../features/economy/domain/usecases/claim_daily_roulette.dart';
+import '../../features/economy/domain/usecases/earn_coins.dart';
+import '../../features/economy/domain/usecases/open_chest.dart';
+import '../../features/economy/domain/usecases/record_run.dart';
+import '../../features/economy/presentation/bloc/wallet_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> initDependencies() async {
   await Hive.initFlutter();
+
+  // Register adapters
   Hive.registerAdapter(CharacterModelAdapter());
   Hive.registerAdapter(CharacterAppearanceModelAdapter());
-  await Hive.openBox<CharacterModel>('characters');
+  Hive.registerAdapter(WalletModelAdapter());
 
-  // Datasources
+  // Open boxes
+  await Hive.openBox<CharacterModel>('characters');
+  await Hive.openBox<WalletModel>('wallet');
+
+  // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
     () => CharacterLocalDatasourceImpl(Hive.box('characters')),
   );
-
-  // Repositories
   sl.registerLazySingleton<CharacterRepository>(
     () => CharacterRepositoryImpl(sl()),
   );
-
-  // Use cases
   sl.registerLazySingleton(() => SaveCharacter(sl()));
   sl.registerLazySingleton(() => GetAllCharacters(sl()));
   sl.registerLazySingleton(() => DeleteCharacter(sl()));
-
-  // BLoC
   sl.registerFactory(
     () => CharacterEditorBloc(
       saveCharacter: sl(),
       getAllCharacters: sl(),
       deleteCharacter: sl(),
+    ),
+  );
+
+  // ── Economy ───────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<WalletLocalDatasource>(
+    () => WalletLocalDatasourceImpl(Hive.box('wallet')),
+  );
+  sl.registerLazySingleton<WalletRepository>(
+    () => WalletRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => EarnCoins(sl()));
+  sl.registerLazySingleton(() => ClaimDailyRoulette(sl()));
+  sl.registerLazySingleton(() => OpenChest(sl()));
+  sl.registerLazySingleton(() => RecordRun(sl()));
+  sl.registerFactory(
+    () => WalletBloc(
+      repository: sl(),
+      earnCoins: sl(),
+      claimDailyRoulette: sl(),
+      openChest: sl(),
+      recordRun: sl(),
     ),
   );
 }

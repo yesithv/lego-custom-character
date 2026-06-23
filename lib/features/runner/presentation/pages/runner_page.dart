@@ -1,8 +1,13 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
+import '../../../economy/presentation/bloc/wallet_bloc.dart';
+import '../../../economy/presentation/bloc/wallet_event.dart';
+import '../../../economy/presentation/bloc/wallet_state.dart';
+import '../../../economy/presentation/widgets/chest_opening_widget.dart';
 import '../game/brix_run_game.dart';
 
 class RunnerPage extends StatefulWidget {
@@ -21,8 +26,8 @@ class RunnerPage extends StatefulWidget {
 
 class _RunnerPageState extends State<RunnerPage> {
   late final BrixRunGame _game;
-  Offset? _dragStart;
   static const double _swipeThreshold = 40.0;
+  bool _showChest = false;
 
   @override
   void initState() {
@@ -30,7 +35,13 @@ class _RunnerPageState extends State<RunnerPage> {
     _game = BrixRunGame(
       appearance: widget.character.appearance,
       worldId: widget.worldId,
+      onRunComplete: _onRunComplete,
     );
+  }
+
+  void _onRunComplete(int coins) {
+    context.read<WalletBloc>().add(RecordRunEvent(coins));
+    setState(() => _showChest = true);
   }
 
   @override
@@ -39,48 +50,51 @@ class _RunnerPageState extends State<RunnerPage> {
     super.dispose();
   }
 
-  void _onPanStart(DragStartDetails d) => _dragStart = d.localPosition;
-
-  void _onPanEnd(DragEndDetails d) {
-    if (_dragStart == null) return;
+  void _handleSwipe(DragEndDetails d) {
     final v = d.velocity.pixelsPerSecond;
-
     if (v.dx.abs() > v.dy.abs()) {
-      if (v.dx > _swipeThreshold) {
-        _game.onSwipeRight();
-      } else if (v.dx < -_swipeThreshold) {
-        _game.onSwipeLeft();
-      }
+      if (v.dx > _swipeThreshold) _game.onSwipeRight();
+      else if (v.dx < -_swipeThreshold) _game.onSwipeLeft();
     } else {
-      if (v.dy < -_swipeThreshold) {
-        _game.onSwipeUp();
-      } else if (v.dy > _swipeThreshold) {
-        _game.onSwipeDown();
-      }
+      if (v.dy < -_swipeThreshold) _game.onSwipeUp();
+      else if (v.dy > _swipeThreshold) _game.onSwipeDown();
     }
-    _dragStart = null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanStart: _onPanStart,
-        onPanEnd: _onPanEnd,
-        onTap: _game.onTap,
-        child: GameWidget<BrixRunGame>(
-          game: _game,
-          overlayBuilderMap: {
-            'hud': (context, game) => _HudOverlay(game: game),
-            'gameOver': (context, game) => _GameOverOverlay(
-                  game: game,
-                  character: widget.character,
-                  onRestart: game.restart,
-                  onExit: () => context.goNamed('worlds'),
-                ),
-          },
-        ),
+      body: Stack(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanEnd: _handleSwipe,
+            onTap: _game.onTap,
+            child: GameWidget<BrixRunGame>(
+              game: _game,
+              overlayBuilderMap: {
+                'hud': (context, game) => _HudOverlay(game: game),
+                'gameOver': (context, game) => _GameOverOverlay(
+                      game: game,
+                      onRestart: () {
+                        setState(() => _showChest = false);
+                        game.restart();
+                      },
+                      onExit: () => context.goNamed('worlds'),
+                    ),
+              },
+            ),
+          ),
+
+          // Chest overlay — shown once after game over + WalletBloc records run
+          if (_showChest)
+            BlocBuilder<WalletBloc, WalletState>(
+              builder: (context, state) => ChestOpeningWidget(
+                isVip: state.wallet.earnVipChest,
+                onDismiss: () => setState(() => _showChest = false),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -122,26 +136,26 @@ class _HudOverlayState extends State<_HudOverlay>
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Score
-            _HudPill(
-              icon: '🏃',
-              label: '${g.meters}m',
-              color: Colors.black54,
+            Row(
+              children: [
+                _HudPill(icon: '🏃', label: '${g.meters}m', color: Colors.black54),
+                const SizedBox(width: 8),
+                _HudPill(
+                  icon: '✦',
+                  label: '${g.coins}',
+                  color: const Color(0xFFB8860B).withValues(alpha: 0.85),
+                ),
+                const Spacer(),
+                if (mult > 1.0) _MultiplierBadge(mult: mult),
+              ],
             ),
-            const SizedBox(width: 8),
-            // Coins
-            _HudPill(
-              icon: '✦',
-              label: '${g.coins}',
-              color: const Color(0xFFB8860B).withValues(alpha: 0.8),
-            ),
-            const Spacer(),
-            // Multiplier
-            if (mult > 1.0)
-              _MultiplierBadge(mult: mult),
+            const SizedBox(height: 4),
+            // Zone indicator
+            _ZoneBadge(zone: g.currentZone),
           ],
         ),
       ),
@@ -166,14 +180,14 @@ class _HudPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 14)),
+          Text(icon, style: const TextStyle(fontSize: 13)),
           const SizedBox(width: 4),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontSize: 14,
             ),
           ),
         ],
@@ -205,7 +219,39 @@ class _MultiplierBadge extends StatelessWidget {
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w900,
-          fontSize: 16,
+          fontSize: 15,
+        ),
+      ),
+    );
+  }
+}
+
+class _ZoneBadge extends StatelessWidget {
+  final RunnerZone zone;
+  const _ZoneBadge({required this.zone});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (zone) {
+      RunnerZone.inicio => ('Inicio', Colors.green.shade700),
+      RunnerZone.nucleo => ('Núcleo ⚡', Colors.orange.shade700),
+      RunnerZone.caos => ('¡ZONA CAOS! 💥', Colors.red.shade700),
+    };
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
         ),
       ),
     );
@@ -216,13 +262,11 @@ class _MultiplierBadge extends StatelessWidget {
 
 class _GameOverOverlay extends StatelessWidget {
   final BrixRunGame game;
-  final Character character;
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
   const _GameOverOverlay({
     required this.game,
-    required this.character,
     required this.onRestart,
     required this.onExit,
   });
@@ -230,7 +274,7 @@ class _GameOverOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.75),
+      color: Colors.black.withValues(alpha: 0.78),
       child: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -244,21 +288,20 @@ class _GameOverOverlay extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                '¡Sigue corriendo!',
+                '¡Sigue creando!',
                 style: TextStyle(
                   color: Color(0xFFFFD700),
                   fontWeight: FontWeight.w900,
                   fontSize: 22,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Text(
                 '¡Casi llegas al podio!',
-                style: TextStyle(color: Colors.white60, fontSize: 14),
+                style: TextStyle(color: Colors.white60, fontSize: 13),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Stats row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -272,9 +315,10 @@ class _GameOverOverlay extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 12),
+              _ZoneBadge(zone: game.currentZone),
+              const SizedBox(height: 20),
 
-              // Restart
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -290,17 +334,14 @@ class _GameOverOverlay extends StatelessWidget {
                   icon: const Icon(Icons.replay_rounded),
                   label: const Text(
                     'Jugar de nuevo',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // Exit
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 46,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white70,
@@ -342,12 +383,12 @@ class _StatBox extends StatelessWidget {
           style: TextStyle(
             color: highlight ? const Color(0xFFFFD700) : Colors.white,
             fontWeight: FontWeight.w900,
-            fontSize: highlight ? 22 : 18,
+            fontSize: highlight ? 22 : 17,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+          style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
       ],
     );

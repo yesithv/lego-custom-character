@@ -11,10 +11,13 @@ import 'components/coin_component.dart';
 import 'components/obstacle_component.dart';
 import 'components/player_component.dart';
 
+enum RunnerZone { inicio, nucleo, caos }
+
 class BrixRunGame extends FlameGame
     with HasCollisionDetection, ChangeNotifier {
   final CharacterAppearance appearance;
   final String worldId;
+  final void Function(int coins)? onRunComplete;
 
   // Runtime state — read by HUD overlay
   double speed = 220.0;
@@ -46,7 +49,23 @@ class BrixRunGame extends FlameGame
   static const String _overlayHud = 'hud';
   static const String _overlayGameOver = 'gameOver';
 
-  BrixRunGame({required this.appearance, required this.worldId});
+  RunnerZone get currentZone {
+    if (meters < 500) return RunnerZone.inicio;
+    if (meters < 1500) return RunnerZone.nucleo;
+    return RunnerZone.caos;
+  }
+
+  double get _zoneSpeedBonus => switch (currentZone) {
+        RunnerZone.inicio => 0,
+        RunnerZone.nucleo => 60,
+        RunnerZone.caos => 160,
+      };
+
+  BrixRunGame({
+    required this.appearance,
+    required this.worldId,
+    this.onRunComplete,
+  });
 
   @override
   Future<void> onLoad() async {
@@ -67,16 +86,17 @@ class BrixRunGame extends FlameGame
     score = meters + (coins * 5) + (obstacleStreak * 2);
     score = (score * multiplier).floor();
 
-    // Speed ramp: +12 px/s every 5 seconds, capped at 900
+    // Speed ramp: +12 px/s every 5 seconds, capped at 900; zone adds flat bonus
     _speedTimer += dt;
     if (_speedTimer >= 5.0) {
       speed = (speed + 12).clamp(220, 900);
       _speedTimer = 0;
     }
+    final effectiveSpeed = speed + _zoneSpeedBonus;
 
-    // Obstacle spawning — interval shrinks as speed grows
+    // Obstacle spawning — interval shrinks as effective speed grows
     _obstacleTimer += dt;
-    final spawnInterval = (2.2 - speed / 900).clamp(0.75, 2.2);
+    final spawnInterval = (2.2 - effectiveSpeed / 900).clamp(0.65, 2.2);
     if (_obstacleTimer >= spawnInterval) {
       _spawnObstacle();
       _obstacleTimer = 0;
@@ -146,8 +166,10 @@ class BrixRunGame extends FlameGame
     _player.kill();
     overlays.remove(_overlayHud);
     overlays.add(_overlayGameOver);
-    // Short delay then pause so player sees impact
-    Future.delayed(const Duration(milliseconds: 600), pauseEngine);
+    Future.delayed(const Duration(milliseconds: 500), () {
+      pauseEngine();
+      onRunComplete?.call(coins);
+    });
   }
 
   void restart() {
