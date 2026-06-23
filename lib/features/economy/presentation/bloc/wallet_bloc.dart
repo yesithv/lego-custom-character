@@ -4,6 +4,7 @@ import '../../domain/usecases/claim_daily_roulette.dart';
 import '../../domain/usecases/earn_coins.dart';
 import '../../domain/usecases/open_chest.dart';
 import '../../domain/usecases/record_run.dart';
+import '../../domain/usecases/unlock_part.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import 'wallet_event.dart';
 import 'wallet_state.dart';
@@ -14,6 +15,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   final ClaimDailyRoulette claimDailyRoulette;
   final OpenChest openChest;
   final RecordRun recordRun;
+  final UnlockPart unlockPart;
 
   WalletBloc({
     required this.repository,
@@ -21,6 +23,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     required this.claimDailyRoulette,
     required this.openChest,
     required this.recordRun,
+    required this.unlockPart,
   }) : super(const WalletState()) {
     on<LoadWallet>(_onLoad);
     on<EarnCoinsEvent>(_onEarnCoins);
@@ -28,6 +31,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     on<ClaimRouletteEvent>(_onClaimRoulette);
     on<OpenChestEvent>(_onOpenChest);
     on<RecordRunEvent>(_onRecordRun);
+    on<UnlockPartEvent>(_onUnlockPart);
   }
 
   Future<void> _onLoad(LoadWallet _, Emitter<WalletState> emit) async {
@@ -80,5 +84,11 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       RecordRunEvent event, Emitter<WalletState> emit) async {
     final wallet = await recordRun(event.coinsEarned);
     emit(state.copyWith(wallet: wallet));
+  }
+
+  Future<void> _onUnlockPart(
+      UnlockPartEvent event, Emitter<WalletState> emit) async {
+    final result = await unlockPart(event.partId, event.cost);
+    if (result.success) emit(state.copyWith(wallet: result.wallet));
   }
 }

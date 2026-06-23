@@ -41,3 +41,11 @@ class RecordRunEvent extends WalletEvent {
   @override
   List<Object?> get props => [coinsEarned];
 }
+
+class UnlockPartEvent extends WalletEvent {
+  final String partId;
+  final int cost;
+  const UnlockPartEvent({required this.partId, required this.cost});
+  @override
+  List<Object?> get props => [partId, cost];
+}

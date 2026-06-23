@@ -8,4 +8,5 @@ abstract class WalletRepository {
   Future<({Wallet wallet, Reward reward})> claimDailyRoulette();
   Future<({Wallet wallet, Reward reward})> openChest({required bool isVip});
   Future<Wallet> recordRunCompletion(int coinsEarned);
+  Future<({Wallet wallet, bool success})> unlockPart(String partId, int cost);
 }

@@ -17,6 +17,7 @@ import '../../features/economy/domain/usecases/claim_daily_roulette.dart';
 import '../../features/economy/domain/usecases/earn_coins.dart';
 import '../../features/economy/domain/usecases/open_chest.dart';
 import '../../features/economy/domain/usecases/record_run.dart';
+import '../../features/economy/domain/usecases/unlock_part.dart';
 import '../../features/economy/presentation/bloc/wallet_bloc.dart';
 
 final sl = GetIt.instance;
@@ -62,6 +63,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => ClaimDailyRoulette(sl()));
   sl.registerLazySingleton(() => OpenChest(sl()));
   sl.registerLazySingleton(() => RecordRun(sl()));
+  sl.registerLazySingleton(() => UnlockPart(sl()));
   sl.registerFactory(
     () => WalletBloc(
       repository: sl(),
@@ -69,6 +71,7 @@ Future<void> initDependencies() async {
       claimDailyRoulette: sl(),
       openChest: sl(),
       recordRun: sl(),
+      unlockPart: sl(),
     ),
   );
 }

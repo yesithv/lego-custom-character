@@ -133,6 +133,21 @@ class WalletRepositoryImpl implements WalletRepository {
     return updated;
   }
 
+  @override
+  Future<({Wallet wallet, bool success})> unlockPart(
+      String partId, int cost) async {
+    final m = _datasource.getWallet();
+    if (m.coins < cost) return (wallet: m.toEntity(), success: false);
+    final parts = List<String>.from(m.unlockedParts);
+    if (!parts.contains(partId)) parts.add(partId);
+    final updated = m.toEntity().copyWith(
+          coins: m.coins - cost,
+          unlockedParts: parts,
+        );
+    await _datasource.saveWallet(WalletModel.fromEntity(updated));
+    return (wallet: updated, success: true);
+  }
+
   Reward _weightedPick(
       List<({int weight, Reward prize})> table) {
     final total = table.fold(0, (sum, e) => sum + e.weight);

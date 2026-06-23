@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../economy/domain/entities/part_catalog.dart';
+import '../../../economy/presentation/bloc/wallet_bloc.dart';
+import '../../../economy/presentation/bloc/wallet_event.dart';
+import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../domain/entities/character.dart';
 import '../bloc/character_editor_bloc.dart';
 import '../bloc/character_editor_event.dart';
@@ -512,36 +516,127 @@ class _AccessoriesTab extends StatelessWidget {
   final CharacterAppearance appearance;
   const _AccessoriesTab({required this.appearance});
 
-  static const _slots = [
-    ('Mano derecha', 'rightHand', ['pistola', 'espada', 'varita', 'antorcha', 'micrófono']),
-    ('Mano izquierda', 'leftHand', ['escudo', 'linterna', 'bolso', 'libro', 'bomba']),
-    ('Espalda', 'back', ['capa corta', 'jetpack', 'alas', 'mochila']),
-    ('Hombros', 'shoulders', ['hombreras', 'loro pirata', 'insignia']),
-    ('Cintura', 'waist', ['cinturón herramientas', 'faja ninja', 'correa cowboy']),
-    ('Cuello', 'neck', ['collar', 'corbata', 'medallón', 'bufanda']),
-    ('Cara', 'face', ['gafas de sol', 'antifaz', 'parche pirata', 'máscara']),
-    ('Pies', 'feet', ['espuelas', 'tobilleras', 'botas propulsión']),
+  static const _slotMeta = [
+    ('Mano derecha', 'rightHand'),
+    ('Mano izquierda', 'leftHand'),
+    ('Espalda', 'back'),
+    ('Hombros', 'shoulders'),
+    ('Cintura', 'waist'),
+    ('Cuello', 'neck'),
+    ('Cara', 'face'),
+    ('Pies', 'feet'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: _slots.map((slot) {
-        final (label, field, options) = slot;
-        final current = _getField(appearance.accessories, field);
-        return _AccessorySlot(
-          label: label,
-          options: options,
-          selected: current,
-          onSelect: (value) {
-            final updated = _setField(appearance.accessories, field, value);
-            context.read<CharacterEditorBloc>().add(
-                  UpdateAppearance(appearance.copyWith(accessories: updated)),
-                );
-          },
+    return BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, walletState) {
+        final unlocked = walletState.wallet.unlockedParts.toSet();
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: _slotMeta.map((meta) {
+            final (label, field) = meta;
+            final entries = catalogForSlot(field);
+            final current = _getField(appearance.accessories, field);
+            return _AccessorySlot(
+              label: label,
+              entries: entries,
+              selected: current,
+              unlockedParts: unlocked,
+              coins: walletState.wallet.coins,
+              onSelect: (id) {
+                final updated = _setField(appearance.accessories, field, id);
+                context.read<CharacterEditorBloc>().add(
+                      UpdateAppearance(appearance.copyWith(accessories: updated)),
+                    );
+              },
+              onUnlock: (entry) => _showUnlockDialog(
+                context,
+                entry: entry,
+                coins: walletState.wallet.coins,
+                onConfirm: () {
+                  context.read<WalletBloc>().add(
+                        UnlockPartEvent(partId: entry.id, cost: entry.coinCost),
+                      );
+                  final updated = _setField(appearance.accessories, field, entry.id);
+                  context.read<CharacterEditorBloc>().add(
+                        UpdateAppearance(appearance.copyWith(accessories: updated)),
+                      );
+                },
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
+    );
+  }
+
+  void _showUnlockDialog(
+    BuildContext context, {
+    required CatalogEntry entry,
+    required int coins,
+    required VoidCallback onConfirm,
+  }) {
+    final canAfford = coins >= entry.coinCost;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Desbloquear ${entry.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _RarityBadge(rarity: entry.rarity),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('✦ ', style: TextStyle(color: Color(0xFFB8860B), fontSize: 18)),
+                Text(
+                  '${entry.coinCost} monedas',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Tienes: ✦ $coins',
+              style: TextStyle(
+                color: canAfford ? Colors.black54 : Colors.red,
+                fontSize: 13,
+              ),
+            ),
+            if (!canAfford) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'No tienes suficientes monedas.\n¡Juega para ganar más!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          if (canAfford)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black87,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                onConfirm();
+              },
+              child: const Text('Desbloquear', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+        ],
+      ),
     );
   }
 
@@ -574,15 +669,21 @@ class _AccessoriesTab extends StatelessWidget {
 
 class _AccessorySlot extends StatelessWidget {
   final String label;
-  final List<String> options;
+  final List<CatalogEntry> entries;
   final String? selected;
+  final Set<String> unlockedParts;
+  final int coins;
   final ValueChanged<String?> onSelect;
+  final ValueChanged<CatalogEntry> onUnlock;
 
   const _AccessorySlot({
     required this.label,
-    required this.options,
+    required this.entries,
     required this.selected,
+    required this.unlockedParts,
+    required this.coins,
     required this.onSelect,
+    required this.onUnlock,
   });
 
   @override
@@ -599,13 +700,26 @@ class _AccessorySlot extends StatelessWidget {
               _OptionChip(
                 label: 'Ninguno',
                 isSelected: selected == null,
+                isLocked: false,
                 onTap: () => onSelect(null),
               ),
-              ...options.map((o) => _OptionChip(
-                    label: o,
-                    isSelected: selected == o,
-                    onTap: () => onSelect(selected == o ? null : o),
-                  )),
+              ...entries.map((entry) {
+                final isAvailable = entry.isFree || unlockedParts.contains(entry.id);
+                return _OptionChip(
+                  label: entry.name,
+                  isSelected: selected == entry.id,
+                  isLocked: !isAvailable,
+                  coinCost: isAvailable ? null : entry.coinCost,
+                  rarity: entry.rarity,
+                  onTap: () {
+                    if (isAvailable) {
+                      onSelect(selected == entry.id ? null : entry.id);
+                    } else {
+                      onUnlock(entry);
+                    }
+                  },
+                );
+              }),
             ],
           ),
         ),
@@ -618,13 +732,26 @@ class _AccessorySlot extends StatelessWidget {
 class _OptionChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final bool isLocked;
+  final int? coinCost;
+  final AccessoryRarity? rarity;
   final VoidCallback onTap;
 
   const _OptionChip({
     required this.label,
     required this.isSelected,
+    required this.isLocked,
+    this.coinCost,
+    this.rarity,
     required this.onTap,
   });
+
+  Color get _rarityColor => switch (rarity) {
+        AccessoryRarity.rare => const Color(0xFF4A90E2),
+        AccessoryRarity.epic => const Color(0xFF9B59B6),
+        AccessoryRarity.legendary => const Color(0xFFE67E22),
+        _ => Colors.grey.shade400,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -635,21 +762,84 @@ class _OptionChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFFFD700) : Colors.white,
+            color: isSelected
+                ? const Color(0xFFFFD700)
+                : isLocked
+                    ? Colors.grey.shade100
+                    : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? const Color(0xFFFFD700) : Colors.grey.shade300,
-              width: 2,
+              color: isSelected
+                  ? const Color(0xFFFFD700)
+                  : isLocked
+                      ? _rarityColor
+                      : Colors.grey.shade300,
+              width: isLocked ? 1.5 : 2,
             ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: isSelected ? Colors.black87 : Colors.black54,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLocked) ...[
+                Icon(Icons.lock_outline, size: 12, color: _rarityColor),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: isSelected
+                      ? Colors.black87
+                      : isLocked
+                          ? Colors.black45
+                          : Colors.black54,
+                ),
+              ),
+              if (isLocked && coinCost != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '✦$coinCost',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _rarityColor,
+                  ),
+                ),
+              ],
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RarityBadge extends StatelessWidget {
+  final AccessoryRarity rarity;
+  const _RarityBadge({required this.rarity});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (rarity) {
+      AccessoryRarity.common => ('Común', Colors.grey),
+      AccessoryRarity.rare => ('Raro', const Color(0xFF4A90E2)),
+      AccessoryRarity.epic => ('Épico', const Color(0xFF9B59B6)),
+      AccessoryRarity.legendary => ('Legendario', const Color(0xFFE67E22)),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
         ),
       ),
     );
