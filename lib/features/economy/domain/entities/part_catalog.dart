@@ -19,12 +19,12 @@ class CatalogEntry {
 }
 
 // Coin costs by rarity
-int coinCostForRarity(AccessoryRarity r) => switch (r) {
-      AccessoryRarity.common => 0,
-      AccessoryRarity.rare => 200,
-      AccessoryRarity.epic => 500,
-      AccessoryRarity.legendary => 1000,
-    };
+int coinCostForRarity(AccessoryRarity r) {
+  if (r == AccessoryRarity.common) return 0;
+  if (r == AccessoryRarity.rare) return 200;
+  if (r == AccessoryRarity.epic) return 500;
+  return 1000;
+}
 
 const partCatalog = <String, CatalogEntry>{
   // ── Right hand ─────────────────────────────────────────────────────────────

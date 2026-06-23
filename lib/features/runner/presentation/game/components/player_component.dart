@@ -234,11 +234,14 @@ class PlayerComponent extends PositionComponent
   }
 
   void _drawFace(Canvas canvas, double w, double h) {
-    final eyeColor = switch (appearance.eyes) {
-      EyeStyle.laser => Colors.red,
-      EyeStyle.robot => Colors.cyan,
-      _ => Colors.black87,
-    };
+    final Color eyeColor;
+    if (appearance.eyes == EyeStyle.laser) {
+      eyeColor = Colors.red;
+    } else if (appearance.eyes == EyeStyle.robot) {
+      eyeColor = Colors.cyan;
+    } else {
+      eyeColor = Colors.black87;
+    }
     final eyeR = h * 0.06;
     canvas.drawCircle(
         Offset(w * 0.35, h * 0.12), eyeR, Paint()..color = eyeColor);

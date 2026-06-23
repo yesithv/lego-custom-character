@@ -364,11 +364,11 @@ class _HairTab extends StatelessWidget {
           _EnumSelector<HeadwearType>(
             values: HeadwearType.values,
             selected: appearance.headwearType,
-            label: (e) => switch (e) {
-              HeadwearType.none => 'Ninguno',
-              HeadwearType.hair => 'Cabello',
-              HeadwearType.helmet => 'Casco',
-              HeadwearType.hat => 'Sombrero',
+            label: (e) {
+              if (e == HeadwearType.none) return 'Ninguno';
+              if (e == HeadwearType.hair) return 'Cabello';
+              if (e == HeadwearType.helmet) return 'Casco';
+              return 'Sombrero';
             },
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(headwearType: e)),
@@ -658,30 +658,29 @@ class _AccessoriesTab extends StatelessWidget {
     );
   }
 
-  String? _getField(CharacterAccessories acc, String field) => switch (field) {
-        'rightHand' => acc.rightHand,
-        'leftHand' => acc.leftHand,
-        'back' => acc.back,
-        'shoulders' => acc.shoulders,
-        'waist' => acc.waist,
-        'neck' => acc.neck,
-        'face' => acc.face,
-        'feet' => acc.feet,
-        _ => null,
-      };
+  String? _getField(CharacterAccessories acc, String field) {
+    if (field == 'rightHand') return acc.rightHand;
+    if (field == 'leftHand') return acc.leftHand;
+    if (field == 'back') return acc.back;
+    if (field == 'shoulders') return acc.shoulders;
+    if (field == 'waist') return acc.waist;
+    if (field == 'neck') return acc.neck;
+    if (field == 'face') return acc.face;
+    if (field == 'feet') return acc.feet;
+    return null;
+  }
 
   CharacterAccessories _setField(
-          CharacterAccessories acc, String field, String? value) =>
-      switch (field) {
-        'rightHand' => acc.copyWith(rightHand: value),
-        'leftHand' => acc.copyWith(leftHand: value),
-        'back' => acc.copyWith(back: value),
-        'shoulders' => acc.copyWith(shoulders: value),
-        'waist' => acc.copyWith(waist: value),
-        'neck' => acc.copyWith(neck: value),
-        'face' => acc.copyWith(face: value),
-        'feet' => acc.copyWith(feet: value),
-        _ => acc,
+      CharacterAccessories acc, String field, String? value) {
+    if (field == 'rightHand') return acc.copyWith(rightHand: value);
+    if (field == 'leftHand') return acc.copyWith(leftHand: value);
+    if (field == 'back') return acc.copyWith(back: value);
+    if (field == 'shoulders') return acc.copyWith(shoulders: value);
+    if (field == 'waist') return acc.copyWith(waist: value);
+    if (field == 'neck') return acc.copyWith(neck: value);
+    if (field == 'face') return acc.copyWith(face: value);
+    if (field == 'feet') return acc.copyWith(feet: value);
+    return acc;
       };
 }
 

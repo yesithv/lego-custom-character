@@ -382,11 +382,18 @@ class _ZoneBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (zone) {
-      RunnerZone.inicio => ('Inicio', Colors.green.shade700),
-      RunnerZone.nucleo => ('Núcleo ⚡', Colors.orange.shade700),
-      RunnerZone.caos => ('¡ZONA CAOS! 💥', Colors.red.shade700),
-    };
+    final String label;
+    final Color color;
+    if (zone == RunnerZone.inicio) {
+      label = 'Inicio';
+      color = Colors.green.shade700;
+    } else if (zone == RunnerZone.nucleo) {
+      label = 'Núcleo ⚡';
+      color = Colors.orange.shade700;
+    } else {
+      label = '¡ZONA CAOS! 💥';
+      color = Colors.red.shade700;
+    }
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
