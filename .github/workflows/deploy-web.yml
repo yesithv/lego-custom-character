@@ -1,0 +1,74 @@
+name: Deploy BrixRun to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/flutter-hello-world-6u87go   # rama de desarrollo actual
+  workflow_dispatch:   # permite lanzar manualmente desde la UI de GitHub
+
+# Permisos necesarios para publicar en Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evita despliegues simultáneos
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── 1. Build ──────────────────────────────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Versión de Flutter
+        run: flutter --version
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      # Flutter falla si las carpetas de assets están declaradas pero no existen
+      - name: Crear directorios de assets vacíos
+        run: |
+          mkdir -p assets/sprites/character/head
+          mkdir -p assets/sprites/character/torso
+          mkdir -p assets/sprites/character/legs
+          mkdir -p assets/sprites/character/accessories
+          mkdir -p assets/sprites/worlds
+          mkdir -p assets/audio
+
+      # El --base-href debe coincidir con el nombre del repositorio
+      - name: Build web
+        run: |
+          flutter build web \
+            --release \
+            --base-href "/lego-custom-character/"
+
+      - name: Subir artefacto a Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  # ── 2. Deploy ─────────────────────────────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
