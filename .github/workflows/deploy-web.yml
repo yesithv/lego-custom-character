@@ -4,21 +4,21 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:   # permite lanzar manualmente desde la UI de GitHub
+      - claude/flutter-hello-world-6u87go
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
-# Permisos necesarios para publicar en Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write   # peaceiris needs write to push to gh-pages branch
 
-# Evita despliegues simultáneos
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  # ── 1. Build ──────────────────────────────────────────────────────────────
+  # ── 1. Build (corre en main Y en la rama feature) ─────────────────────────
   build:
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +37,6 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
-      # Flutter falla si las carpetas de assets están declaradas pero no existen
       - name: Crear directorios de assets vacíos
         run: |
           mkdir -p assets/sprites/character/head
@@ -47,29 +46,35 @@ jobs:
           mkdir -p assets/sprites/worlds
           mkdir -p assets/audio
 
-      # El --base-href debe coincidir con el nombre del repositorio
       - name: Build web
         run: |
           flutter build web \
             --release \
             --base-href "/lego-custom-character/"
 
-      - name: Subir artefacto a Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Subir build como artefacto
+        uses: actions/upload-artifact@v4
         with:
+          name: web-build
           path: build/web
+          retention-days: 1
 
-  # ── 2. Deploy ─────────────────────────────────────────────────────────────
+  # ── 2. Deploy (solo cuando se hace push a main) ───────────────────────────
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Desplegar en GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Descargar build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Desplegar en GitHub Pages (rama gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          publish_branch: gh-pages
+          force_orphan: true
