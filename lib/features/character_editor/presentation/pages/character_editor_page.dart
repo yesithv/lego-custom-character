@@ -746,12 +746,12 @@ class _OptionChip extends StatelessWidget {
     required this.onTap,
   });
 
-  Color get _rarityColor => switch (rarity) {
-        AccessoryRarity.rare => const Color(0xFF4A90E2),
-        AccessoryRarity.epic => const Color(0xFF9B59B6),
-        AccessoryRarity.legendary => const Color(0xFFE67E22),
-        _ => Colors.grey.shade400,
-      };
+  Color get _rarityColor {
+    if (rarity == AccessoryRarity.legendary) return const Color(0xFFE67E22);
+    if (rarity == AccessoryRarity.epic) return const Color(0xFF9B59B6);
+    if (rarity == AccessoryRarity.rare) return const Color(0xFF4A90E2);
+    return Colors.grey.shade400;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -821,12 +821,17 @@ class _RarityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (rarity) {
-      AccessoryRarity.common => ('Común', Colors.grey),
-      AccessoryRarity.rare => ('Raro', const Color(0xFF4A90E2)),
-      AccessoryRarity.epic => ('Épico', const Color(0xFF9B59B6)),
-      AccessoryRarity.legendary => ('Legendario', const Color(0xFFE67E22)),
-    };
+    final String label;
+    final Color color;
+    if (rarity == AccessoryRarity.legendary) {
+      label = 'Legendario'; color = const Color(0xFFE67E22);
+    } else if (rarity == AccessoryRarity.epic) {
+      label = 'Épico'; color = const Color(0xFF9B59B6);
+    } else if (rarity == AccessoryRarity.rare) {
+      label = 'Raro'; color = const Color(0xFF4A90E2);
+    } else {
+      label = 'Común'; color = Colors.grey;
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(

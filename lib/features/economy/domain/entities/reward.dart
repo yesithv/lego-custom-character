@@ -32,10 +32,10 @@ class PartReward extends Reward {
   String get displayLabel => partName;
 
   @override
-  String get emoji => switch (rarity) {
-        AccessoryRarity.common => '⚙️',
-        AccessoryRarity.rare => '💎',
-        AccessoryRarity.epic => '⚡',
-        AccessoryRarity.legendary => '👑',
-      };
+  String get emoji {
+    if (rarity == AccessoryRarity.legendary) return '👑';
+    if (rarity == AccessoryRarity.epic) return '⚡';
+    if (rarity == AccessoryRarity.rare) return '💎';
+    return '⚙️';
+  }
 }
