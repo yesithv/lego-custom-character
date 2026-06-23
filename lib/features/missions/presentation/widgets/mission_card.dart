@@ -8,13 +8,13 @@ class MissionCard extends StatelessWidget {
 
   const MissionCard({super.key, required this.mission, this.compact = false});
 
-  String get _icon => switch (mission.type) {
-        MissionType.collectCoins => '✦',
-        MissionType.runMeters => '🏃',
-        MissionType.evadeObstacles => '⚡',
-        MissionType.surviveSeconds => '⏱',
-        MissionType.useJump => '🦘',
-      };
+  String get _icon {
+    if (mission.type == MissionType.collectCoins) return '✦';
+    if (mission.type == MissionType.runMeters) return '🏃';
+    if (mission.type == MissionType.evadeObstacles) return '⚡';
+    if (mission.type == MissionType.surviveSeconds) return '⏱';
+    return '🦘';
+  }
 
   @override
   Widget build(BuildContext context) {

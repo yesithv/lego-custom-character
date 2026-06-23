@@ -63,11 +63,12 @@ class ObstacleComponent extends PositionComponent
       return;
     }
 
-    final color = switch (type) {
-      ObstacleType.block => Colors.red.shade600,
-      ObstacleType.barrier => Colors.orange.shade700,
-      _ => Colors.red.shade600,
-    };
+    final Color color;
+    if (type == ObstacleType.barrier) {
+      color = Colors.orange.shade700;
+    } else {
+      color = Colors.red.shade600;
+    }
 
     // Body
     canvas.drawRRect(

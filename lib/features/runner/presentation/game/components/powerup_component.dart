@@ -54,10 +54,15 @@ class PowerupComponent extends PositionComponent
   @override
   void render(Canvas canvas) {
     final pulse = 0.6 + 0.4 * sin(_age * 4);
-    final (color, icon) = switch (type) {
-      PowerupType.shield => (const Color(0xFF00AAFF), '🛡'),
-      PowerupType.magnet => (const Color(0xFFFF6B35), '🧲'),
-    };
+    final Color color;
+    final String icon;
+    if (type == PowerupType.shield) {
+      color = const Color(0xFF00AAFF);
+      icon = '🛡';
+    } else {
+      color = const Color(0xFFFF6B35);
+      icon = '🧲';
+    }
 
     // Glow ring
     canvas.drawCircle(

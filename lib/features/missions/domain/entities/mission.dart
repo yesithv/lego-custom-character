@@ -79,11 +79,11 @@ class MissionRunData {
     required this.jumps,
   });
 
-  int progressFor(MissionType type) => switch (type) {
-        MissionType.collectCoins => coins,
-        MissionType.runMeters => meters,
-        MissionType.evadeObstacles => evadedObstacles,
-        MissionType.surviveSeconds => seconds,
-        MissionType.useJump => jumps,
-      };
+  int progressFor(MissionType type) {
+    if (type == MissionType.collectCoins) return coins;
+    if (type == MissionType.runMeters) return meters;
+    if (type == MissionType.evadeObstacles) return evadedObstacles;
+    if (type == MissionType.surviveSeconds) return seconds;
+    return jumps;
+  }
 }

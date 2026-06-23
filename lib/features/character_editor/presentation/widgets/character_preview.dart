@@ -64,11 +64,18 @@ class _CharacterPainter extends CustomPainter {
 
     // Torso
     final torsoColor = _torsoColor(appearance.torso);
+    final torsoX = (w - w * 0.7) / 2;
     _drawRoundRect(
         canvas,
-        Rect.fromLTWH((w - w * 0.7) / 2, torsoTop, w * 0.7, torsoH),
+        Rect.fromLTWH(torsoX, torsoTop, w * 0.7, torsoH),
         torsoColor,
         6);
+
+    // Arms
+    final armW = w * 0.12;
+    final armH = h * 0.22;
+    _drawRoundRect(canvas, Rect.fromLTWH(torsoX - armW, torsoTop + h * 0.02, armW, armH), skinColor, 4);
+    _drawRoundRect(canvas, Rect.fromLTWH(torsoX + w * 0.7, torsoTop + h * 0.02, armW, armH), skinColor, 4);
 
     // Legs
     final legColor = _legColor(appearance.legDesign);
