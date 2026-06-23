@@ -1,41 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'core/di/injection.dart';
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
+import 'features/economy/presentation/bloc/wallet_bloc.dart';
+import 'features/economy/presentation/bloc/wallet_event.dart';
+import 'features/missions/presentation/bloc/mission_bloc.dart';
+import 'features/missions/presentation/bloc/mission_event.dart';
+import 'features/ranking/presentation/bloc/ranking_bloc.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initDependencies();
+  runApp(const BrixRunApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BrixRunApp extends StatelessWidget {
+  const BrixRunApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Hola Mundo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<WalletBloc>()..add(const LoadWallet())),
+        BlocProvider(create: (_) => sl<MissionBloc>()..add(const LoadMissions())),
+        BlocProvider(create: (_) => sl<RankingBloc>()),
+      ],
+      child: MaterialApp.router(
+        title: 'BrixRun',
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        routerConfig: AppRouter.router,
+        debugShowCheckedModeBanner: false,
       ),
-      home: const MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Hola Mundo'),
-      ),
-      body: const Center(
-        child: Text(
-          '¡Hola, Mundo!',
-          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}

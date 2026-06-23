@@ -1,0 +1,12 @@
+{
+    "name": "BrixRun",
+    "short_name": "BrixRun",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#FFD700",
+    "description": "Crea tu minifigura LEGO y corre sin parar",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": []
+}
