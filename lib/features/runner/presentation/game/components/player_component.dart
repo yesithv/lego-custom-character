@@ -286,45 +286,45 @@ class PlayerComponent extends PositionComponent
 
   // ── Color helpers (mirrors CharacterPreview) ───────────────────────────────
 
-  Color _skinColor(SkinTone t) => switch (t) {
-        SkinTone.light => const Color(0xFFFFDBAC),
-        SkinTone.medium => const Color(0xFFD4A574),
-        SkinTone.dark => const Color(0xFF8D5524),
-        SkinTone.blue => Colors.blue.shade400,
-        SkinTone.green => Colors.green.shade400,
-        SkinTone.purple => Colors.purple.shade400,
-        SkinTone.orange => Colors.orange.shade400,
-        SkinTone.silver => Colors.grey.shade400,
-        SkinTone.gold => const Color(0xFFFFD700),
-      };
+  Color _skinColor(SkinTone t) {
+    if (t == SkinTone.light) return const Color(0xFFFFDBAC);
+    if (t == SkinTone.medium) return const Color(0xFFD4A574);
+    if (t == SkinTone.dark) return const Color(0xFF8D5524);
+    if (t == SkinTone.blue) return Colors.blue.shade400;
+    if (t == SkinTone.green) return Colors.green.shade400;
+    if (t == SkinTone.purple) return Colors.purple.shade400;
+    if (t == SkinTone.orange) return Colors.orange.shade400;
+    if (t == SkinTone.silver) return Colors.grey.shade400;
+    return const Color(0xFFFFD700);
+  }
 
-  Color _torsoColor(TorsoDesign d) => switch (d) {
-        TorsoDesign.plain => Colors.red.shade400,
-        TorsoDesign.police => Colors.blue.shade800,
-        TorsoDesign.firefighter => Colors.red.shade800,
-        TorsoDesign.ninja => Colors.black,
-        TorsoDesign.pirate => Colors.brown.shade700,
-        TorsoDesign.superhero => Colors.blue.shade600,
-        TorsoDesign.medieval => Colors.grey.shade600,
-        TorsoDesign.robot => Colors.blueGrey.shade400,
-        _ => Colors.teal.shade400,
-      };
+  Color _torsoColor(TorsoDesign d) {
+    if (d == TorsoDesign.plain) return Colors.red.shade400;
+    if (d == TorsoDesign.police) return Colors.blue.shade800;
+    if (d == TorsoDesign.firefighter) return Colors.red.shade800;
+    if (d == TorsoDesign.ninja) return Colors.black;
+    if (d == TorsoDesign.pirate) return Colors.brown.shade700;
+    if (d == TorsoDesign.superhero) return Colors.blue.shade600;
+    if (d == TorsoDesign.medieval) return Colors.grey.shade600;
+    if (d == TorsoDesign.robot) return Colors.blueGrey.shade400;
+    return Colors.teal.shade400;
+  }
 
-  Color _legColor(LegDesign d) => switch (d) {
-        LegDesign.plain => Colors.blue.shade700,
-        LegDesign.camouflage => Colors.green.shade700,
-        LegDesign.armor => Colors.grey.shade600,
-        LegDesign.flames => Colors.orange.shade700,
-        _ => Colors.indigo.shade600,
-      };
+  Color _legColor(LegDesign d) {
+    if (d == LegDesign.plain) return Colors.blue.shade700;
+    if (d == LegDesign.camouflage) return Colors.green.shade700;
+    if (d == LegDesign.armor) return Colors.grey.shade600;
+    if (d == LegDesign.flames) return Colors.orange.shade700;
+    return Colors.indigo.shade600;
+  }
 
-  Color _shoeColor(ShoeType t) => switch (t) {
-        ShoeType.sneakers => Colors.white,
-        ShoeType.military => Colors.brown.shade800,
-        ShoeType.cowboy => Colors.brown.shade600,
-        ShoeType.witchBoots => Colors.black,
-        _ => Colors.grey.shade800,
-      };
+  Color _shoeColor(ShoeType t) {
+    if (t == ShoeType.sneakers) return Colors.white;
+    if (t == ShoeType.military) return Colors.brown.shade800;
+    if (t == ShoeType.cowboy) return Colors.brown.shade600;
+    if (t == ShoeType.witchBoots) return Colors.black;
+    return Colors.grey.shade800;
+  }
 
   @override
   void onCollisionStart(

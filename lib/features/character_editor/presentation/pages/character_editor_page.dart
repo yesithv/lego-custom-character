@@ -123,9 +123,28 @@ class _EditorView extends StatelessWidget {
   }
 }
 
-class _PreviewSection extends StatelessWidget {
+class _PreviewSection extends StatefulWidget {
   final Character character;
   const _PreviewSection({required this.character});
+
+  @override
+  State<_PreviewSection> createState() => _PreviewSectionState();
+}
+
+class _PreviewSectionState extends State<_PreviewSection> {
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.character.name);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,17 +153,16 @@ class _PreviewSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       child: Row(
         children: [
-          CharacterPreview(appearance: character.appearance, size: 80),
+          CharacterPreview(appearance: widget.character.appearance, size: 80),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
+                  controller: _nameController,
                   onChanged: (v) =>
                       context.read<CharacterEditorBloc>().add(UpdateName(v)),
-                  controller: TextEditingController(text: character.name)
-                    ..selection = TextSelection.collapsed(offset: character.name.length),
                   decoration: const InputDecoration(
                     hintText: 'Nombre del personaje',
                     border: OutlineInputBorder(),
@@ -159,7 +177,7 @@ class _PreviewSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _TypeSelector(selected: character.type),
+                _TypeSelector(selected: widget.character.type),
               ],
             ),
           ),
