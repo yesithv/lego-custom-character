@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -13,16 +14,25 @@ import '../../../missions/presentation/bloc/mission_bloc.dart';
 import '../../../missions/presentation/bloc/mission_event.dart';
 import '../../../missions/presentation/bloc/mission_state.dart';
 import '../../../missions/presentation/widgets/mission_card.dart';
+import '../../../ranking/domain/entities/score.dart';
+import '../../../ranking/presentation/bloc/ranking_bloc.dart';
+import '../../../ranking/presentation/bloc/ranking_event.dart';
 import '../game/brix_run_game.dart';
 
 class RunnerPage extends StatefulWidget {
   final Character character;
   final String worldId;
+  final String worldName;
+  final String worldEmoji;
+  final Color worldColor;
 
   const RunnerPage({
     super.key,
     required this.character,
     required this.worldId,
+    required this.worldName,
+    required this.worldEmoji,
+    required this.worldColor,
   });
 
   @override
@@ -52,6 +62,15 @@ class _RunnerPageState extends State<RunnerPage> {
       evadedObstacles: _game.maxObstacleStreak,
       seconds: _game.elapsedSeconds.floor(),
       jumps: _game.jumpCount,
+    )));
+    context.read<RankingBloc>().add(SubmitScoreEvent(Score(
+      id: const Uuid().v4(),
+      characterName: widget.character.name,
+      worldId: widget.worldId,
+      score: _game.score,
+      meters: _game.meters,
+      coins: _game.coins,
+      createdAt: DateTime.now(),
     )));
     setState(() => _showChest = true);
   }
@@ -91,6 +110,10 @@ class _RunnerPageState extends State<RunnerPage> {
                       builder: (context, missionState) => _GameOverOverlay(
                         game: game,
                         completedMissions: missionState.justCompleted,
+                        worldId: widget.worldId,
+                        worldName: widget.worldName,
+                        worldEmoji: widget.worldEmoji,
+                        worldColor: widget.worldColor,
                         onRestart: () {
                           setState(() => _showChest = false);
                           game.restart();
@@ -279,12 +302,20 @@ class _ZoneBadge extends StatelessWidget {
 class _GameOverOverlay extends StatelessWidget {
   final BrixRunGame game;
   final List<Mission> completedMissions;
+  final String worldId;
+  final String worldName;
+  final String worldEmoji;
+  final Color worldColor;
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
   const _GameOverOverlay({
     required this.game,
     required this.completedMissions,
+    required this.worldId,
+    required this.worldName,
+    required this.worldEmoji,
+    required this.worldColor,
     required this.onRestart,
     required this.onExit,
   });
@@ -387,6 +418,27 @@ class _GameOverOverlay extends StatelessWidget {
                   onPressed: onExit,
                   icon: const Icon(Icons.map_outlined, size: 18),
                   label: const Text('Elegir mundo'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => context.goNamed(
+                  'ranking',
+                  pathParameters: {'worldId': worldId},
+                  extra: {
+                    'worldName': worldName,
+                    'worldEmoji': worldEmoji,
+                    'worldColor': worldColor,
+                  },
+                ),
+                icon: const Icon(Icons.emoji_events_outlined,
+                    size: 16, color: Color(0xFFFFD700)),
+                label: const Text(
+                  'Ver ranking',
+                  style: TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],

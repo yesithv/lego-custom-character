@@ -23,6 +23,10 @@ import '../../features/missions/data/datasources/mission_local_datasource.dart';
 import '../../features/missions/data/repositories/mission_repository_impl.dart';
 import '../../features/missions/domain/repositories/mission_repository.dart';
 import '../../features/missions/presentation/bloc/mission_bloc.dart';
+import '../../features/ranking/data/models/score_model.dart';
+import '../../features/ranking/data/repositories/score_local_repository.dart';
+import '../../features/ranking/domain/repositories/score_repository.dart';
+import '../../features/ranking/presentation/bloc/ranking_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -33,11 +37,13 @@ Future<void> initDependencies() async {
   Hive.registerAdapter(CharacterModelAdapter());
   Hive.registerAdapter(CharacterAppearanceModelAdapter());
   Hive.registerAdapter(WalletModelAdapter());
+  Hive.registerAdapter(ScoreModelAdapter());
 
   // Open boxes
   await Hive.openBox<CharacterModel>('characters');
   await Hive.openBox<WalletModel>('wallet');
   await Hive.openBox<String>('missions');
+  await Hive.openBox<ScoreModel>('scores');
 
   // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
@@ -90,4 +96,11 @@ Future<void> initDependencies() async {
   sl.registerFactory(
     () => MissionBloc(repository: sl()),
   );
+
+  // ── Ranking ───────────────────────────────────────────────────────────────
+  // Swap ScoreLocalRepository → FirebaseScoreRepository here to go online.
+  sl.registerLazySingleton<ScoreRepository>(
+    () => ScoreLocalRepository(Hive.box('scores')),
+  );
+  sl.registerFactory(() => RankingBloc(repository: sl()));
 }

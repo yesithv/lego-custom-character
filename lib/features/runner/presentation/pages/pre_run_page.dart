@@ -136,7 +136,13 @@ class PreRunPage extends StatelessWidget {
                     ),
                     onPressed: () => context.goNamed(
                       'runner',
-                      extra: {'character': character, 'worldId': worldId},
+                      extra: {
+                        'character': character,
+                        'worldId': worldId,
+                        'worldName': worldName,
+                        'worldEmoji': worldEmoji,
+                        'worldColor': worldColor,
+                      },
                     ),
                     child: const Text(
                       '¡CORRER!',

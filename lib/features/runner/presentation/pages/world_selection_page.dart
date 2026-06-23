@@ -8,6 +8,8 @@ import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
 import '../../../character_editor/presentation/bloc/character_editor_state.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
+import '../../../ranking/presentation/bloc/ranking_bloc.dart';
+import '../../../ranking/presentation/bloc/ranking_event.dart';
 
 enum WorldStatus { available, locked }
 
@@ -332,6 +334,37 @@ class _WorldCard extends StatelessWidget {
                         style: const TextStyle(fontSize: 48)),
                   ),
                 ),
+                if (!isLocked)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: GestureDetector(
+                      onTap: () {
+                        context.read<RankingBloc>().add(LoadRanking(world.id));
+                        context.goNamed(
+                          'ranking',
+                          pathParameters: {'worldId': world.id},
+                          extra: {
+                            'worldName': world.name,
+                            'worldEmoji': world.emoji,
+                            'worldColor': world.color,
+                          },
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.emoji_events_outlined,
+                          color: Color(0xFFFFD700),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(

@@ -8,6 +8,7 @@ import 'features/economy/presentation/bloc/wallet_bloc.dart';
 import 'features/economy/presentation/bloc/wallet_event.dart';
 import 'features/missions/presentation/bloc/mission_bloc.dart';
 import 'features/missions/presentation/bloc/mission_event.dart';
+import 'features/ranking/presentation/bloc/ranking_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ class BrixRunApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => sl<WalletBloc>()..add(const LoadWallet())),
         BlocProvider(create: (_) => sl<MissionBloc>()..add(const LoadMissions())),
+        BlocProvider(create: (_) => sl<RankingBloc>()),
       ],
       child: MaterialApp.router(
         title: 'BrixRun',
