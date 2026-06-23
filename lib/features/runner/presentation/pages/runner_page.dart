@@ -8,6 +8,11 @@ import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../../economy/presentation/widgets/chest_opening_widget.dart';
+import '../../../missions/domain/entities/mission.dart';
+import '../../../missions/presentation/bloc/mission_bloc.dart';
+import '../../../missions/presentation/bloc/mission_event.dart';
+import '../../../missions/presentation/bloc/mission_state.dart';
+import '../../../missions/presentation/widgets/mission_card.dart';
 import '../game/brix_run_game.dart';
 
 class RunnerPage extends StatefulWidget {
@@ -41,6 +46,13 @@ class _RunnerPageState extends State<RunnerPage> {
 
   void _onRunComplete(int coins) {
     context.read<WalletBloc>().add(RecordRunEvent(coins));
+    context.read<MissionBloc>().add(AdvanceMissionsEvent(MissionRunData(
+      coins: _game.coins,
+      meters: _game.meters,
+      evadedObstacles: _game.maxObstacleStreak,
+      seconds: _game.elapsedSeconds.floor(),
+      jumps: _game.jumpCount,
+    )));
     setState(() => _showChest = true);
   }
 
@@ -74,13 +86,17 @@ class _RunnerPageState extends State<RunnerPage> {
               game: _game,
               overlayBuilderMap: {
                 'hud': (context, game) => _HudOverlay(game: game),
-                'gameOver': (context, game) => _GameOverOverlay(
-                      game: game,
-                      onRestart: () {
-                        setState(() => _showChest = false);
-                        game.restart();
-                      },
-                      onExit: () => context.goNamed('worlds'),
+                'gameOver': (context, game) =>
+                    BlocBuilder<MissionBloc, MissionState>(
+                      builder: (context, missionState) => _GameOverOverlay(
+                        game: game,
+                        completedMissions: missionState.justCompleted,
+                        onRestart: () {
+                          setState(() => _showChest = false);
+                          game.restart();
+                        },
+                        onExit: () => context.goNamed('worlds'),
+                      ),
                     ),
               },
             ),
@@ -262,11 +278,13 @@ class _ZoneBadge extends StatelessWidget {
 
 class _GameOverOverlay extends StatelessWidget {
   final BrixRunGame game;
+  final List<Mission> completedMissions;
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
   const _GameOverOverlay({
     required this.game,
+    required this.completedMissions,
     required this.onRestart,
     required this.onExit,
   });
@@ -317,6 +335,22 @@ class _GameOverOverlay extends StatelessWidget {
 
               const SizedBox(height: 12),
               _ZoneBadge(zone: game.currentZone),
+              if (completedMissions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '🎯 Misiones completadas',
+                    style: TextStyle(
+                      color: Colors.green.shade300,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ...completedMissions.map((m) => MissionCard(mission: m, compact: true)),
+              ],
               const SizedBox(height: 20),
 
               SizedBox(

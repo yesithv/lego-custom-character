@@ -6,6 +6,8 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/economy/presentation/bloc/wallet_bloc.dart';
 import 'features/economy/presentation/bloc/wallet_event.dart';
+import 'features/missions/presentation/bloc/mission_bloc.dart';
+import 'features/missions/presentation/bloc/mission_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,9 +20,11 @@ class BrixRunApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // WalletBloc lives at app scope — all pages share the same instance
-      create: (_) => sl<WalletBloc>()..add(const LoadWallet()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<WalletBloc>()..add(const LoadWallet())),
+        BlocProvider(create: (_) => sl<MissionBloc>()..add(const LoadMissions())),
+      ],
       child: MaterialApp.router(
         title: 'BrixRun',
         theme: AppTheme.light,
@@ -31,3 +35,4 @@ class BrixRunApp extends StatelessWidget {
     );
   }
 }
+

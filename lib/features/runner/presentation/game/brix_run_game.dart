@@ -26,6 +26,9 @@ class BrixRunGame extends FlameGame
   int meters = 0;
   double multiplier = 1.0;
   int obstacleStreak = 0;
+  int maxObstacleStreak = 0;
+  int jumpCount = 0;
+  double elapsedSeconds = 0.0;
   bool isAlive = true;
 
   double _distanceTraveled = 0;
@@ -81,6 +84,7 @@ class BrixRunGame extends FlameGame
     if (!isAlive) return;
 
     // Distance → meters → score
+    elapsedSeconds += dt;
     _distanceTraveled += speed * dt;
     meters = (_distanceTraveled / 100).floor();
     score = meters + (coins * 5) + (obstacleStreak * 2);
@@ -135,11 +139,11 @@ class BrixRunGame extends FlameGame
 
   // ── Input handlers (called from RunnerPage gesture detector) ──────────────
 
-  void onSwipeUp() => _player.jump();
+  void onSwipeUp() { _player.jump(); if (isAlive) jumpCount++; }
   void onSwipeDown() => _player.slide();
   void onSwipeLeft() => _player.changeLane(-1, lanePositions);
   void onSwipeRight() => _player.changeLane(1, lanePositions);
-  void onTap() => _player.jump(); // tap also jumps (easier for kids)
+  void onTap() { _player.jump(); if (isAlive) jumpCount++; }
 
   // ── Game events ────────────────────────────────────────────────────────────
 
@@ -150,6 +154,7 @@ class BrixRunGame extends FlameGame
 
   void evadedObstacle() {
     obstacleStreak++;
+    if (obstacleStreak > maxObstacleStreak) maxObstacleStreak = obstacleStreak;
     multiplier = obstacleStreak >= 50
         ? 5.0
         : obstacleStreak >= 25
@@ -178,6 +183,9 @@ class BrixRunGame extends FlameGame
     meters = 0;
     multiplier = 1.0;
     obstacleStreak = 0;
+    maxObstacleStreak = 0;
+    jumpCount = 0;
+    elapsedSeconds = 0.0;
     speed = 220.0;
     _distanceTraveled = 0;
     _speedTimer = 0;

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
+import '../../../missions/presentation/bloc/mission_bloc.dart';
+import '../../../missions/presentation/bloc/mission_state.dart';
+import '../../../missions/presentation/widgets/mission_card.dart';
 
 class PreRunPage extends StatelessWidget {
   final Character character;
@@ -19,12 +23,6 @@ class PreRunPage extends StatelessWidget {
     required this.worldEmoji,
     required this.worldColor,
   });
-
-  static const _missions = [
-    'Recoge 20 monedas en una carrera',
-    'Esquiva 10 obstáculos seguidos',
-    'Sobrevive más de 30 segundos',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -82,42 +80,40 @@ class PreRunPage extends StatelessWidget {
               // Missions panel
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '🎯  Misiones activas',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ..._missions.map(
-                        (m) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.radio_button_unchecked,
-                                  color: Color(0xFFFFD700), size: 16),
-                              const SizedBox(width: 8),
-                              Text(m,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  )),
-                            ],
+                child: BlocBuilder<MissionBloc, MissionState>(
+                  builder: (context, state) => Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '🎯  Misiones activas',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 10),
+                        if (state.status == MissionStatus.loading)
+                          const Center(
+                            child: SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          )
+                        else
+                          ...state.missions.map((m) => MissionCard(mission: m)),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -19,6 +19,10 @@ import '../../features/economy/domain/usecases/open_chest.dart';
 import '../../features/economy/domain/usecases/record_run.dart';
 import '../../features/economy/domain/usecases/unlock_part.dart';
 import '../../features/economy/presentation/bloc/wallet_bloc.dart';
+import '../../features/missions/data/datasources/mission_local_datasource.dart';
+import '../../features/missions/data/repositories/mission_repository_impl.dart';
+import '../../features/missions/domain/repositories/mission_repository.dart';
+import '../../features/missions/presentation/bloc/mission_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -33,6 +37,7 @@ Future<void> initDependencies() async {
   // Open boxes
   await Hive.openBox<CharacterModel>('characters');
   await Hive.openBox<WalletModel>('wallet');
+  await Hive.openBox<String>('missions');
 
   // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
@@ -73,5 +78,16 @@ Future<void> initDependencies() async {
       recordRun: sl(),
       unlockPart: sl(),
     ),
+  );
+
+  // ── Missions ──────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<MissionLocalDatasource>(
+    () => MissionLocalDatasourceImpl(Hive.box('missions')),
+  );
+  sl.registerLazySingleton<MissionRepository>(
+    () => MissionRepositoryImpl(sl()),
+  );
+  sl.registerFactory(
+    () => MissionBloc(repository: sl()),
   );
 }
