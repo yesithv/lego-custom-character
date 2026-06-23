@@ -269,27 +269,21 @@ class _RewardReveal extends StatelessWidget {
   const _RewardReveal({required this.reward});
 
   Color get _color {
-    if (reward is PartReward) {
-      return switch ((reward as PartReward).rarity) {
-        AccessoryRarity.common => Colors.grey,
-        AccessoryRarity.rare => Colors.blue,
-        AccessoryRarity.epic => Colors.purple,
-        AccessoryRarity.legendary => const Color(0xFFFFD700),
-      };
-    }
-    return Colors.green;
+    if (reward is! PartReward) return Colors.green;
+    final r = (reward as PartReward).rarity;
+    if (r == AccessoryRarity.legendary) return const Color(0xFFFFD700);
+    if (r == AccessoryRarity.epic) return Colors.purple;
+    if (r == AccessoryRarity.rare) return Colors.blue;
+    return Colors.grey;
   }
 
   String get _rarityLabel {
-    if (reward is PartReward) {
-      return switch ((reward as PartReward).rarity) {
-        AccessoryRarity.common => 'Común',
-        AccessoryRarity.rare => '¡Raro!',
-        AccessoryRarity.epic => '¡Épico!',
-        AccessoryRarity.legendary => '¡LEGENDARIO!',
-      };
-    }
-    return 'Monedas';
+    if (reward is! PartReward) return 'Monedas';
+    final r = (reward as PartReward).rarity;
+    if (r == AccessoryRarity.legendary) return '¡LEGENDARIO!';
+    if (r == AccessoryRarity.epic) return '¡Épico!';
+    if (r == AccessoryRarity.rare) return '¡Raro!';
+    return 'Común';
   }
 
   @override

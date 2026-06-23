@@ -350,15 +350,12 @@ class _RewardCard extends StatelessWidget {
   const _RewardCard({required this.reward});
 
   Color get _rarityColor {
-    if (reward is PartReward) {
-      return switch ((reward as PartReward).rarity) {
-        AccessoryRarity.common => Colors.grey,
-        AccessoryRarity.rare => Colors.blue,
-        AccessoryRarity.epic => Colors.purple,
-        AccessoryRarity.legendary => const Color(0xFFFFD700),
-      };
-    }
-    return Colors.green;
+    if (reward is! PartReward) return Colors.green;
+    final r = (reward as PartReward).rarity;
+    if (r == AccessoryRarity.legendary) return const Color(0xFFFFD700);
+    if (r == AccessoryRarity.epic) return Colors.purple;
+    if (r == AccessoryRarity.rare) return Colors.blue;
+    return Colors.grey;
   }
 
   @override
