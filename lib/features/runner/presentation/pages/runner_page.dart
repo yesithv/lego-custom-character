@@ -1,9 +1,11 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/services/audio_service.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
@@ -17,6 +19,7 @@ import '../../../missions/presentation/widgets/mission_card.dart';
 import '../../../ranking/domain/entities/score.dart';
 import '../../../ranking/presentation/bloc/ranking_bloc.dart';
 import '../../../ranking/presentation/bloc/ranking_event.dart';
+import '../../../ranking/presentation/bloc/ranking_state.dart';
 import '../game/brix_run_game.dart';
 
 class RunnerPage extends StatefulWidget {
@@ -43,15 +46,20 @@ class _RunnerPageState extends State<RunnerPage> {
   late final BrixRunGame _game;
   static const double _swipeThreshold = 40.0;
   bool _showChest = false;
+  bool _isPaused = false;
 
   @override
   void initState() {
     super.initState();
     _game = BrixRunGame(
       appearance: widget.character.appearance,
+      characterType: widget.character.type,
       worldId: widget.worldId,
       onRunComplete: _onRunComplete,
+      onHit: _onHit,
     );
+    // Pre-load ranking for this world to show personal best in game over
+    context.read<RankingBloc>().add(LoadRanking(widget.worldId));
   }
 
   void _onRunComplete(int coins) {
@@ -72,7 +80,14 @@ class _RunnerPageState extends State<RunnerPage> {
       coins: _game.coins,
       createdAt: DateTime.now(),
     )));
-    setState(() => _showChest = true);
+    setState(() {
+      _showChest = true;
+      _isPaused = false;
+    });
+  }
+
+  void _onHit() {
+    HapticFeedback.heavyImpact();
   }
 
   @override
@@ -82,6 +97,7 @@ class _RunnerPageState extends State<RunnerPage> {
   }
 
   void _handleSwipe(DragEndDetails d) {
+    if (_isPaused) return;
     final v = d.velocity.pixelsPerSecond;
     if (v.dx.abs() > v.dy.abs()) {
       if (v.dx > _swipeThreshold) _game.onSwipeRight();
@@ -92,6 +108,22 @@ class _RunnerPageState extends State<RunnerPage> {
     }
   }
 
+  void _handleTap() {
+    if (_isPaused) return;
+    _game.onTap();
+  }
+
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
+      if (_isPaused) {
+        _game.pauseEngine();
+      } else {
+        _game.resumeEngine();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,11 +132,14 @@ class _RunnerPageState extends State<RunnerPage> {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onPanEnd: _handleSwipe,
-            onTap: _game.onTap,
+            onTap: _handleTap,
             child: GameWidget<BrixRunGame>(
               game: _game,
               overlayBuilderMap: {
-                'hud': (context, game) => _HudOverlay(game: game),
+                'hud': (context, game) => _HudOverlay(
+                      game: game,
+                      onTogglePause: _togglePause,
+                    ),
                 'gameOver': (context, game) =>
                     BlocBuilder<MissionBloc, MissionState>(
                       builder: (context, missionState) => _GameOverOverlay(
@@ -115,7 +150,10 @@ class _RunnerPageState extends State<RunnerPage> {
                         worldEmoji: widget.worldEmoji,
                         worldColor: widget.worldColor,
                         onRestart: () {
-                          setState(() => _showChest = false);
+                          setState(() {
+                            _showChest = false;
+                            _isPaused = false;
+                          });
                           game.restart();
                         },
                         onExit: () => context.goNamed('worlds'),
@@ -125,7 +163,14 @@ class _RunnerPageState extends State<RunnerPage> {
             ),
           ),
 
-          // Chest overlay — shown once after game over + WalletBloc records run
+          // Pause overlay
+          if (_isPaused)
+            _PauseOverlay(
+              onResume: _togglePause,
+              onExit: () => context.goNamed('worlds'),
+            ),
+
+          // Chest overlay — shown after game over
           if (_showChest)
             BlocBuilder<WalletBloc, WalletState>(
               builder: (context, state) => ChestOpeningWidget(
@@ -143,7 +188,8 @@ class _RunnerPageState extends State<RunnerPage> {
 
 class _HudOverlay extends StatefulWidget {
   final BrixRunGame game;
-  const _HudOverlay({required this.game});
+  final VoidCallback onTogglePause;
+  const _HudOverlay({required this.game, required this.onTogglePause});
 
   @override
   State<_HudOverlay> createState() => _HudOverlayState();
@@ -158,8 +204,7 @@ class _HudOverlayState extends State<_HudOverlay>
     super.initState();
     _ticker = createTicker((_) {
       if (mounted) setState(() {});
-    })
-      ..start();
+    })..start();
   }
 
   @override
@@ -172,6 +217,7 @@ class _HudOverlayState extends State<_HudOverlay>
   Widget build(BuildContext context) {
     final g = widget.game;
     final mult = g.multiplier;
+    final muted = AudioService.instance.muted;
 
     return SafeArea(
       child: Padding(
@@ -181,19 +227,47 @@ class _HudOverlayState extends State<_HudOverlay>
           children: [
             Row(
               children: [
-                _HudPill(icon: '🏃', label: '${g.meters}m', color: Colors.black54),
+                _HudPill(
+                    icon: '🏃', label: '${g.meters}m', color: Colors.black54),
                 const SizedBox(width: 8),
                 _HudPill(
                   icon: '✦',
                   label: '${g.coins}',
                   color: const Color(0xFFB8860B).withValues(alpha: 0.85),
                 ),
+                if (g.hasShield) ...[
+                  const SizedBox(width: 8),
+                  _PowerupPill(
+                      icon: '🛡', color: const Color(0xFF00AAFF)),
+                ],
+                if (g.magnetActive) ...[
+                  const SizedBox(width: 8),
+                  _PowerupPill(
+                      icon: '🧲', color: const Color(0xFFFF6B35)),
+                ],
                 const Spacer(),
-                if (mult > 1.0) _MultiplierBadge(mult: mult),
+                if (mult > 1.0) ...[
+                  _MultiplierBadge(mult: mult),
+                  const SizedBox(width: 8),
+                ],
+                // Mute button
+                GestureDetector(
+                  onTap: () => AudioService.instance.toggleMute(),
+                  child: _IconChip(
+                    icon: muted
+                        ? Icons.volume_off_rounded
+                        : Icons.volume_up_rounded,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Pause button
+                GestureDetector(
+                  onTap: widget.onTogglePause,
+                  child: const _IconChip(icon: Icons.pause_rounded),
+                ),
               ],
             ),
             const SizedBox(height: 4),
-            // Zone indicator
             _ZoneBadge(zone: g.currentZone),
           ],
         ),
@@ -206,7 +280,8 @@ class _HudPill extends StatelessWidget {
   final String icon;
   final String label;
   final Color color;
-  const _HudPill({required this.icon, required this.label, required this.color});
+  const _HudPill(
+      {required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -231,6 +306,41 @@ class _HudPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PowerupPill extends StatelessWidget {
+  final String icon;
+  final Color color;
+  const _PowerupPill({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(icon, style: const TextStyle(fontSize: 13)),
+    );
+  }
+}
+
+class _IconChip extends StatelessWidget {
+  final IconData icon;
+  const _IconChip({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 }
@@ -290,6 +400,89 @@ class _ZoneBadge extends StatelessWidget {
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 11,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pause Overlay ──────────────────────────────────────────────────────────────
+
+class _PauseOverlay extends StatelessWidget {
+  final VoidCallback onResume;
+  final VoidCallback onExit;
+  const _PauseOverlay({required this.onResume, required this.onExit});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onResume,
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.72),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {},
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 48),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2E),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFFFD700), width: 2),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '⏸ Pausa',
+                    style: TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD700),
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: onResume,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text(
+                        'Continuar',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        side: const BorderSide(color: Colors.white30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: onExit,
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: const Text('Salir al mapa'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -364,10 +557,40 @@ class _GameOverOverlay extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _ZoneBadge(zone: game.currentZone),
+
+              // Personal best from ranking
+              BlocBuilder<RankingBloc, RankingState>(
+                builder: (context, rankingState) {
+                  if (rankingState.scores.isEmpty ||
+                      rankingState.worldId != worldId) {
+                    return const SizedBox.shrink();
+                  }
+                  final pb = rankingState.scores.first.score;
+                  final isNew = game.score >= pb;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: isNew
+                        ? const Text(
+                            '🎉 ¡Nuevo récord!',
+                            style: TextStyle(
+                              color: Color(0xFFFFD700),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          )
+                        : Text(
+                            'Récord: $pb pts',
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
+                  );
+                },
+              ),
+
               if (completedMissions.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -380,7 +603,8 @@ class _GameOverOverlay extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                ...completedMissions.map((m) => MissionCard(mission: m, compact: true)),
+                ...completedMissions
+                    .map((m) => MissionCard(mission: m, compact: true)),
               ],
               const SizedBox(height: 20),
 
@@ -399,7 +623,8 @@ class _GameOverOverlay extends StatelessWidget {
                   icon: const Icon(Icons.replay_rounded),
                   label: const Text(
                     'Jugar de nuevo',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                 ),
               ),

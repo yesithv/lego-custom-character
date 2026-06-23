@@ -39,6 +39,30 @@ const worldConfigs = <String, WorldColors>{
     ground: Color(0xFF5C4033),
     accent: Color(0xFF7FFF00),
   ),
+  'dark_city': WorldColors(
+    sky: Color(0xFF1A1A2E),
+    midground: Color(0xFF2D2D4E),
+    ground: Color(0xFF0D0D1A),
+    accent: Color(0xFFE94560),
+  ),
+  'ocean': WorldColors(
+    sky: Color(0xFF006994),
+    midground: Color(0xFF0099CC),
+    ground: Color(0xFF003D5C),
+    accent: Color(0xFF00FFCC),
+  ),
+  'tundra': WorldColors(
+    sky: Color(0xFFB0E0FF),
+    midground: Color(0xFF87CEEB),
+    ground: Color(0xFFDFF0FF),
+    accent: Color(0xFFFFFFFF),
+  ),
+  'robot_city': WorldColors(
+    sky: Color(0xFF1C1C1C),
+    midground: Color(0xFF2D2D2D),
+    ground: Color(0xFF111111),
+    accent: Color(0xFF00FF41),
+  ),
 };
 
 WorldColors colorsFor(String worldId) =>

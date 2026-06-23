@@ -28,14 +28,28 @@ class CoinComponent extends PositionComponent
 
   @override
   void update(double dt) {
-    position.x -= game.speed * dt;
     _age += dt;
+
+    if (game.magnetActive) {
+      final target = Vector2(game.playerX, game.playerY);
+      final center = Vector2(position.x + _radius, position.y + _radius);
+      final diff = target - center;
+      final dist = diff.length;
+      if (dist < 28) {
+        game.collectCoin();
+        removeFromParent();
+        return;
+      }
+      position += diff.normalized() * 320 * dt;
+    } else {
+      position.x -= game.speed * dt;
+    }
+
     if (position.x < -size.x - 10) removeFromParent();
   }
 
   @override
   void render(Canvas canvas) {
-    // Pulsing glow
     final pulse = 0.7 + 0.3 * sin(_age * 4);
 
     // Glow ring
@@ -69,7 +83,7 @@ class CoinComponent extends PositionComponent
         ..strokeWidth = 2,
     );
 
-    // "₿" or "$" symbol
+    // Symbol
     final tp = TextPainter(
       text: const TextSpan(
         text: '✦',
@@ -81,7 +95,6 @@ class CoinComponent extends PositionComponent
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(canvas,
-        Offset(_radius - tp.width / 2, _radius - tp.height / 2));
+    tp.paint(canvas, Offset(_radius - tp.width / 2, _radius - tp.height / 2));
   }
 }

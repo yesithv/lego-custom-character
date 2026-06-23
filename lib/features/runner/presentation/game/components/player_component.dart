@@ -108,6 +108,8 @@ class PlayerComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    if (game.hasShield) _drawShieldAura(canvas);
+
     if (_state == PlayerState.dead) {
       _drawDead(canvas);
       return;
@@ -117,6 +119,47 @@ class PlayerComponent extends PositionComponent
       return;
     }
     _drawRunning(canvas);
+
+    if (game.magnetActive) _drawMagnetAura(canvas);
+  }
+
+  void _drawShieldAura(Canvas canvas) {
+    const shieldColor = Color(0xFF00AAFF);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.x / 2, size.y / 2),
+        width: size.x + 18,
+        height: size.y + 18,
+      ),
+      Paint()..color = shieldColor.withValues(alpha: 0.18),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.x / 2, size.y / 2),
+        width: size.x + 18,
+        height: size.y + 18,
+      ),
+      Paint()
+        ..color = shieldColor.withValues(alpha: 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+  }
+
+  void _drawMagnetAura(Canvas canvas) {
+    const magnetColor = Color(0xFFFF6B35);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.x / 2, size.y / 2),
+        width: size.x + 22,
+        height: size.y + 22,
+      ),
+      Paint()
+        ..color = magnetColor.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   // ── Drawing helpers ────────────────────────────────────────────────────────
