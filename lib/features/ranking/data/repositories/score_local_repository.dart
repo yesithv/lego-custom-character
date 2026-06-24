@@ -25,7 +25,15 @@ class ScoreLocalRepository implements ScoreRepository {
         .map((m) => m.toEntity())
         .toList()
       ..sort((a, b) => b.score.compareTo(a.score));
-    return all.take(limit).toList();
+
+    // Keep only the best run per character name
+    final seen = <String>{};
+    final deduped = <Score>[];
+    for (final s in all) {
+      final key = s.characterName.isEmpty ? s.id : s.characterName;
+      if (seen.add(key)) deduped.add(s);
+    }
+    return deduped.take(limit).toList();
   }
 
   void _prune(String worldId) {
