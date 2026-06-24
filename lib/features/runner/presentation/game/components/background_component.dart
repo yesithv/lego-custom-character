@@ -10,11 +10,10 @@ class BackgroundComponent extends PositionComponent
     with HasGameRef<BrixRunGame> {
   final String worldId;
 
-  double _scrollFar = 0;
-  double _scrollMid = 0;
+  double _groundScroll = 0.0;
+  double _buildingScroll = 0.0;
 
-  late final List<_Deco> _farDecos;
-  late final List<_Deco> _midDecos;
+  late List<_Building> _buildings;
 
   BackgroundComponent({required this.worldId})
       : super(position: Vector2.zero(), priority: -10);
@@ -22,368 +21,280 @@ class BackgroundComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     final rng = Random(worldId.hashCode);
-    _farDecos = List.generate(8, (i) => _Deco(rng.nextDouble() * 800, rng));
-    _midDecos = List.generate(6, (i) => _Deco(rng.nextDouble() * 800, rng));
+    _buildings = List.generate(14, (_) => _Building(rng));
   }
 
   @override
   void update(double dt) {
-    _scrollFar += game.speed * 0.15 * dt;
-    _scrollMid += game.speed * 0.35 * dt;
+    _groundScroll += game.depthRate * dt;
+    _buildingScroll += game.speed * 0.36 * dt;
   }
 
   @override
   void render(Canvas canvas) {
     final w = game.size.x;
     final h = game.size.y;
-    final colors = colorsFor(worldId);
-    final groundY = h * 0.65;
+    final c = colorsFor(worldId);
+    final hy = game.horizonY;
+    final py = game.playerBaseY;
+    final vx = game.vanishX;
+    final sep = game.laneSep;
 
-    // Sky
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, w, groundY),
-      Paint()..color = colors.sky,
-    );
+    // 1 — Sky
+    _drawSky(canvas, w, hy, c);
 
-    // Sky special decorations
-    _drawSkyDecoration(canvas, w, h, groundY, colors);
+    // 2 — City silhouette behind track (above horizon)
+    _drawCitySilhouette(canvas, w, hy, vx, c);
 
-    // Far decorations (slow scroll)
-    for (final d in _farDecos) {
-      _drawFarDeco(canvas, d, w, h, groundY, colors);
-    }
+    // 3 — Sky decorations (stars, moon, etc.)
+    _drawSkyDecorations(canvas, w, h, hy, c);
 
-    // Ground strip
-    canvas.drawRect(
-      Rect.fromLTWH(0, groundY, w, h * 0.35),
-      Paint()..color = colors.ground,
-    );
-
-    // Ground accent line
-    canvas.drawRect(
-      Rect.fromLTWH(0, groundY, w, 4),
-      Paint()..color = colors.accent.withValues(alpha: 0.6),
-    );
-
-    // Mid decorations (faster scroll)
-    for (final d in _midDecos) {
-      _drawMidDeco(canvas, d, w, h, groundY, colors);
-    }
-
-    // Lane dividers
-    _drawLaneDividers(canvas, w);
+    // 4 — Ground plane with perspective grid
+    _drawGround(canvas, w, h, hy, py, vx, sep, c);
   }
 
-  void _drawSkyDecoration(
-      Canvas canvas, double w, double h, double groundY, WorldColors c) {
+  // ── Sky ─────────────────────────────────────────────────────────────────────
+
+  void _drawSky(Canvas canvas, double w, double hy, WorldColors c) {
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, hy), Paint()..color = c.sky);
+    // Horizon warm glow
+    canvas.drawRect(
+      Rect.fromLTWH(0, hy * 0.70, w, hy * 0.30),
+      Paint()..color = c.accent.withValues(alpha: 0.09),
+    );
+  }
+
+  // ── City silhouette scrolling above horizon ──────────────────────────────────
+
+  void _drawCitySilhouette(
+      Canvas canvas, double w, double hy, double vx, WorldColors c) {
+    final scrolled = _buildingScroll % (w * 0.85);
+
+    for (final b in _buildings) {
+      final rawX = (b.relX * w * 0.85 - scrolled) % (w * 0.85);
+
+      // Skip buildings near the center vanishing corridor
+      final distFromCenter = (rawX - vx).abs();
+      if (distFromCenter < w * 0.10) continue;
+
+      final bh = b.heightFraction * hy * 0.80 + hy * 0.10;
+      final bw = 24.0 + b.widthFraction * 34.0;
+      final bx = rawX - bw / 2;
+
+      // Building body
+      canvas.drawRect(
+        Rect.fromLTWH(bx, hy - bh, bw, bh),
+        Paint()..color = c.midground,
+      );
+
+      // Windows
+      _drawWindows(canvas, bx, hy - bh, bw, bh, c);
+
+      // World-specific roof
+      _drawRoof(canvas, bx, hy - bh, bw, c);
+    }
+  }
+
+  void _drawWindows(Canvas canvas, double bx, double bTop, double bw,
+      double bh, WorldColors c) {
+    if (bw < 12 || bh < 18) return;
+    final cols = (bw / 13).floor().clamp(1, 3);
+    final rows = (bh / 18).floor().clamp(1, 7);
+    final wPaint = Paint()..color = c.accent.withValues(alpha: 0.30);
+    for (int r = 0; r < rows; r++) {
+      for (int col = 0; col < cols; col++) {
+        canvas.drawRect(
+          Rect.fromLTWH(bx + col * (bw / cols) + 3, bTop + r * 18 + 5, 7, 10),
+          wPaint,
+        );
+      }
+    }
+  }
+
+  void _drawRoof(Canvas canvas, double bx, double bTop, double bw,
+      WorldColors c) {
     switch (worldId) {
-      case 'galaxy':
-        for (final d in _farDecos) {
-          final sx = (d.baseX - _scrollFar * 0.08) % w;
-          canvas.drawCircle(
-            Offset(sx, d.height * groundY * 0.85),
-            d.width * 2 + 0.5,
-            Paint()
-              ..color = Colors.white.withValues(alpha: d.width * 0.7 + 0.3),
-          );
+      case 'medieval':
+        final cols = (bw / 10).floor();
+        for (int i = 0; i < cols; i++) {
+          if (i.isEven) {
+            canvas.drawRect(Rect.fromLTWH(bx + i * 10, bTop - 10, 8, 10),
+                Paint()..color = c.midground);
+          }
         }
       case 'dark_city':
-        canvas.drawCircle(
-          Offset(w * 0.82, h * 0.14),
-          22,
-          Paint()..color = const Color(0xFFFFF8DC),
+        final cx = bx + bw / 2;
+        final spire = Path()
+          ..moveTo(cx, bTop - 20)
+          ..lineTo(cx - 4, bTop)
+          ..lineTo(cx + 4, bTop)
+          ..close();
+        canvas.drawPath(spire, Paint()..color = c.accent.withValues(alpha: 0.80));
+      case 'galaxy':
+        canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(bx + bw / 2, bTop),
+              width: bw * 0.70,
+              height: bw * 0.25),
+          Paint()..color = c.accent.withValues(alpha: 0.25),
         );
-        canvas.drawCircle(
-          Offset(w * 0.85, h * 0.12),
-          17,
-          Paint()..color = c.sky,
-        );
-      case 'ocean':
-        final rayPaint = Paint()..color = Colors.white.withValues(alpha: 0.04);
-        for (int i = 0; i < 5; i++) {
-          final rx = (i * w / 5 + (_scrollFar * 0.05) % (w / 5));
-          canvas.drawRect(Rect.fromLTWH(rx, 0, 16, groundY * 0.8), rayPaint);
-        }
+      case 'robot_city':
+        canvas.drawRect(
+            Rect.fromLTWH(bx + bw / 2 - 1.5, bTop - 16, 3, 16),
+            Paint()..color = c.midground);
+        canvas.drawCircle(Offset(bx + bw / 2, bTop - 18), 4,
+            Paint()..color = c.accent);
+      case 'jungle':
+        canvas.drawCircle(Offset(bx + bw / 2, bTop - 12), bw * 0.42,
+            Paint()..color = Colors.green.shade700.withValues(alpha: 0.75));
       case 'tundra':
-        canvas.drawRect(
-          Rect.fromLTWH(0, h * 0.08, w, h * 0.06),
-          Paint()..color = Colors.green.withValues(alpha: 0.12),
-        );
-        canvas.drawRect(
-          Rect.fromLTWH(0, h * 0.16, w, h * 0.04),
-          Paint()..color = Colors.purple.withValues(alpha: 0.08),
-        );
-        canvas.drawRect(
-          Rect.fromLTWH(0, h * 0.22, w, h * 0.03),
-          Paint()..color = Colors.teal.withValues(alpha: 0.07),
-        );
+        final mPath = Path()
+          ..moveTo(bx, bTop)
+          ..lineTo(bx + bw / 2, bTop - bw * 0.55)
+          ..lineTo(bx + bw, bTop)
+          ..close();
+        canvas.drawPath(
+            mPath, Paint()..color = Colors.white.withValues(alpha: 0.55));
       default:
         break;
     }
   }
 
-  void _drawFarDeco(Canvas canvas, _Deco d, double w, double h, double groundY,
-      WorldColors c) {
-    final x = (d.baseX - _scrollFar * 0.5) % (w + 80) - 40;
-    final bh = d.height * groundY * 0.45;
-    final bw = d.width * 40 + 22;
+  // ── Sky decorations ──────────────────────────────────────────────────────────
 
+  void _drawSkyDecorations(
+      Canvas canvas, double w, double h, double hy, WorldColors c) {
     switch (worldId) {
-      case 'lego_city':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - bh, bw, bh),
-          Paint()..color = c.midground,
-        );
-        for (int row = 0; row < (bh / 16).floor(); row++) {
-          for (int col = 0; col < (bw / 14).floor(); col++) {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                  x + col * 14 + 3, groundY - bh + row * 16 + 4, 6, 8),
-              Paint()..color = c.accent.withValues(alpha: 0.7),
-            );
-          }
-        }
-      case 'medieval':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - bh, bw, bh),
-          Paint()..color = c.midground,
-        );
-        for (int i = 0; i < (bw / 10).floor(); i++) {
-          if (i.isEven) {
-            canvas.drawRect(
-              Rect.fromLTWH(x + i * 10, groundY - bh - 10, 8, 10),
-              Paint()..color = c.midground,
-            );
-          }
-        }
       case 'galaxy':
-        final r = bh * 0.45;
-        canvas.drawCircle(
-          Offset(x + bw / 2, groundY - bh - 10),
-          r,
-          Paint()..color = c.midground,
-        );
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset(x + bw / 2, groundY - bh - 6),
-            width: r * 2.8,
-            height: r * 0.35,
-          ),
-          Paint()
-            ..color = c.accent.withValues(alpha: 0.55)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 3,
-        );
-      case 'jungle':
-        canvas.drawRect(
-          Rect.fromLTWH(x + bw / 2 - 8, groundY - bh * 0.65, 16, bh * 0.65),
-          Paint()..color = Colors.brown.shade800,
-        );
-        canvas.drawCircle(
-          Offset(x + bw / 2, groundY - bh * 0.75),
-          bw * 0.65,
-          Paint()..color = Colors.green.shade700,
-        );
-        canvas.drawCircle(
-          Offset(x + bw / 2 - bw * 0.32, groundY - bh * 0.58),
-          bw * 0.48,
-          Paint()..color = Colors.green.shade800,
-        );
-        canvas.drawCircle(
-          Offset(x + bw / 2 + bw * 0.32, groundY - bh * 0.58),
-          bw * 0.48,
-          Paint()..color = Colors.green.shade600,
-        );
-      case 'dark_city':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - bh, bw, bh),
-          Paint()..color = c.midground,
-        );
-        final spireCount = (bw / 14).floor().clamp(1, 3);
-        for (int i = 0; i < spireCount; i++) {
-          final sx = x + i * (bw / spireCount) + bw / spireCount / 2;
-          final spire = Path()
-            ..moveTo(sx, groundY - bh - 22)
-            ..lineTo(sx - 5, groundY - bh)
-            ..lineTo(sx + 5, groundY - bh)
-            ..close();
-          canvas.drawPath(spire, Paint()..color = c.accent.withValues(alpha: 0.85));
+        final rng = Random(77);
+        for (int i = 0; i < 60; i++) {
+          final sx = rng.nextDouble() * w;
+          final sy = rng.nextDouble() * hy * 0.95;
+          final sr = rng.nextDouble() * 1.6 + 0.4;
+          canvas.drawCircle(Offset(sx, sy), sr,
+              Paint()..color = Colors.white.withValues(alpha: rng.nextDouble() * 0.5 + 0.4));
         }
-        for (int row = 0; row < (bh / 20).floor(); row++) {
-          for (int col = 0; col < (bw / 16).floor(); col++) {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                  x + col * 16 + 3, groundY - bh + row * 20 + 5, 8, 10),
-              Paint()..color = c.accent.withValues(alpha: 0.28),
-            );
-          }
+      case 'dark_city':
+        canvas.drawCircle(
+            Offset(w * 0.80, h * 0.11), 24, Paint()..color = const Color(0xFFFFF8DC));
+        canvas.drawCircle(
+            Offset(w * 0.84, h * 0.09), 18, Paint()..color = c.sky);
+      case 'tundra':
+        for (int i = 0; i < 3; i++) {
+          canvas.drawRect(
+            Rect.fromLTWH(0, hy * (0.10 + i * 0.10), w, hy * 0.05),
+            Paint()..color = [Colors.green, Colors.purple, Colors.teal][i]
+                .withValues(alpha: 0.10),
+          );
         }
       case 'ocean':
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(x + bw * 0.1, groundY - bh, bw * 0.38, bh),
-            const Radius.circular(8),
-          ),
-          Paint()..color = c.accent.withValues(alpha: 0.75),
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-                x + bw * 0.55, groundY - bh * 0.65, bw * 0.35, bh * 0.65),
-            const Radius.circular(6),
-          ),
-          Paint()..color = c.midground,
-        );
-      case 'tundra':
-        final mPath = Path()
-          ..moveTo(x, groundY)
-          ..lineTo(x + bw / 2, groundY - bh)
-          ..lineTo(x + bw, groundY)
-          ..close();
-        canvas.drawPath(mPath, Paint()..color = c.midground);
-        final snowCap = Path()
-          ..moveTo(x + bw * 0.28, groundY - bh * 0.52)
-          ..lineTo(x + bw / 2, groundY - bh)
-          ..lineTo(x + bw * 0.72, groundY - bh * 0.52)
-          ..close();
-        canvas.drawPath(snowCap, Paint()..color = Colors.white);
-      case 'robot_city':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - bh, bw, bh),
-          Paint()..color = c.midground,
-        );
-        final circuitP = Paint()
-          ..color = c.accent.withValues(alpha: 0.6)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(x + 4, groundY - bh + 8),
-            Offset(x + bw - 4, groundY - bh + 8), circuitP);
-        canvas.drawLine(Offset(x + 4, groundY - bh + 22),
-            Offset(x + bw * 0.6, groundY - bh + 22), circuitP);
-        canvas.drawLine(
-          Offset(x + bw / 2, groundY - bh),
-          Offset(x + bw / 2, groundY - bh - 16),
-          circuitP,
-        );
-        canvas.drawCircle(
-          Offset(x + bw / 2, groundY - bh - 19),
-          3,
-          Paint()..color = c.accent,
-        );
+        final rayP = Paint()..color = Colors.white.withValues(alpha: 0.04);
+        for (int i = 0; i < 6; i++) {
+          final rx = (i * w / 6 + (_buildingScroll * 0.04) % (w / 6));
+          canvas.drawRect(Rect.fromLTWH(rx, 0, 16, hy * 0.90), rayP);
+        }
+      case 'jungle':
+        for (int i = 0; i < 5; i++) {
+          final cx = (i * w * 0.22 - _buildingScroll * 0.06) % (w + 40) - 20;
+          canvas.drawCircle(Offset(cx, hy * 0.72), 24,
+              Paint()..color = Colors.green.shade900.withValues(alpha: 0.45));
+        }
       default:
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - bh, bw, bh),
-          Paint()..color = c.midground.withValues(alpha: 0.7),
-        );
+        break;
     }
   }
 
-  void _drawMidDeco(Canvas canvas, _Deco d, double w, double h, double groundY,
-      WorldColors c) {
-    final x = (d.baseX - _scrollMid) % (w + 60) - 30;
+  // ── Perspective ground ───────────────────────────────────────────────────────
 
-    switch (worldId) {
-      case 'lego_city':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - 50, 4, 50),
-          Paint()..color = Colors.grey.shade700,
-        );
-        canvas.drawCircle(
-          Offset(x + 2, groundY - 52),
-          6,
-          Paint()..color = c.accent,
-        );
-      case 'medieval':
-        canvas.drawRect(
-          Rect.fromLTWH(x, groundY - 40, 12, 40),
-          Paint()..color = Colors.brown.shade700,
-        );
-        canvas.drawCircle(
-          Offset(x + 6, groundY - 45),
-          16,
-          Paint()..color = Colors.green.shade700,
-        );
-      case 'galaxy':
-        canvas.drawCircle(
-          Offset(x, groundY - d.height * 35 - 10),
-          5 + d.width * 7,
-          Paint()..color = c.midground.withValues(alpha: 0.75),
-        );
-      case 'jungle':
-        final vinePaint = Paint()
-          ..color = Colors.green.shade600
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(x, 0), Offset(x + 4, groundY - 30), vinePaint);
-        canvas.drawCircle(
-          Offset(x + 4, groundY - 22),
-          9,
-          Paint()..color = Colors.green.shade500,
-        );
-      case 'dark_city':
-        final batY = groundY - 55 - d.height * 35;
-        canvas.drawCircle(Offset(x, batY), 4, Paint()..color = Colors.black87);
-        final wings = Path()
-          ..moveTo(x - 13, batY + 2)
-          ..quadraticBezierTo(x - 6, batY - 7, x, batY)
-          ..quadraticBezierTo(x + 6, batY - 7, x + 13, batY + 2);
-        canvas.drawPath(wings, Paint()..color = Colors.black87);
-      case 'ocean':
-        canvas.drawCircle(
-          Offset(x, groundY - d.height * 55),
-          3 + d.width * 5,
-          Paint()
-            ..color = Colors.white.withValues(alpha: 0.28)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5,
-        );
-      case 'tundra':
-        canvas.drawCircle(
-          Offset(x, groundY - d.height * 45),
-          2 + d.width * 2,
-          Paint()..color = Colors.white.withValues(alpha: 0.65),
-        );
-      case 'robot_city':
-        final gearR = 9.0 + d.width * 7;
-        final gearPath = Path();
-        const teeth = 8;
-        for (int i = 0; i < teeth * 2; i++) {
-          final angle = (i / (teeth * 2)) * 2 * pi;
-          final r = i.isEven ? gearR : gearR * 0.68;
-          final gx = x + r * cos(angle);
-          final gy = groundY - 28 + r * sin(angle);
-          if (i == 0) gearPath.moveTo(gx, gy);
-          else gearPath.lineTo(gx, gy);
+  void _drawGround(Canvas canvas, double w, double h, double hy, double py,
+      double vx, double sep, WorldColors c) {
+    // Base ground fill
+    canvas.drawRect(Rect.fromLTWH(0, hy, w, h - hy), Paint()..color = c.ground);
+
+    // Track surface (slightly different shade)
+    final trackPath = Path()
+      ..moveTo(vx, hy)
+      ..lineTo(vx + sep * 1.60, h)
+      ..lineTo(vx - sep * 1.60, h)
+      ..close();
+    canvas.drawPath(
+        trackPath, Paint()..color = c.midground.withValues(alpha: 0.38));
+
+    // Horizon accent
+    canvas.drawRect(
+        Rect.fromLTWH(0, hy - 1.5, w, 3), Paint()..color = c.accent.withValues(alpha: 0.50));
+
+    // Scrolling cross-lines (depth motion grid)
+    _drawCrossLines(canvas, hy, py, vx, sep, c);
+
+    // Rail perspective lines (converging to vanish point)
+    _drawRailLines(canvas, hy, py, vx, sep, c);
+  }
+
+  void _drawCrossLines(Canvas canvas, double hy, double py, double vx,
+      double sep, WorldColors c) {
+    const dz = 0.135;
+    final phase = _groundScroll % dz;
+    final linePaint = Paint()
+      ..color = c.accent.withValues(alpha: 0.16)
+      ..strokeWidth = 1.5;
+    final studPaint = Paint()..color = c.accent.withValues(alpha: 0.09);
+
+    for (double base = 0.0; base <= 1.0 + dz; base += dz) {
+      final t = (base - phase).clamp(0.0, 1.5);
+      if (t < 0.02 || t > 1.0) continue;
+      final ly = hy + (py - hy) * t;
+      final halfW = sep * 1.60 * t;
+
+      // Cross line
+      canvas.drawLine(Offset(vx - halfW, ly), Offset(vx + halfW, ly), linePaint);
+
+      // LEGO stud dots on every other line
+      if ((base / dz).round().isEven) {
+        final dotR = 3.5 * t;
+        for (int lane = 0; lane < 3; lane++) {
+          final offsets = [-sep, 0.0, sep];
+          canvas.drawCircle(
+              Offset(vx + offsets[lane] * t, ly - dotR), dotR, studPaint);
         }
-        gearPath.close();
-        canvas.drawPath(gearPath,
-            Paint()..color = c.accent.withValues(alpha: 0.38));
-      default:
-        canvas.drawCircle(
-          Offset(x, groundY - 20),
-          10,
-          Paint()..color = c.accent.withValues(alpha: 0.5),
-        );
+      }
     }
   }
 
-  void _drawLaneDividers(Canvas canvas, double w) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.15)
-      ..strokeWidth = 2
+  void _drawRailLines(Canvas canvas, double hy, double py, double vx,
+      double sep, WorldColors c) {
+    final outerPaint = Paint()
+      ..color = c.accent.withValues(alpha: 0.48)
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
-    for (final laneY in game.lanePositions) {
-      canvas.drawLine(Offset(0, laneY + 5), Offset(w, laneY + 5), paint);
+    final innerPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.20)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+
+    final rails = [
+      (-sep * 1.60, outerPaint),
+      (-sep * 0.53, innerPaint),
+      (sep * 0.53, innerPaint),
+      (sep * 1.60, outerPaint),
+    ];
+    for (final (offset, paint) in rails) {
+      canvas.drawLine(
+        Offset(vx, hy),
+        Offset(vx + offset, py + (py * 0.26)),
+        paint,
+      );
     }
   }
 }
 
-class _Deco {
-  final double baseX;
-  final double height;
-  final double width;
+class _Building {
+  final double relX;
+  final double heightFraction;
+  final double widthFraction;
 
-  _Deco(this.baseX, Random rng)
-      : height = 0.4 + rng.nextDouble() * 0.6,
-        width = rng.nextDouble();
+  _Building(Random rng)
+      : relX = rng.nextDouble(),
+        heightFraction = 0.15 + rng.nextDouble() * 0.75,
+        widthFraction = rng.nextDouble();
 }

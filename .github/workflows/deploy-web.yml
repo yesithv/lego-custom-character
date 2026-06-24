@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/flutter-hello-world-6u87go
+      - claude/subway-surfers-style-game-ntbisd
   pull_request:
     branches:
       - main
