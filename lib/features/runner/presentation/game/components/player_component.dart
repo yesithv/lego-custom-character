@@ -183,7 +183,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
     final armSwing = sin(_runAnimTimer * 8.5) * 10.0;
 
     // Cape (drawn behind character — very prominent from back view)
-    if (appearance.cape) _drawCape(canvas, w, h);
+    if (appearance.hasCape) _drawCape(canvas, w, h);
 
     // Left leg
     _rr(canvas, Rect.fromLTWH(w * 0.13, h * 0.60, w * 0.31, h * 0.37 + legBob), leg, 6);
