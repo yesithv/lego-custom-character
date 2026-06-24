@@ -38,7 +38,7 @@ class PreRunPage extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              // Top bar
+              // Top bar (fixed)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
@@ -59,70 +59,79 @@ class PreRunPage extends StatelessWidget {
                 ),
               ),
 
-              const Spacer(),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
 
-              // Character preview
-              CharacterPreview(appearance: character.appearance, size: 120),
-              const SizedBox(height: 8),
-              Text(
-                character.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 24,
-                ),
-              ),
-              const SizedBox(height: 4),
-              _CharacterTypeBadge(type: character.type),
+                      // Character preview
+                      CharacterPreview(appearance: character.appearance, size: 120),
+                      const SizedBox(height: 8),
+                      Text(
+                        character.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _CharacterTypeBadge(type: character.type),
 
-              const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
-              // Missions panel
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: BlocBuilder<MissionBloc, MissionState>(
-                  builder: (context, state) => Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '🎯  Misiones activas',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
+                      // Missions panel
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: BlocBuilder<MissionBloc, MissionState>(
+                          builder: (context, state) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '🎯  Misiones activas',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                if (state.status == MissionStatus.loading)
+                                  const Center(
+                                    child: SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white54,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ...state.missions.map((m) => MissionCard(mission: m, compact: true)),
+                              ],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        if (state.status == MissionStatus.loading)
-                          const Center(
-                            child: SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          )
-                        else
-                          ...state.missions.map((m) => MissionCard(mission: m)),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
               ),
 
-              const Spacer(),
-
-              // Run button
+              // Run button (always visible at bottom)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                 child: SizedBox(
                   width: double.infinity,
                   height: 64,
