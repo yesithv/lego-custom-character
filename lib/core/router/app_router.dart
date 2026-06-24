@@ -13,6 +13,15 @@ import '../../features/runner/presentation/pages/world_selection_page.dart';
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/gallery',
+    errorBuilder: (context, state) => const CharacterGalleryPage(),
+    redirect: (context, state) {
+      // extra is ephemeral and lost on browser refresh / direct URL access
+      final needsExtra = ['/pre-run', '/runner'];
+      if (needsExtra.contains(state.matchedLocation) && state.extra == null) {
+        return '/gallery';
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/gallery',
