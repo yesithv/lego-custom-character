@@ -1,61 +1,57 @@
 import 'dart:math';
 
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' hide Image;
 
 import '../brix_run_game.dart';
-import 'player_component.dart';
 
 enum PowerupType { shield, magnet }
 
-class PowerupComponent extends PositionComponent
-    with CollisionCallbacks, HasGameRef<BrixRunGame> {
+class PowerupComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+  final int lane;
   final PowerupType type;
-  double _age = 0;
-  late double _baseY;
-  static const double _radius = 18.0;
 
-  PowerupComponent({
-    required int lane,
-    required double laneY,
-    required double startX,
-    required this.type,
-  }) : super(
-          position: Vector2(startX, laneY - _radius * 2 - 10),
-          size: Vector2(_radius * 2, _radius * 2),
-          priority: 4,
-        );
+  double _depth = 0.0;
+  bool _collected = false;
+  double _age = 0.0;
 
-  @override
-  Future<void> onLoad() async {
-    _baseY = position.y;
-    add(CircleHitbox(radius: _radius, isSolid: false));
-  }
+  static const _baseRadius = 20.0;
+
+  double get depth => _depth;
+  bool get collected => _collected;
+  set collected(bool v) => _collected = v;
+
+  PowerupComponent({required this.lane, required this.type})
+      : super(size: Vector2(_baseRadius * 2, _baseRadius * 2), priority: 4);
 
   @override
   void update(double dt) {
-    position.x -= game.speed * dt;
+    _depth += game.depthRate * dt;
     _age += dt;
-    position.y = _baseY + sin(_age * 3) * 6;
-    if (position.x < -size.x - 10) removeFromParent();
+    _syncTransform();
+    if (_depth > 1.30) removeFromParent();
   }
 
-  @override
-  void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollisionStart(intersectionPoints, other);
-    if (other is PlayerComponent) {
-      game.activatePowerup(type);
-      removeFromParent();
-    }
+  void _syncTransform() {
+    final s = game.perspectiveScale(_depth);
+    final groundPos = game.perspectivePos(lane, _depth);
+    final r = _baseRadius * s;
+    size = Vector2(r * 2, r * 2);
+    final bob = sin(_age * 3.5) * 7.0 * s;
+    position = Vector2(
+      groundPos.x - r,
+      groundPos.y - r * 2.6 - bob,
+    );
+    priority = (200 * _depth).floor() + 4;
   }
 
   @override
   void render(Canvas canvas) {
-    final pulse = 0.6 + 0.4 * sin(_age * 4);
+    final r = size.x / 2;
+    final pulse = 0.60 + 0.40 * sin(_age * 4.0);
     final Color color;
     final String icon;
+
     if (type == PowerupType.shield) {
       color = const Color(0xFF00AAFF);
       icon = '🛡';
@@ -64,42 +60,41 @@ class PowerupComponent extends PositionComponent
       icon = '🧲';
     }
 
-    // Glow ring
+    // Outer glow ring
     canvas.drawCircle(
-      Offset(_radius, _radius),
-      _radius + 6,
-      Paint()..color = color.withValues(alpha: 0.25 * pulse),
+      Offset(r, r),
+      r + 7 * pulse,
+      Paint()..color = color.withValues(alpha: 0.22 * pulse),
     );
 
     // Body
-    canvas.drawCircle(
-      Offset(_radius, _radius),
-      _radius,
-      Paint()..color = color,
-    );
+    canvas.drawCircle(Offset(r, r), r, Paint()..color = color);
 
     // Inner shine
     canvas.drawCircle(
-      Offset(_radius - 4, _radius - 4),
-      _radius * 0.38,
-      Paint()..color = Colors.white.withValues(alpha: 0.35),
+      Offset(r - r * 0.22, r - r * 0.22),
+      r * 0.38,
+      Paint()..color = Colors.white.withValues(alpha: 0.32),
     );
 
     // Border
     canvas.drawCircle(
-      Offset(_radius, _radius),
-      _radius,
+      Offset(r, r),
+      r,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.5)
+        ..color = Colors.white.withValues(alpha: 0.52)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = max(1.5, r * 0.12),
     );
 
-    // Icon
-    final tp = TextPainter(
-      text: TextSpan(text: icon, style: const TextStyle(fontSize: 14)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(_radius - tp.width / 2, _radius - tp.height / 2));
+    // Emoji icon — only draw when large enough to be readable
+    if (r > 10) {
+      final fontSize = (r * 0.95).clamp(8.0, 22.0);
+      final tp = TextPainter(
+        text: TextSpan(text: icon, style: TextStyle(fontSize: fontSize)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(r - tp.width / 2, r - tp.height / 2));
+    }
   }
 }

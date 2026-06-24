@@ -1,65 +1,67 @@
 import 'dart:math';
 
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' hide Image;
 
 import '../../../../character_editor/domain/entities/character.dart';
 import '../brix_run_game.dart';
-import 'coin_component.dart';
-import 'obstacle_component.dart';
 
 enum PlayerState { running, jumping, sliding, dead }
 
-class PlayerComponent extends PositionComponent
-    with CollisionCallbacks, HasGameRef<BrixRunGame> {
+class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   final CharacterAppearance appearance;
   int currentLane;
 
   PlayerState _state = PlayerState.running;
   double _jumpProgress = 0;
   double _slideTimer = 0;
-  double _targetY = 0;
+  double _targetX = 0;
   double _runAnimTimer = 0;
 
-  static const double _w = 48.0;
-  static const double _h = 72.0;
-  static const double _slideH = 38.0;
-  static const double _jumpHeight = 115.0;
-  static const double _jumpDuration = 0.58;
-  static const double _slideDuration = 0.5;
-  static const double _laneSpeed = 10.0;
+  static const double _w = 58.0;
+  static const double _h = 86.0;
+  static const double _slideH = 46.0;
+  static const double _jumpHeight = 95.0;
+  static const double _jumpDuration = 0.62;
+  static const double _slideDuration = 0.50;
+  static const double _laneSpeed = 14.0;
 
-  late RectangleHitbox _hitbox;
+  bool get isJumping => _state == PlayerState.jumping;
+  bool get isSliding => _state == PlayerState.sliding;
+  double get jumpProgress => _jumpProgress;
 
   PlayerComponent({required this.appearance, required int initialLane})
       : currentLane = initialLane,
-        super(size: Vector2(_w, _h), priority: 10);
+        super(size: Vector2(_w, _h), priority: 50);
 
   @override
   Future<void> onLoad() async {
-    _targetY = game.lanePositions[currentLane] - _h;
-    position = Vector2(80, _targetY);
-    _hitbox = RectangleHitbox(size: size);
-    add(_hitbox);
+    _targetX = game.laneXPositions[currentLane];
+    position = Vector2(_targetX - _w / 2, game.playerBaseY - _h);
   }
 
   @override
   void update(double dt) {
     _runAnimTimer += dt;
 
+    // Smooth lane slide
+    final absTargetX = _targetX - size.x / 2;
+    position.x += (absTargetX - position.x) * _laneSpeed * dt;
+
     switch (_state) {
       case PlayerState.running:
-        position.y += (_targetY - position.y) * _laneSpeed * dt;
+        position.y = game.playerBaseY - size.y;
 
       case PlayerState.jumping:
         _jumpProgress += dt / _jumpDuration;
         if (_jumpProgress >= 1.0) {
           _state = PlayerState.running;
           _jumpProgress = 0;
-          position.y = _targetY;
+          position.y = game.playerBaseY - _h;
+          size = Vector2(_w, _h);
         } else {
-          position.y = _targetY - sin(_jumpProgress * pi) * _jumpHeight;
+          final arc = sin(_jumpProgress * pi);
+          position.y = game.playerBaseY - _h - arc * _jumpHeight;
         }
 
       case PlayerState.sliding:
@@ -68,9 +70,7 @@ class PlayerComponent extends PositionComponent
           _state = PlayerState.running;
           _slideTimer = 0;
           size = Vector2(_w, _h);
-          _hitbox.size = size;
-          _hitbox.position = Vector2.zero();
-          position.y = _targetY;
+          position.y = game.playerBaseY - _h;
         }
 
       case PlayerState.dead:
@@ -90,79 +90,87 @@ class PlayerComponent extends PositionComponent
     _state = PlayerState.sliding;
     _slideTimer = 0;
     size = Vector2(_w, _slideH);
-    _hitbox.size = size;
-    // Align hitbox to bottom of original height
-    position.y = _targetY + (_h - _slideH);
+    position.y = game.playerBaseY - _slideH;
   }
 
-  void changeLane(int direction, List<double> lanePositions) {
+  void changeLane(int direction, List<double> laneXPositions) {
     final next = (currentLane + direction).clamp(0, 2);
     if (next == currentLane) return;
     currentLane = next;
-    _targetY = lanePositions[currentLane] - _h;
+    _targetX = laneXPositions[currentLane];
   }
 
-  void kill() {
-    _state = PlayerState.dead;
-  }
+  void kill() => _state = PlayerState.dead;
 
   @override
   void render(Canvas canvas) {
+    _drawGroundShadow(canvas);
+
     if (game.hasShield) _drawShieldAura(canvas);
 
-    if (_state == PlayerState.dead) {
-      _drawDead(canvas);
-      return;
+    switch (_state) {
+      case PlayerState.dead:
+        _drawDead(canvas);
+      case PlayerState.sliding:
+        _drawSliding(canvas);
+      default:
+        _drawRunning(canvas);
+        if (game.magnetActive) _drawMagnetAura(canvas);
     }
-    if (_state == PlayerState.sliding) {
-      _drawSliding(canvas);
-      return;
-    }
-    _drawRunning(canvas);
+  }
 
-    if (game.magnetActive) _drawMagnetAura(canvas);
+  // Shadow stays on the ground even while jumping.
+  void _drawGroundShadow(Canvas canvas) {
+    // groundLocalY: y-coordinate of the ground in component-local space
+    final groundLocalY = game.playerBaseY - position.y;
+    final lift = _state == PlayerState.jumping ? sin(_jumpProgress * pi) : 0.0;
+    final shrink = (1.0 - lift * 0.55).clamp(0.25, 1.0);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.x / 2, groundLocalY + 5),
+        width: size.x * 0.68 * shrink,
+        height: 9.0 * shrink,
+      ),
+      Paint()..color = Colors.black.withValues(alpha: 0.28 * shrink),
+    );
   }
 
   void _drawShieldAura(Canvas canvas) {
-    const shieldColor = Color(0xFF00AAFF);
+    const c = Color(0xFF00AAFF);
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2),
-        width: size.x + 18,
-        height: size.y + 18,
-      ),
-      Paint()..color = shieldColor.withValues(alpha: 0.18),
+          center: Offset(size.x / 2, size.y / 2),
+          width: size.x + 22,
+          height: size.y + 22),
+      Paint()..color = c.withValues(alpha: 0.14),
     );
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2),
-        width: size.x + 18,
-        height: size.y + 18,
-      ),
+          center: Offset(size.x / 2, size.y / 2),
+          width: size.x + 22,
+          height: size.y + 22),
       Paint()
-        ..color = shieldColor.withValues(alpha: 0.7)
+        ..color = c.withValues(alpha: 0.70)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5,
     );
   }
 
   void _drawMagnetAura(Canvas canvas) {
-    const magnetColor = Color(0xFFFF6B35);
+    const c = Color(0xFFFF6B35);
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2),
-        width: size.x + 22,
-        height: size.y + 22,
-      ),
+          center: Offset(size.x / 2, size.y / 2),
+          width: size.x + 26,
+          height: size.y + 26),
       Paint()
-        ..color = magnetColor.withValues(alpha: 0.45)
+        ..color = c.withValues(alpha: 0.42)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round,
+        ..strokeWidth = 2.0,
     );
   }
 
-  // ── Drawing helpers ────────────────────────────────────────────────────────
+  // ── Back-view running character ─────────────────────────────────────────────
 
   void _drawRunning(Canvas canvas) {
     final w = size.x;
@@ -171,137 +179,64 @@ class PlayerComponent extends PositionComponent
     final torso = _torsoColor(appearance.torso);
     final leg = _legColor(appearance.legDesign);
     final shoe = _shoeColor(appearance.shoes);
+    final legBob = sin(_runAnimTimer * 8.5) * 5.5;
+    final armSwing = sin(_runAnimTimer * 8.5) * 10.0;
 
-    final legBob = sin(_runAnimTimer * 8) * 3;
-    final armSwing = sin(_runAnimTimer * 8) * 6;
+    // Cape (drawn behind character — very prominent from back view)
+    if (appearance.cape) _drawCape(canvas, w, h);
 
-    // LEGO minifig: stud, neck peg, shoulder knobs, fists, hip piece, shoe blocks
-    final headW = w * 0.60;
-    final headH = h * 0.22;
-    final headTop = h * 0.03;
-    final headX = (w - headW) / 2;
+    // Left leg
+    _rr(canvas, Rect.fromLTWH(w * 0.13, h * 0.60, w * 0.31, h * 0.37 + legBob), leg, 6);
+    // Right leg (opposite phase)
+    _rr(canvas, Rect.fromLTWH(w * 0.56, h * 0.60, w * 0.31, h * 0.37 - legBob), leg, 6);
 
-    // Stud (drawn first — head rect covers its lower half)
-    final studR = w * 0.09;
-    canvas.drawCircle(Offset(w / 2, headTop - studR * 0.3), studR, Paint()..color = skin);
+    // Left shoe
+    _rr(canvas,
+        Rect.fromLTWH(w * 0.07, h * 0.90 + legBob * 0.55, w * 0.38, h * 0.12), shoe, 5);
+    // Right shoe
+    _rr(canvas,
+        Rect.fromLTWH(w * 0.55, h * 0.90 - legBob * 0.55, w * 0.38, h * 0.12), shoe, 5);
 
-    // Head
-    _rr(canvas, Rect.fromLTWH(headX, headTop, headW, headH), skin, 6);
-    _drawFace(canvas, w, h);
+    // Torso (back view — solid color with subtle spine stripe)
+    _rr(canvas, Rect.fromLTWH(w * 0.07, h * 0.25, w * 0.86, h * 0.37), torso, 8);
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.43, h * 0.29, w * 0.14, h * 0.30),
+      Paint()..color = Colors.black.withValues(alpha: 0.10),
+    );
+
+    // Left arm swinging
+    _rr(canvas,
+        Rect.fromLTWH(-6, h * 0.27 + armSwing, 13, h * 0.28), skin, 5);
+    // Right arm
+    _rr(canvas,
+        Rect.fromLTWH(w - 7, h * 0.27 - armSwing, 13, h * 0.28), skin, 5);
+
+    // Head (back of head)
+    _rr(canvas, Rect.fromLTWH(w * 0.15, 0, w * 0.70, h * 0.27), skin, 10);
+
     _drawHeadwear(canvas, w, h);
-
-    // Neck peg
-    final neckW = w * 0.18;
-    final neckH = h * 0.04;
-    final neckTop = headTop + headH;
-    _rr(canvas, Rect.fromLTWH((w - neckW) / 2, neckTop, neckW, neckH), skin, 3);
-
-    // Torso
-    final torsoW = w * 0.72;
-    final torsoH = h * 0.24;
-    final torsoTop = neckTop + neckH;
-    final torsoX = (w - torsoW) / 2;
-    _rr(canvas, Rect.fromLTWH(torsoX, torsoTop, torsoW, torsoH), torso, 5);
-
-    // Arms with swing animation
-    final armW = w * 0.13;
-    final armH = h * 0.18;
-    final armTop = torsoTop + h * 0.01;
-    _rr(canvas, Rect.fromLTWH(torsoX - armW, armTop + armSwing, armW, armH), skin, 4);
-    _rr(canvas, Rect.fromLTWH(torsoX + torsoW, armTop - armSwing, armW, armH), skin, 4);
-
-    // Shoulder knobs (drawn on top of arm-torso junction)
-    final knobR = armW * 0.50;
-    canvas.drawCircle(Offset(torsoX, armTop + knobR), knobR, Paint()..color = torso);
-    canvas.drawCircle(Offset(torsoX + torsoW, armTop + knobR), knobR, Paint()..color = torso);
-
-    // Round fists at arm bottoms
-    final fistR = armW * 0.52;
-    canvas.drawCircle(Offset(torsoX - armW / 2, armTop + armH + armSwing + fistR * 0.5), fistR, Paint()..color = skin);
-    canvas.drawCircle(Offset(torsoX + torsoW + armW / 2, armTop + armH - armSwing + fistR * 0.5), fistR, Paint()..color = skin);
-
-    // Hip piece
-    final hipW = w * 0.72;
-    final hipH = h * 0.06;
-    final hipTop = torsoTop + torsoH;
-    _rr(canvas, Rect.fromLTWH((w - hipW) / 2, hipTop, hipW, hipH), leg, 3);
-
-    // Legs (opposite-phase bob)
-    final legW = w * 0.30;
-    final legH = h * 0.28;
-    final legTop = hipTop + hipH;
-    final legGap = w * 0.04;
-    final leftLegX = (w - legW * 2 - legGap) / 2;
-    final rightLegX = leftLegX + legW + legGap;
-    _rr(canvas, Rect.fromLTWH(leftLegX, legTop, legW, legH + legBob), leg, 4);
-    _rr(canvas, Rect.fromLTWH(rightLegX, legTop, legW, legH - legBob), leg, 4);
-
-    // Shoe blocks (wider than legs, rectangular)
-    final shoeW = w * 0.34;
-    final shoeH = h * 0.10;
-    final shoeOff = (shoeW - legW) / 2;
-    _rr(canvas, Rect.fromLTWH(leftLegX - shoeOff, legTop + legH + legBob - h * 0.02, shoeW, shoeH), shoe, 3);
-    _rr(canvas, Rect.fromLTWH(rightLegX - shoeOff, legTop + legH - legBob - h * 0.02, shoeW, shoeH), shoe, 3);
   }
 
-  void _drawSliding(Canvas canvas) {
-    final w = size.x;
-    final h = size.y;
-    final skin = _skinColor(appearance.skinTone);
-    final torso = _torsoColor(appearance.torso);
-
-    // Crouched body
-    _rr(canvas, Rect.fromLTWH(0, h * 0.1, w, h * 0.5), torso, 8);
-    // Head peeking
-    _rr(canvas, Rect.fromLTWH(w * 0.2, 0, w * 0.6, h * 0.35), skin, 6);
-    _drawFace(canvas, w, h * 0.5);
-  }
-
-  void _drawDead(Canvas canvas) {
-    final w = size.x;
-    final h = size.y;
-    final skin = _skinColor(appearance.skinTone);
-    _rr(canvas, Rect.fromLTWH(w * 0.1, h * 0.3, w * 0.8, h * 0.6), skin, 8);
-    // X eyes
-    final p = Paint()
-      ..color = Colors.black87
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(w * 0.3, h * 0.35), Offset(w * 0.45, h * 0.5), p);
-    canvas.drawLine(Offset(w * 0.45, h * 0.35), Offset(w * 0.3, h * 0.5), p);
-    canvas.drawLine(Offset(w * 0.55, h * 0.35), Offset(w * 0.7, h * 0.5), p);
-    canvas.drawLine(Offset(w * 0.7, h * 0.35), Offset(w * 0.55, h * 0.5), p);
-  }
-
-  void _drawFace(Canvas canvas, double w, double h) {
-    final Color eyeColor;
-    if (appearance.eyes == EyeStyle.laser) {
-      eyeColor = Colors.red;
-    } else if (appearance.eyes == EyeStyle.robot) {
-      eyeColor = Colors.cyan;
-    } else {
-      eyeColor = Colors.black87;
-    }
-    final eyeR = h * 0.06;
-    canvas.drawCircle(
-        Offset(w * 0.35, h * 0.12), eyeR, Paint()..color = eyeColor);
-    canvas.drawCircle(
-        Offset(w * 0.65, h * 0.12), eyeR, Paint()..color = eyeColor);
-
-    // Smile
-    if (appearance.mouth == MouthStyle.smile) {
-      final path = Path()
-        ..moveTo(w * 0.35, h * 0.19)
-        ..quadraticBezierTo(w * 0.5, h * 0.26, w * 0.65, h * 0.19);
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = Colors.black87
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..strokeCap = StrokeCap.round,
-      );
-    }
+  void _drawCape(Canvas canvas, double w, double h) {
+    final capeColor = Colors.red.shade700;
+    final wave = sin(_runAnimTimer * 6.0) * 5.0;
+    final path = Path()
+      ..moveTo(w * 0.20, h * 0.26)
+      ..lineTo(w * 0.06, h * 0.74 + wave)
+      ..quadraticBezierTo(-6, h * 0.82, w * 0.16, h * 0.78)
+      ..lineTo(w * 0.50, h * 0.50)
+      ..lineTo(w * 0.84, h * 0.78)
+      ..quadraticBezierTo(w + 6, h * 0.82, w * 0.94, h * 0.74 - wave)
+      ..lineTo(w * 0.80, h * 0.26)
+      ..close();
+    canvas.drawPath(path, Paint()..color = capeColor.withValues(alpha: 0.90));
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.14)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
   }
 
   void _drawHeadwear(Canvas canvas, double w, double h) {
@@ -309,16 +244,71 @@ class PlayerComponent extends PositionComponent
       case HeadwearType.none:
         break;
       case HeadwearType.hair:
-        _rr(canvas, Rect.fromLTWH(w * 0.12, -4, w * 0.76, h * 0.14),
-            Colors.brown.shade700, 5);
+        _rr(canvas,
+            Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), Colors.brown.shade700, 8);
       case HeadwearType.helmet:
-        _rr(canvas, Rect.fromLTWH(w * 0.08, -6, w * 0.84, h * 0.18),
-            Colors.grey.shade600, 5);
+        _rr(canvas,
+            Rect.fromLTWH(w * 0.05, -7, w * 0.90, h * 0.22), Colors.grey.shade600, 8);
+        canvas.drawRect(
+          Rect.fromLTWH(w * 0.26, h * 0.16, w * 0.48, 5),
+          Paint()..color = Colors.grey.shade800,
+        );
       case HeadwearType.hat:
-        _rr(canvas, Rect.fromLTWH(w * 0.05, -10, w * 0.9, h * 0.22),
-            Colors.black87, 4);
+        // Brim
+        _rr(canvas, Rect.fromLTWH(-3, h * 0.07, w + 6, h * 0.07), Colors.black87, 2);
+        // Crown
+        _rr(canvas,
+            Rect.fromLTWH(w * 0.13, -11, w * 0.74, h * 0.21), Colors.black87, 8);
     }
   }
+
+  // ── Sliding (crouched) ──────────────────────────────────────────────────────
+
+  void _drawSliding(Canvas canvas) {
+    final w = size.x;
+    final h = size.y;
+    final skin = _skinColor(appearance.skinTone);
+    final torso = _torsoColor(appearance.torso);
+    final leg = _legColor(appearance.legDesign);
+    final shoe = _shoeColor(appearance.shoes);
+
+    // Low torso
+    _rr(canvas, Rect.fromLTWH(w * 0.0, h * 0.30, w, h * 0.46), torso, 9);
+    // Head peeking
+    _rr(canvas, Rect.fromLTWH(w * 0.16, 0, w * 0.68, h * 0.38), skin, 9);
+    _drawHeadwear(canvas, w, h);
+    // Legs splayed wide
+    _rr(canvas, Rect.fromLTWH(-w * 0.12, h * 0.56, w * 0.54, h * 0.44), leg, 5);
+    _rr(canvas, Rect.fromLTWH(w * 0.58, h * 0.56, w * 0.54, h * 0.44), leg, 5);
+    // Shoes
+    _rr(canvas,
+        Rect.fromLTWH(-w * 0.14, h * 0.80, w * 0.46, h * 0.20), shoe, 5);
+    _rr(canvas,
+        Rect.fromLTWH(w * 0.68, h * 0.80, w * 0.46, h * 0.20), shoe, 5);
+  }
+
+  // ── Dead ───────────────────────────────────────────────────────────────────
+
+  void _drawDead(Canvas canvas) {
+    final w = size.x;
+    final h = size.y;
+    final skin = _skinColor(appearance.skinTone);
+    final torso = _torsoColor(appearance.torso);
+    final p = Paint()
+      ..color = Colors.black87
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    _rr(canvas, Rect.fromLTWH(0, h * 0.48, w, h * 0.52), torso, 7);
+    _rr(canvas, Rect.fromLTWH(w * 0.18, h * 0.18, w * 0.64, h * 0.36), skin, 9);
+    // X eyes
+    canvas.drawLine(Offset(w * 0.28, h * 0.24), Offset(w * 0.42, h * 0.38), p);
+    canvas.drawLine(Offset(w * 0.42, h * 0.24), Offset(w * 0.28, h * 0.38), p);
+    canvas.drawLine(Offset(w * 0.58, h * 0.24), Offset(w * 0.72, h * 0.38), p);
+    canvas.drawLine(Offset(w * 0.72, h * 0.24), Offset(w * 0.58, h * 0.38), p);
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _rr(Canvas canvas, Rect rect, Color color, double radius) {
     canvas.drawRRect(
@@ -327,57 +317,43 @@ class PlayerComponent extends PositionComponent
     );
   }
 
-  // ── Color helpers (mirrors CharacterPreview) ───────────────────────────────
+  Color _skinColor(SkinTone t) => switch (t) {
+        SkinTone.light => const Color(0xFFFFDBAC),
+        SkinTone.medium => const Color(0xFFD4A574),
+        SkinTone.dark => const Color(0xFF8D5524),
+        SkinTone.blue => Colors.blue.shade400,
+        SkinTone.green => Colors.green.shade400,
+        SkinTone.purple => Colors.purple.shade400,
+        SkinTone.orange => Colors.orange.shade400,
+        SkinTone.silver => Colors.grey.shade400,
+        SkinTone.gold => const Color(0xFFFFD700),
+      };
 
-  Color _skinColor(SkinTone t) {
-    if (t == SkinTone.light) return const Color(0xFFFFDBAC);
-    if (t == SkinTone.medium) return const Color(0xFFD4A574);
-    if (t == SkinTone.dark) return const Color(0xFF8D5524);
-    if (t == SkinTone.blue) return Colors.blue.shade400;
-    if (t == SkinTone.green) return Colors.green.shade400;
-    if (t == SkinTone.purple) return Colors.purple.shade400;
-    if (t == SkinTone.orange) return Colors.orange.shade400;
-    if (t == SkinTone.silver) return Colors.grey.shade400;
-    return const Color(0xFFFFD700);
-  }
+  Color _torsoColor(TorsoDesign d) => switch (d) {
+        TorsoDesign.plain => Colors.red.shade400,
+        TorsoDesign.police => Colors.blue.shade800,
+        TorsoDesign.firefighter => Colors.red.shade800,
+        TorsoDesign.ninja => Colors.black,
+        TorsoDesign.pirate => Colors.brown.shade700,
+        TorsoDesign.superhero => Colors.blue.shade600,
+        TorsoDesign.medieval => Colors.grey.shade600,
+        TorsoDesign.robot => Colors.blueGrey.shade400,
+        _ => Colors.teal.shade400,
+      };
 
-  Color _torsoColor(TorsoDesign d) {
-    if (d == TorsoDesign.plain) return Colors.red.shade400;
-    if (d == TorsoDesign.police) return Colors.blue.shade800;
-    if (d == TorsoDesign.firefighter) return Colors.red.shade800;
-    if (d == TorsoDesign.ninja) return Colors.black;
-    if (d == TorsoDesign.pirate) return Colors.brown.shade700;
-    if (d == TorsoDesign.superhero) return Colors.blue.shade600;
-    if (d == TorsoDesign.medieval) return Colors.grey.shade600;
-    if (d == TorsoDesign.robot) return Colors.blueGrey.shade400;
-    return Colors.teal.shade400;
-  }
+  Color _legColor(LegDesign d) => switch (d) {
+        LegDesign.plain => Colors.blue.shade700,
+        LegDesign.camouflage => Colors.green.shade700,
+        LegDesign.armor => Colors.grey.shade600,
+        LegDesign.flames => Colors.orange.shade700,
+        _ => Colors.indigo.shade600,
+      };
 
-  Color _legColor(LegDesign d) {
-    if (d == LegDesign.plain) return Colors.blue.shade700;
-    if (d == LegDesign.camouflage) return Colors.green.shade700;
-    if (d == LegDesign.armor) return Colors.grey.shade600;
-    if (d == LegDesign.flames) return Colors.orange.shade700;
-    return Colors.indigo.shade600;
-  }
-
-  Color _shoeColor(ShoeType t) {
-    if (t == ShoeType.sneakers) return Colors.white;
-    if (t == ShoeType.military) return Colors.brown.shade800;
-    if (t == ShoeType.cowboy) return Colors.brown.shade600;
-    if (t == ShoeType.witchBoots) return Colors.black;
-    return Colors.grey.shade800;
-  }
-
-  @override
-  void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollisionStart(intersectionPoints, other);
-    if (other is ObstacleComponent && _state != PlayerState.dead) {
-      game.hitObstacle();
-    } else if (other is CoinComponent) {
-      other.removeFromParent();
-      game.collectCoin();
-    }
-  }
+  Color _shoeColor(ShoeType t) => switch (t) {
+        ShoeType.sneakers => Colors.white,
+        ShoeType.military => Colors.brown.shade800,
+        ShoeType.cowboy => Colors.brown.shade600,
+        ShoeType.witchBoots => Colors.black,
+        _ => Colors.grey.shade800,
+      };
 }

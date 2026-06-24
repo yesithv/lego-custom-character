@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
@@ -16,8 +15,7 @@ import 'components/score_popup_component.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
 
-class BrixRunGame extends FlameGame
-    with HasCollisionDetection, ChangeNotifier {
+class BrixRunGame extends FlameGame with ChangeNotifier {
   final CharacterAppearance appearance;
   final CharacterType characterType;
   final String worldId;
@@ -58,14 +56,41 @@ class BrixRunGame extends FlameGame
   late PlayerComponent _player;
   final Random _rng = Random();
 
-  double get playerX => _player.position.x + _player.size.x;
-  double get playerY => _player.position.y + _player.size.y / 2;
+  // ── Perspective system ──────────────────────────────────────────────────────
+  // Pseudo-3D: objects spawn at the horizon (depth 0) and rush toward the
+  // camera (depth 1 = player level).
 
-  List<double> get lanePositions => [
-        size.y * 0.50,
-        size.y * 0.65,
-        size.y * 0.78,
+  double get horizonY => size.y * 0.37;
+  double get playerBaseY => size.y * 0.81;
+  double get vanishX => size.x / 2;
+  double get laneSep => size.x * 0.265;
+
+  /// X positions of the 3 lanes at player level (bottom of screen).
+  List<double> get laneXPositions => [
+        vanishX - laneSep,
+        vanishX,
+        vanishX + laneSep,
       ];
+
+  /// Screen position for a lane+depth combination.
+  /// depth 0 = horizon, depth 1 = player level.
+  Vector2 perspectivePos(int lane, double depth) {
+    final lx = laneXPositions[lane];
+    return Vector2(
+      vanishX + (lx - vanishX) * depth,
+      horizonY + (playerBaseY - horizonY) * depth,
+    );
+  }
+
+  /// Scale factor for objects at a given depth (tiny at horizon, full at player).
+  double perspectiveScale(double depth) =>
+      (0.07 + 0.93 * depth).clamp(0.0, 1.5);
+
+  /// Depth units per second at current speed.
+  double get depthRate => 0.42 * (speed / 220.0);
+
+  double get playerX => _player.position.x + _player.size.x / 2;
+  double get playerY => _player.position.y;
 
   static const String _overlayHud = 'hud';
   static const String _overlayGameOver = 'gameOver';
@@ -96,7 +121,6 @@ class BrixRunGame extends FlameGame
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
     add(_player);
 
-    // Character type starting bonuses
     switch (characterType) {
       case CharacterType.hero:
         _heroShieldActive = true;
@@ -121,7 +145,7 @@ class BrixRunGame extends FlameGame
     score = meters + (coins * 5) + (obstacleStreak * 2);
     score = (score * multiplier).floor();
 
-    // Speed ramp: +12 px/s every 5s, capped at 900
+    // Speed ramp: +12 px/s every 5 s, capped at 900
     _speedTimer += dt;
     if (_speedTimer >= 5.0) {
       speed = (speed + 12).clamp(220, 900);
@@ -151,19 +175,75 @@ class BrixRunGame extends FlameGame
       _powerupTimer = 0;
     }
 
-    // Magnet timer
     if (magnetActive) {
       _magnetTimer -= dt;
       if (_magnetTimer <= 0) magnetActive = false;
     }
-
-    // Shield powerup timer
     if (shieldPowerupActive) {
       _shieldTimer -= dt;
       if (_shieldTimer <= 0) shieldPowerupActive = false;
     }
 
+    _checkDepthCollisions();
     notifyListeners();
+  }
+
+  // Manual collision detection based on depth proximity and lane matching.
+  void _checkDepthCollisions() {
+    const hitMin = 0.87;
+    const hitMax = 1.11;
+    const pastPlayer = 1.16;
+    final playerLane = _player.currentLane;
+
+    for (final obs in children.whereType<ObstacleComponent>().toList()) {
+      if (obs.collided) continue;
+
+      if (!obs.evaded && obs.depth >= pastPlayer) {
+        obs.evaded = true;
+        evadedObstacle();
+      }
+
+      if (!obs.evaded && obs.depth >= hitMin && obs.depth <= hitMax &&
+          obs.lane == playerLane) {
+        // Mid-jump clears all obstacles
+        if (_player.isJumping &&
+            _player.jumpProgress > 0.14 &&
+            _player.jumpProgress < 0.88) {
+          continue;
+        }
+        // Sliding clears barriers (duck under them)
+        if (_player.isSliding && obs.type == ObstacleType.barrier) continue;
+
+        obs.collided = true;
+        hitObstacle();
+        return;
+      }
+    }
+
+    for (final coin in children.whereType<CoinComponent>().toList()) {
+      if (coin.collected) continue;
+      // Magnet grabs adjacent lanes too
+      final inRange = coin.lane == playerLane ||
+          (magnetActive && (coin.lane - playerLane).abs() == 1);
+      if (inRange && coin.depth >= hitMin && coin.depth <= hitMax) {
+        coin.collected = true;
+        coin.removeFromParent();
+        collectCoin();
+      } else if (coin.depth >= pastPlayer) {
+        coin.removeFromParent();
+      }
+    }
+
+    for (final pu in children.whereType<PowerupComponent>().toList()) {
+      if (pu.collected) continue;
+      if (pu.lane == playerLane && pu.depth >= hitMin && pu.depth <= hitMax) {
+        pu.collected = true;
+        pu.removeFromParent();
+        activatePowerup(pu.type);
+      } else if (pu.depth >= pastPlayer) {
+        pu.removeFromParent();
+      }
+    }
   }
 
   void _spawnObstacle() {
@@ -174,47 +254,26 @@ class BrixRunGame extends FlameGame
         : roll < 0.35
             ? ObstacleType.spike
             : ObstacleType.block;
-    add(ObstacleComponent(
-      lane: lane,
-      laneY: lanePositions[lane],
-      startX: size.x + 60,
-      type: type,
-    ));
+    add(ObstacleComponent(lane: lane, type: type));
 
-    // Double obstacle in caos zone (20% chance, different lane)
+    // Caos zone: 20% chance of a second obstacle in a different lane
     if (currentZone == RunnerZone.caos && _rng.nextDouble() < 0.20) {
       final otherLane = (lane + 1 + _rng.nextInt(2)) % 3;
       final t2 = _rng.nextDouble() < 0.3 ? ObstacleType.barrier : ObstacleType.block;
-      add(ObstacleComponent(
-        lane: otherLane,
-        laneY: lanePositions[otherLane],
-        startX: size.x + 60,
-        type: t2,
-      ));
+      add(ObstacleComponent(lane: otherLane, type: t2));
     }
   }
 
   void _spawnCoin() {
-    final lane = _rng.nextInt(3);
-    add(CoinComponent(
-      lane: lane,
-      laneY: lanePositions[lane],
-      startX: size.x + 80 + _rng.nextDouble() * 60,
-    ));
+    add(CoinComponent(lane: _rng.nextInt(3)));
   }
 
   void _spawnPowerup() {
-    final lane = _rng.nextInt(3);
     final type = _rng.nextBool() ? PowerupType.shield : PowerupType.magnet;
-    add(PowerupComponent(
-      lane: lane,
-      laneY: lanePositions[lane],
-      startX: size.x + 80,
-      type: type,
-    ));
+    add(PowerupComponent(lane: _rng.nextInt(3), type: type));
   }
 
-  // ── Input (called from RunnerPage gesture detector) ────────────────────────
+  // ── Input ──────────────────────────────────────────────────────────────────
 
   void onSwipeUp() {
     _player.jump();
@@ -225,8 +284,8 @@ class BrixRunGame extends FlameGame
   }
 
   void onSwipeDown() => _player.slide();
-  void onSwipeLeft() => _player.changeLane(-1, lanePositions);
-  void onSwipeRight() => _player.changeLane(1, lanePositions);
+  void onSwipeLeft() => _player.changeLane(-1, laneXPositions);
+  void onSwipeRight() => _player.changeLane(1, laneXPositions);
 
   void onTap() {
     _player.jump();
@@ -244,7 +303,7 @@ class BrixRunGame extends FlameGame
     AudioService.instance.playCoin();
     add(ScorePopupComponent(
       '+$value',
-      spawnPosition: Vector2(playerX - 30, playerY - 55),
+      spawnPosition: Vector2(playerX, playerY - 20),
     ));
     notifyListeners();
   }
@@ -278,7 +337,6 @@ class BrixRunGame extends FlameGame
   void hitObstacle() {
     if (!isAlive) return;
 
-    // Shield absorbs the hit
     if (hasShield) {
       _heroShieldActive = false;
       shieldPowerupActive = false;
