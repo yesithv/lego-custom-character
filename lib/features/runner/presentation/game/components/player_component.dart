@@ -170,38 +170,78 @@ class PlayerComponent extends PositionComponent
     final skin = _skinColor(appearance.skinTone);
     final torso = _torsoColor(appearance.torso);
     final leg = _legColor(appearance.legDesign);
+    final shoe = _shoeColor(appearance.shoes);
 
-    // Leg bob animation
     final legBob = sin(_runAnimTimer * 8) * 3;
+    final armSwing = sin(_runAnimTimer * 8) * 6;
+
+    // LEGO minifig: stud, neck peg, shoulder knobs, fists, hip piece, shoe blocks
+    final headW = w * 0.60;
+    final headH = h * 0.22;
+    final headTop = h * 0.03;
+    final headX = (w - headW) / 2;
+
+    // Stud (drawn first — head rect covers its lower half)
+    final studR = w * 0.09;
+    canvas.drawCircle(Offset(w / 2, headTop - studR * 0.3), studR, Paint()..color = skin);
 
     // Head
-    _rr(canvas, Rect.fromLTWH(w * 0.18, 0, w * 0.64, h * 0.28), skin, 6);
+    _rr(canvas, Rect.fromLTWH(headX, headTop, headW, headH), skin, 6);
     _drawFace(canvas, w, h);
-
-    // Hair / headwear
     _drawHeadwear(canvas, w, h);
 
+    // Neck peg
+    final neckW = w * 0.18;
+    final neckH = h * 0.04;
+    final neckTop = headTop + headH;
+    _rr(canvas, Rect.fromLTWH((w - neckW) / 2, neckTop, neckW, neckH), skin, 3);
+
     // Torso
-    _rr(canvas, Rect.fromLTWH(w * 0.1, h * 0.29, w * 0.8, h * 0.35), torso, 5);
+    final torsoW = w * 0.72;
+    final torsoH = h * 0.24;
+    final torsoTop = neckTop + neckH;
+    final torsoX = (w - torsoW) / 2;
+    _rr(canvas, Rect.fromLTWH(torsoX, torsoTop, torsoW, torsoH), torso, 5);
 
-    // Arms (swinging)
-    final armSwing = sin(_runAnimTimer * 8) * 6;
-    _rr(canvas, Rect.fromLTWH(-4, h * 0.31 + armSwing, 10, h * 0.22), skin, 4);
-    _rr(canvas, Rect.fromLTWH(w - 6, h * 0.31 - armSwing, 10, h * 0.22), skin, 4);
+    // Arms with swing animation
+    final armW = w * 0.13;
+    final armH = h * 0.18;
+    final armTop = torsoTop + h * 0.01;
+    _rr(canvas, Rect.fromLTWH(torsoX - armW, armTop + armSwing, armW, armH), skin, 4);
+    _rr(canvas, Rect.fromLTWH(torsoX + torsoW, armTop - armSwing, armW, armH), skin, 4);
 
-    // Left leg
-    _rr(canvas,
-        Rect.fromLTWH(w * 0.12, h * 0.65, w * 0.3, h * 0.35 + legBob), leg, 4);
-    // Right leg (opposite phase)
-    _rr(canvas,
-        Rect.fromLTWH(w * 0.54, h * 0.65, w * 0.3, h * 0.35 - legBob), leg, 4);
+    // Shoulder knobs (drawn on top of arm-torso junction)
+    final knobR = armW * 0.50;
+    canvas.drawCircle(Offset(torsoX, armTop + knobR), knobR, Paint()..color = torso);
+    canvas.drawCircle(Offset(torsoX + torsoW, armTop + knobR), knobR, Paint()..color = torso);
 
-    // Shoe dots
-    final shoe = _shoeColor(appearance.shoes);
-    canvas.drawCircle(Offset(w * 0.27, h * 0.97 + legBob * 0.5), 6,
-        Paint()..color = shoe);
-    canvas.drawCircle(Offset(w * 0.69, h * 0.97 - legBob * 0.5), 6,
-        Paint()..color = shoe);
+    // Round fists at arm bottoms
+    final fistR = armW * 0.52;
+    canvas.drawCircle(Offset(torsoX - armW / 2, armTop + armH + armSwing + fistR * 0.5), fistR, Paint()..color = skin);
+    canvas.drawCircle(Offset(torsoX + torsoW + armW / 2, armTop + armH - armSwing + fistR * 0.5), fistR, Paint()..color = skin);
+
+    // Hip piece
+    final hipW = w * 0.72;
+    final hipH = h * 0.06;
+    final hipTop = torsoTop + torsoH;
+    _rr(canvas, Rect.fromLTWH((w - hipW) / 2, hipTop, hipW, hipH), leg, 3);
+
+    // Legs (opposite-phase bob)
+    final legW = w * 0.30;
+    final legH = h * 0.28;
+    final legTop = hipTop + hipH;
+    final legGap = w * 0.04;
+    final leftLegX = (w - legW * 2 - legGap) / 2;
+    final rightLegX = leftLegX + legW + legGap;
+    _rr(canvas, Rect.fromLTWH(leftLegX, legTop, legW, legH + legBob), leg, 4);
+    _rr(canvas, Rect.fromLTWH(rightLegX, legTop, legW, legH - legBob), leg, 4);
+
+    // Shoe blocks (wider than legs, rectangular)
+    final shoeW = w * 0.34;
+    final shoeH = h * 0.10;
+    final shoeOff = (shoeW - legW) / 2;
+    _rr(canvas, Rect.fromLTWH(leftLegX - shoeOff, legTop + legH + legBob - h * 0.02, shoeW, shoeH), shoe, 3);
+    _rr(canvas, Rect.fromLTWH(rightLegX - shoeOff, legTop + legH - legBob - h * 0.02, shoeW, shoeH), shoe, 3);
   }
 
   void _drawSliding(Canvas canvas) {

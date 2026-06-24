@@ -62,9 +62,9 @@ class BrixRunGame extends FlameGame
   double get playerY => _player.position.y + _player.size.y / 2;
 
   List<double> get lanePositions => [
-        size.y * 0.40,
-        size.y * 0.57,
-        size.y * 0.74,
+        size.y * 0.50,
+        size.y * 0.65,
+        size.y * 0.78,
       ];
 
   static const String _overlayHud = 'hud';

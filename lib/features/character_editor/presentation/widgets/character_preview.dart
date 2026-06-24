@@ -36,13 +36,22 @@ class _CharacterPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    final headSize = w * 0.55;
-    final headTop = h * 0.02;
-    final torsoH = h * 0.28;
-    final torsoTop = headTop + headSize + h * 0.02;
-    final legH = h * 0.3;
-    final legTop = torsoTop + torsoH;
+    // LEGO minifig: square head with stud + neck peg + hip piece + shoe blocks
+    final headSize = w * 0.50;
+    final headTop = h * 0.04;
     final hx = (w - headSize) / 2;
+
+    // Stud on top of head (drawn first — head rect covers its lower half)
+    final studR = headSize * 0.16;
+    canvas.drawCircle(Offset(w / 2, headTop - studR * 0.35), studR, Paint()..color = skinColor);
+    canvas.drawCircle(
+      Offset(w / 2, headTop - studR * 0.35),
+      studR,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.20)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
 
     // Head
     _drawRoundRect(canvas, Rect.fromLTWH(hx, headTop, headSize, headSize), skinColor, 8);
@@ -62,38 +71,62 @@ class _CharacterPainter extends CustomPainter {
       _drawHat(canvas, hx, headTop, headSize);
     }
 
+    // Neck peg
+    final neckW = headSize * 0.30;
+    final neckH = h * 0.03;
+    final neckTop = headTop + headSize;
+    _drawRoundRect(canvas, Rect.fromLTWH((w - neckW) / 2, neckTop, neckW, neckH), skinColor, 3);
+
     // Torso
     final torsoColor = _torsoColor(appearance.torso);
-    final torsoX = (w - w * 0.7) / 2;
-    _drawRoundRect(
-        canvas,
-        Rect.fromLTWH(torsoX, torsoTop, w * 0.7, torsoH),
-        torsoColor,
-        6);
+    final torsoW = w * 0.62;
+    final torsoH = h * 0.22;
+    final torsoTop = neckTop + neckH;
+    final torsoX = (w - torsoW) / 2;
+    _drawRoundRect(canvas, Rect.fromLTWH(torsoX, torsoTop, torsoW, torsoH), torsoColor, 6);
 
-    // Arms
+    // Arms (skin-colored)
     final armW = w * 0.12;
-    final armH = h * 0.22;
-    _drawRoundRect(canvas, Rect.fromLTWH(torsoX - armW, torsoTop + h * 0.02, armW, armH), skinColor, 4);
-    _drawRoundRect(canvas, Rect.fromLTWH(torsoX + w * 0.7, torsoTop + h * 0.02, armW, armH), skinColor, 4);
+    final armH = h * 0.17;
+    final armTop = torsoTop + h * 0.01;
+    _drawRoundRect(canvas, Rect.fromLTWH(torsoX - armW, armTop, armW, armH), skinColor, 4);
+    _drawRoundRect(canvas, Rect.fromLTWH(torsoX + torsoW, armTop, armW, armH), skinColor, 4);
+
+    // Shoulder knobs (torso color, at arm-torso junction)
+    final knobR = armW * 0.55;
+    canvas.drawCircle(Offset(torsoX, armTop + knobR), knobR, Paint()..color = torsoColor);
+    canvas.drawCircle(Offset(torsoX + torsoW, armTop + knobR), knobR, Paint()..color = torsoColor);
+
+    // Round fists at arm bottoms
+    final fistR = armW * 0.55;
+    canvas.drawCircle(Offset(torsoX - armW / 2, armTop + armH + fistR * 0.55), fistR, Paint()..color = skinColor);
+    canvas.drawCircle(Offset(torsoX + torsoW + armW / 2, armTop + armH + fistR * 0.55), fistR, Paint()..color = skinColor);
+
+    // Hip piece (leg color, separates torso from legs)
+    final legColor = _legColor(appearance.legDesign);
+    final hipW = w * 0.64;
+    final hipH = h * 0.07;
+    final hipTop = torsoTop + torsoH;
+    _drawRoundRect(canvas, Rect.fromLTWH((w - hipW) / 2, hipTop, hipW, hipH), legColor, 4);
 
     // Legs
-    final legColor = _legColor(appearance.legDesign);
-    final legW = w * 0.3;
-    _drawRoundRect(canvas,
-        Rect.fromLTWH((w - legW * 2 - 4) / 2, legTop, legW, legH), legColor, 4);
-    _drawRoundRect(canvas,
-        Rect.fromLTWH((w + 4) / 2, legTop, legW, legH), legColor, 4);
+    final legW = w * 0.28;
+    final legH = h * 0.25;
+    final legTop = hipTop + hipH;
+    final legGap = w * 0.04;
+    final leftLegX = (w - legW * 2 - legGap) / 2;
+    final rightLegX = leftLegX + legW + legGap;
+    _drawRoundRect(canvas, Rect.fromLTWH(leftLegX, legTop, legW, legH), legColor, 4);
+    _drawRoundRect(canvas, Rect.fromLTWH(rightLegX, legTop, legW, legH), legColor, 4);
 
-    // Shoes
+    // Shoe blocks (wider than legs, flat at bottom)
     final shoeColor = _shoeColor(appearance.shoes);
-    final shoeH = h * 0.08;
-    _drawRoundRect(canvas,
-        Rect.fromLTWH((w - legW * 2 - 4) / 2, legTop + legH - 4, legW, shoeH),
-        shoeColor, 4);
-    _drawRoundRect(canvas,
-        Rect.fromLTWH((w + 4) / 2, legTop + legH - 4, legW, shoeH),
-        shoeColor, 4);
+    final shoeW = w * 0.32;
+    final shoeH = h * 0.09;
+    final shoeOffset = (shoeW - legW) / 2;
+    final shoeTop = legTop + legH - h * 0.02;
+    _drawRoundRect(canvas, Rect.fromLTWH(leftLegX - shoeOffset, shoeTop, shoeW, shoeH), shoeColor, 3);
+    _drawRoundRect(canvas, Rect.fromLTWH(rightLegX - shoeOffset, shoeTop, shoeW, shoeH), shoeColor, 3);
   }
 
   void _drawRoundRect(Canvas canvas, Rect rect, Color color, double radius) {
