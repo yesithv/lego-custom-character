@@ -647,6 +647,35 @@ class _CharacterPainter extends CustomPainter {
               Offset(torsoX + torsoW + w * 0.02, torsoTop + torsoH * (t + 0.12)),
               feather);
         }
+      case 'alas mariposa':
+        // Dos pares de alas rosadas con motas, como de hada
+        final upper = Colors.pink.shade300;
+        final lower = Colors.purple.shade200;
+        final spot = Paint()..color = Colors.white.withValues(alpha: 0.75);
+        for (final side in [-1, 1]) {
+          final anchorX = side < 0 ? torsoX : torsoX + torsoW;
+          canvas.save();
+          canvas.translate(anchorX, torsoTop + torsoH * 0.15);
+          canvas.rotate(side * 0.45);
+          // Ala superior grande — asoma por encima del hombro
+          final upperR = Rect.fromCenter(
+              center: Offset(side * w * 0.17, -torsoH * 0.30),
+              width: w * 0.30,
+              height: torsoH * 0.85);
+          drawShadedPath(canvas, Path()..addOval(upperR), upper);
+          // Ala inferior pequeña
+          final lowerR = Rect.fromCenter(
+              center: Offset(side * w * 0.13, torsoH * 0.42),
+              width: w * 0.22,
+              height: torsoH * 0.55);
+          drawShadedPath(canvas, Path()..addOval(lowerR), lower);
+          // Motas
+          canvas.drawCircle(upperR.center, w * 0.040, spot);
+          canvas.drawCircle(
+              Offset(lowerR.center.dx, lowerR.center.dy + torsoH * 0.04),
+              w * 0.026, spot);
+          canvas.restore();
+        }
     }
   }
 
@@ -694,6 +723,49 @@ class _CharacterPainter extends CustomPainter {
             Offset(torsoX + torsoW * 0.2, torsoTop + torsoH * 0.14),
             w * 0.05,
             Paint()..color = const Color(0xFFFFD700));
+      case 'gatito':
+        // Gatito naranja sentado en el hombro izquierdo
+        final catX = torsoX + torsoW * 0.14;
+        final catY = armTop - h * 0.012;
+        final orange = Colors.orange.shade400;
+        // Cola curvada
+        canvas.drawPath(
+          Path()
+            ..moveTo(catX + w * 0.045, catY + h * 0.012)
+            ..quadraticBezierTo(catX + w * 0.10, catY + h * 0.008,
+                catX + w * 0.085, catY - h * 0.030),
+          Paint()
+            ..color = orange
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3.0
+            ..strokeCap = StrokeCap.round,
+        );
+        // Cuerpo
+        drawShadedPath(
+            canvas,
+            Path()
+              ..addOval(Rect.fromCenter(
+                  center: Offset(catX, catY + h * 0.005),
+                  width: w * 0.095,
+                  height: h * 0.055)),
+            orange);
+        // Cabeza con orejas
+        final headC = Offset(catX - w * 0.015, catY - h * 0.042);
+        for (final ear in [-1, 1]) {
+          final earPath = Path()
+            ..moveTo(headC.dx + ear * w * 0.008, headC.dy - w * 0.028)
+            ..lineTo(headC.dx + ear * w * 0.036, headC.dy - w * 0.052)
+            ..lineTo(headC.dx + ear * w * 0.038, headC.dy - w * 0.016)
+            ..close();
+          canvas.drawPath(earPath, Paint()..color = orange);
+        }
+        drawPlasticSphere(canvas, headC, w * 0.037, orange);
+        // Carita
+        final dot = Paint()..color = Colors.black87;
+        canvas.drawCircle(Offset(headC.dx - w * 0.013, headC.dy - w * 0.006), 1.1, dot);
+        canvas.drawCircle(Offset(headC.dx + w * 0.013, headC.dy - w * 0.006), 1.1, dot);
+        canvas.drawCircle(Offset(headC.dx, headC.dy + w * 0.008), 1.0,
+            Paint()..color = Colors.pink.shade300);
     }
   }
 
@@ -739,6 +811,15 @@ class _CharacterPainter extends CustomPainter {
             Offset(cx, torsoTop + torsoH * 0.3), chain);
         drawPlasticSphere(canvas, Offset(cx, torsoTop + torsoH * 0.36),
             w * 0.045, const Color(0xFFFFD700));
+      case 'perlas':
+        // Collar de perlas: arco de esferas blancas con caída central
+        for (var i = -3; i <= 3; i++) {
+          final t = i / 3.0;
+          final px = cx + t * torsoW * 0.30;
+          final py = torsoTop + h * 0.006 + (1 - t * t) * h * 0.020;
+          drawPlasticSphere(canvas, Offset(px, py),
+              w * (i == 0 ? 0.024 : 0.019), const Color(0xFFF7F3EE));
+        }
       case 'bufanda':
         final scarf = Paint()..color = Colors.red.shade600;
         _drawRoundRect(
@@ -790,6 +871,38 @@ class _CharacterPainter extends CustomPainter {
                 width: hipW * 0.14,
                 height: beltRect.height * 0.8),
             Paint()..color = const Color(0xFFFFD700));
+      case 'tutú':
+        // Tutú de bailarina: falda de tul rosa con volantes
+        final pink = Colors.pink.shade300;
+        final tutuL = (w - hipW) / 2 - w * 0.07;
+        final tutuR = (w + hipW) / 2 + w * 0.07;
+        final hem = legTop + legH * 0.22;
+        final path = Path()
+          ..moveTo((w - hipW) / 2, hipTop)
+          ..lineTo((w + hipW) / 2, hipTop)
+          ..lineTo(tutuR, hem);
+        const ruffles = 5;
+        for (var i = 1; i <= ruffles; i++) {
+          final x = tutuR - (tutuR - tutuL) * i / ruffles;
+          path.quadraticBezierTo(
+              x + (tutuR - tutuL) / ruffles / 2, hem + w * 0.05, x, hem);
+        }
+        path.close();
+        drawShadedPath(canvas, path, pink);
+        // Capa interior de tul más clara
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.22)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3.0,
+        );
+        // Cinturilla
+        _drawRoundRect(
+            canvas,
+            Rect.fromLTWH((w - hipW) / 2, hipTop, hipW, hipH * 0.35),
+            Colors.pink.shade400,
+            3);
     }
   }
 
@@ -848,7 +961,41 @@ class _CharacterPainter extends CustomPainter {
             Offset(hx + hs * 0.32, headTop + hs * 0.74), hs * 0.07, filter);
         canvas.drawCircle(
             Offset(hx + hs * 0.68, headTop + hs * 0.74), hs * 0.07, filter);
+      case 'moño rosa':
+        // Lazo en lo alto de la cabeza, ladeado
+        final bowC = Offset(hx + hs * 0.80, headTop - hs * 0.02);
+        _drawBow(canvas, bowC, hs * 0.22, Colors.pink.shade400);
+      case 'pendientes':
+        final gold = const Color(0xFFFFD700);
+        final earY = headTop + hs * 0.55;
+        for (final ex in [hx - 1.5, hx + hs + 1.5]) {
+          drawPlasticSphere(canvas, Offset(ex, earY), hs * 0.055, gold);
+          // Gotita rosa colgante
+          canvas.drawOval(
+              Rect.fromCenter(
+                  center: Offset(ex, earY + hs * 0.13),
+                  width: hs * 0.07,
+                  height: hs * 0.11),
+              Paint()..color = Colors.pink.shade300);
+        }
     }
+  }
+
+  /// Lazo de dos bucles con nudo central.
+  void _drawBow(Canvas canvas, Offset c, double size, Color color) {
+    final loopL = Path()
+      ..moveTo(c.dx, c.dy)
+      ..quadraticBezierTo(
+          c.dx - size, c.dy - size * 0.75, c.dx - size * 0.9, c.dy + size * 0.25)
+      ..close();
+    final loopR = Path()
+      ..moveTo(c.dx, c.dy)
+      ..quadraticBezierTo(
+          c.dx + size, c.dy - size * 0.75, c.dx + size * 0.9, c.dy + size * 0.25)
+      ..close();
+    drawShadedPath(canvas, loopL, color);
+    drawShadedPath(canvas, loopR, color);
+    drawPlasticSphere(canvas, c, size * 0.28, darkenColor(color, 0.10));
   }
 
   void _drawFeetAccessory(Canvas canvas) {
@@ -888,6 +1035,12 @@ class _CharacterPainter extends CustomPainter {
             ..lineTo(shoe.right - shoe.width * 0.32, shoe.bottom)
             ..close();
           canvas.drawPath(small, inner);
+        }
+      case 'moños zapatos':
+        // Lazo rosa sobre el empeine de cada zapato
+        for (final shoe in [leftShoe, rightShoe]) {
+          _drawBow(canvas, Offset(shoe.center.dx, shoe.top + shoe.height * 0.15),
+              shoe.width * 0.28, Colors.pink.shade400);
         }
     }
   }
@@ -971,6 +1124,42 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawPath(cone, Paint()..color = const Color(0xFFD2B48C));
         canvas.drawCircle(Offset(fist.dx, fist.dy - h * 0.09), w * 0.032,
             Paint()..color = Colors.pink.shade300);
+      case 'cetro real':
+        // Vara dorada con gema rosa y destello
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.010, fist.dy - h * 0.135,
+                w * 0.020, h * 0.135),
+            const Color(0xFFD4A017),
+            2,
+            sheen: false);
+        drawPlasticSphere(canvas, Offset(fist.dx, fist.dy - h * 0.150),
+            w * 0.034, Colors.pink.shade300);
+        drawStar4(canvas, Offset(fist.dx, fist.dy - h * 0.150), w * 0.055,
+            Paint()..color = Colors.white.withValues(alpha: 0.55));
+      case 'globo corazón':
+        // Cuerda + globo con forma de corazón
+        final heartC = Offset(fist.dx + w * 0.025, fist.dy - h * 0.150);
+        canvas.drawLine(
+            Offset(fist.dx, fist.dy - fistR * 0.4),
+            Offset(heartC.dx, heartC.dy + w * 0.05),
+            Paint()
+              ..color = Colors.grey.shade500
+              ..strokeWidth = 1.2);
+        final s = w * 0.075;
+        final heart = Path()
+          ..moveTo(heartC.dx, heartC.dy + s * 0.62)
+          ..cubicTo(heartC.dx - s * 1.10, heartC.dy - s * 0.18,
+              heartC.dx - s * 0.50, heartC.dy - s * 0.95, heartC.dx,
+              heartC.dy - s * 0.30)
+          ..cubicTo(heartC.dx + s * 0.50, heartC.dy - s * 0.95,
+              heartC.dx + s * 1.10, heartC.dy - s * 0.18, heartC.dx,
+              heartC.dy + s * 0.62)
+          ..close();
+        drawShadedPath(canvas, heart, Colors.pink.shade400);
+        canvas.drawCircle(
+            Offset(heartC.dx - s * 0.30, heartC.dy - s * 0.35), s * 0.16,
+            Paint()..color = Colors.white.withValues(alpha: 0.7));
 
       // Left hand
       case 'bolso':
@@ -1060,6 +1249,50 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(fist.dx - w * 0.055, fist.dy + h * 0.14)
           ..close();
         canvas.drawPath(bristles, Paint()..color = const Color(0xFFD2B48C));
+      case 'peluche':
+        // Osito de peluche abrazado junto al puño
+        final brown = Colors.brown.shade400;
+        final tc = Offset(fist.dx - w * 0.01, fist.dy + fistR * 1.6);
+        // Patitas
+        for (final px in [-1, 1]) {
+          drawPlasticSphere(canvas,
+              Offset(tc.dx + px * w * 0.032, tc.dy + w * 0.040), w * 0.018, brown);
+        }
+        // Cuerpo y cabeza
+        drawPlasticSphere(canvas, Offset(tc.dx, tc.dy + w * 0.012), w * 0.042, brown);
+        final headC = Offset(tc.dx, tc.dy - w * 0.048);
+        for (final ex in [-1, 1]) {
+          drawPlasticSphere(canvas,
+              Offset(headC.dx + ex * w * 0.028, headC.dy - w * 0.026), w * 0.014, brown);
+        }
+        drawPlasticSphere(canvas, headC, w * 0.034, brown);
+        // Hocico y ojos
+        canvas.drawCircle(Offset(headC.dx, headC.dy + w * 0.008), w * 0.016,
+            Paint()..color = const Color(0xFFD2B48C));
+        final eye = Paint()..color = Colors.black87;
+        canvas.drawCircle(Offset(headC.dx - w * 0.012, headC.dy - w * 0.006), 1.1, eye);
+        canvas.drawCircle(Offset(headC.dx + w * 0.012, headC.dy - w * 0.006), 1.1, eye);
+      case 'espejo':
+        // Espejo de mano con marco dorado
+        final gold = const Color(0xFFD4A017);
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.008, fist.dy - h * 0.055,
+                w * 0.016, h * 0.05),
+            gold,
+            2,
+            sheen: false);
+        final mirrorC = Offset(fist.dx, fist.dy - h * 0.095);
+        canvas.drawCircle(mirrorC, w * 0.042, Paint()..color = gold);
+        canvas.drawCircle(mirrorC, w * 0.033,
+            Paint()..color = Colors.lightBlue.shade100);
+        // Reflejo diagonal
+        canvas.drawLine(
+            Offset(mirrorC.dx - w * 0.016, mirrorC.dy + w * 0.014),
+            Offset(mirrorC.dx + w * 0.014, mirrorC.dy - w * 0.016),
+            Paint()
+              ..color = Colors.white.withValues(alpha: 0.85)
+              ..strokeWidth = 2.0);
     }
   }
 

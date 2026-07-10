@@ -349,6 +349,30 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..strokeWidth = 1.3;
         canvas.drawPath(leftWing, wingOutline);
         canvas.drawPath(rightWing, wingOutline);
+      case 'alas mariposa':
+        // Alas de mariposa que aletean al correr — muy visibles de espaldas
+        final flapAngle = 0.30 + sin(_runAnimTimer * 8.0) * 0.12;
+        final upper = Colors.pink.shade300;
+        final lower = Colors.purple.shade200;
+        final spot = Paint()..color = Colors.white.withValues(alpha: 0.75);
+        for (final side in [-1, 1]) {
+          canvas.save();
+          canvas.translate(w * (0.5 + side * 0.10), h * 0.33);
+          canvas.rotate(side * flapAngle);
+          final upperR = Rect.fromCenter(
+              center: Offset(side * w * 0.22, -h * 0.03),
+              width: w * 0.36,
+              height: h * 0.22);
+          drawShadedPath(canvas, Path()..addOval(upperR), upper);
+          final lowerR = Rect.fromCenter(
+              center: Offset(side * w * 0.16, h * 0.14),
+              width: w * 0.26,
+              height: h * 0.15);
+          drawShadedPath(canvas, Path()..addOval(lowerR), lower);
+          canvas.drawCircle(upperR.center, w * 0.05, spot);
+          canvas.drawCircle(lowerR.center, w * 0.032, spot);
+          canvas.restore();
+        }
       case 'capa corta':
         final path = Path()
           ..moveTo(w * 0.12, h * 0.26)
