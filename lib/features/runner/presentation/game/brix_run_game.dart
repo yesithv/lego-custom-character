@@ -11,6 +11,7 @@ import 'components/coin_component.dart';
 import 'components/obstacle_component.dart';
 import 'components/player_component.dart';
 import 'components/powerup_component.dart';
+import 'components/scenery_component.dart';
 import 'components/score_popup_component.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
@@ -52,6 +53,9 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
   double _speedTimer = 0;
   double _obstacleTimer = 0;
   double _coinTimer = 0;
+  double _sceneryTimer = 0;
+
+  static const double _scenerySpawnInterval = 0.55;
 
   late PlayerComponent _player;
   final Random _rng = Random();
@@ -118,6 +122,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
   @override
   Future<void> onLoad() async {
     add(BackgroundComponent(worldId: worldId));
+    _seedScenery();
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
     add(_player);
 
@@ -166,6 +171,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
     if (_coinTimer >= 0.9) {
       _spawnCoin();
       _coinTimer = 0;
+    }
+
+    // Trackside scenery spawning
+    _sceneryTimer += dt;
+    if (_sceneryTimer >= _scenerySpawnInterval) {
+      _spawnScenery();
+      _sceneryTimer = 0;
     }
 
     // Power-up spawning
@@ -273,6 +285,25 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
     add(PowerupComponent(lane: _rng.nextInt(3), type: type));
   }
 
+  void _spawnScenery({double startDepth = 0.0}) {
+    add(SceneryComponent(
+      side: _rng.nextBool() ? -1 : 1,
+      variant: _rng.nextInt(3),
+      lateral: 2.0 + _rng.nextDouble() * 1.1,
+      startDepth: startDepth,
+    ));
+  }
+
+  // Pre-populate both sides of the track so the world isn't empty on start.
+  void _seedScenery() {
+    for (double d = 0.12; d <= 1.0; d += 0.16) {
+      _spawnScenery(startDepth: d);
+      if (_rng.nextDouble() < 0.6) {
+        _spawnScenery(startDepth: (d + 0.08).clamp(0.0, 1.0));
+      }
+    }
+  }
+
   // ── Input ──────────────────────────────────────────────────────────────────
 
   void onSwipeUp() {
@@ -374,6 +405,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
     _obstacleTimer = 0;
     _coinTimer = 0;
     _powerupTimer = 0;
+    _sceneryTimer = 0;
     _heroShieldActive = characterType == CharacterType.hero;
     shieldPowerupActive = false;
     magnetActive = false;
@@ -385,6 +417,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
     children.whereType<CoinComponent>().toList().forEach((c) => c.removeFromParent());
     children.whereType<PowerupComponent>().toList().forEach((c) => c.removeFromParent());
     children.whereType<ScorePopupComponent>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<SceneryComponent>().toList().forEach((c) => c.removeFromParent());
+    _seedScenery();
 
     _player.removeFromParent();
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
