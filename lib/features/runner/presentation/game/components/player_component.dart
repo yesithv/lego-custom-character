@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart' hide Image;
 
 import '../../../../character_editor/domain/entities/character.dart';
+import '../../../../character_editor/presentation/widgets/appearance_colors.dart';
 import '../brix_run_game.dart';
 
 enum PlayerState { running, jumping, sliding, dead }
@@ -175,27 +176,39 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   void _drawRunning(Canvas canvas) {
     final w = size.x;
     final h = size.y;
-    final skin = _skinColor(appearance.skinTone);
-    final torso = _torsoColor(appearance.torso);
-    final leg = _legColor(appearance.legDesign);
-    final shoe = _shoeColor(appearance.shoes);
+    final skin = skinColorFor(appearance.skinTone);
+    final torso = torsoColorFor(appearance.torso);
+    final shoe = shoeColorFor(appearance.shoes, skin);
     final legBob = sin(_runAnimTimer * 8.5) * 5.5;
     final armSwing = sin(_runAnimTimer * 8.5) * 10.0;
 
     // Cape (drawn behind character — very prominent from back view)
     if (appearance.hasCape) _drawCape(canvas, w, h);
 
-    // Left leg
-    _rr(canvas, Rect.fromLTWH(w * 0.13, h * 0.60, w * 0.31, h * 0.37 + legBob), leg, 6);
-    // Right leg (opposite phase)
-    _rr(canvas, Rect.fromLTWH(w * 0.56, h * 0.60, w * 0.31, h * 0.37 - legBob), leg, 6);
+    // Legs
+    _drawLeg(canvas, Rect.fromLTWH(w * 0.13, h * 0.60, w * 0.31, h * 0.37 + legBob), skin);
+    _drawLeg(canvas, Rect.fromLTWH(w * 0.56, h * 0.60, w * 0.31, h * 0.37 - legBob), skin);
 
-    // Left shoe
+    if (appearance.legType == LegType.skirt) {
+      final skirt = Path()
+        ..moveTo(w * 0.10, h * 0.58)
+        ..lineTo(w * 0.90, h * 0.58)
+        ..lineTo(w * 0.96, h * 0.74)
+        ..lineTo(w * 0.04, h * 0.74)
+        ..close();
+      canvas.drawPath(skirt, Paint()..color = legColorFor(appearance.legDesign));
+    }
+
+    // Shoes (flippers extend outwards)
+    final shoeStretch = appearance.shoes == ShoeType.flippers ? w * 0.12 : 0.0;
     _rr(canvas,
-        Rect.fromLTWH(w * 0.07, h * 0.90 + legBob * 0.55, w * 0.38, h * 0.12), shoe, 5);
-    // Right shoe
+        Rect.fromLTWH(w * 0.07 - shoeStretch, h * 0.90 + legBob * 0.55,
+            w * 0.38 + shoeStretch, h * 0.12),
+        shoe, 5);
     _rr(canvas,
-        Rect.fromLTWH(w * 0.55, h * 0.90 - legBob * 0.55, w * 0.38, h * 0.12), shoe, 5);
+        Rect.fromLTWH(w * 0.55, h * 0.90 - legBob * 0.55,
+            w * 0.38 + shoeStretch, h * 0.12),
+        shoe, 5);
 
     // Torso (back view — solid color with subtle spine stripe)
     _rr(canvas, Rect.fromLTWH(w * 0.07, h * 0.25, w * 0.86, h * 0.37), torso, 8);
@@ -204,6 +217,9 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
       Paint()..color = Colors.black.withValues(alpha: 0.10),
     );
 
+    // Equipped back accessory sits over the torso from this angle
+    _drawBackAccessory(canvas, w, h);
+
     // Left arm swinging
     _rr(canvas,
         Rect.fromLTWH(-6, h * 0.27 + armSwing, 13, h * 0.28), skin, 5);
@@ -211,10 +227,52 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
     _rr(canvas,
         Rect.fromLTWH(w - 7, h * 0.27 - armSwing, 13, h * 0.28), skin, 5);
 
+    // Fists — colored by glove type
+    final glove = gloveColorFor(appearance.gloves, skin);
+    final fistR = appearance.gloves == GloveType.boxing ? 8.5 : 6.5;
+    canvas.drawCircle(
+        Offset(0.5, h * 0.27 + armSwing + h * 0.28 + 3), fistR, Paint()..color = glove);
+    canvas.drawCircle(
+        Offset(w - 0.5, h * 0.27 - armSwing + h * 0.28 + 3), fistR, Paint()..color = glove);
+
     // Head (back of head)
     _rr(canvas, Rect.fromLTWH(w * 0.15, 0, w * 0.70, h * 0.27), skin, 10);
 
     _drawHeadwear(canvas, w, h);
+  }
+
+  void _drawLeg(Canvas canvas, Rect rect, Color skin) {
+    final legColor = legColorFor(appearance.legDesign);
+    switch (appearance.legType) {
+      case LegType.pants:
+        _rr(canvas, rect, legColor, 6);
+        paintLegPattern(canvas, rect, appearance.legDesign);
+      case LegType.shorts:
+        _rr(canvas, rect, skin, 6);
+        final upper = Rect.fromLTWH(rect.left, rect.top, rect.width, rect.height * 0.48);
+        _rr(canvas, upper, legColor, 6);
+        paintLegPattern(canvas, upper, appearance.legDesign);
+      case LegType.skirt:
+        _rr(canvas, rect, skin, 6);
+      case LegType.legArmor:
+        _rr(canvas, rect, legColor, 6);
+        paintLegPattern(canvas, rect, appearance.legDesign);
+        _rr(canvas,
+            Rect.fromLTWH(rect.left + rect.width * 0.12,
+                rect.top + rect.height * 0.5, rect.width * 0.76, rect.height * 0.4),
+            Colors.grey.shade500, 3);
+      case LegType.spacesuit:
+        _rr(canvas, rect.inflate(1.0), Colors.white, 6);
+        final band = Paint()..color = legColor;
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.top + rect.height * 0.25,
+                rect.width, rect.height * 0.12),
+            band);
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.top + rect.height * 0.68,
+                rect.width, rect.height * 0.12),
+            band);
+    }
   }
 
   void _drawCape(Canvas canvas, double w, double h) {
@@ -239,26 +297,201 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
     );
   }
 
+  void _drawBackAccessory(Canvas canvas, double w, double h) {
+    final id = appearance.accessories.back;
+    if (id == null) return;
+    switch (id) {
+      case 'mochila':
+        _rr(canvas, Rect.fromLTWH(w * 0.18, h * 0.28, w * 0.64, h * 0.30),
+            Colors.green.shade800, 7);
+        final strap = Paint()
+          ..color = Colors.green.shade900
+          ..strokeWidth = 3;
+        canvas.drawLine(Offset(w * 0.28, h * 0.26), Offset(w * 0.28, h * 0.58), strap);
+        canvas.drawLine(Offset(w * 0.72, h * 0.26), Offset(w * 0.72, h * 0.58), strap);
+      case 'jetpack':
+        final body = Colors.grey.shade600;
+        final flame = Paint()..color = Colors.orange.shade600;
+        for (final x in [w * 0.22, w * 0.56]) {
+          _rr(canvas, Rect.fromLTWH(x, h * 0.27, w * 0.22, h * 0.30), body, 7);
+          final path = Path()
+            ..moveTo(x + w * 0.04, h * 0.57)
+            ..lineTo(x + w * 0.11, h * 0.66)
+            ..lineTo(x + w * 0.18, h * 0.57)
+            ..close();
+          canvas.drawPath(path, flame);
+        }
+      case 'alas':
+        final wing = Paint()..color = Colors.grey.shade100;
+        final flap = sin(_runAnimTimer * 6.0) * h * 0.02;
+        final leftWing = Path()
+          ..moveTo(w * 0.30, h * 0.30)
+          ..quadraticBezierTo(-w * 0.35, h * 0.10 + flap, -w * 0.28, h * 0.48 + flap)
+          ..quadraticBezierTo(-w * 0.02, h * 0.46, w * 0.30, h * 0.45)
+          ..close();
+        final rightWing = Path()
+          ..moveTo(w * 0.70, h * 0.30)
+          ..quadraticBezierTo(w * 1.35, h * 0.10 + flap, w * 1.28, h * 0.48 + flap)
+          ..quadraticBezierTo(w * 1.02, h * 0.46, w * 0.70, h * 0.45)
+          ..close();
+        canvas.drawPath(leftWing, wing);
+        canvas.drawPath(rightWing, wing);
+      case 'capa corta':
+        final path = Path()
+          ..moveTo(w * 0.12, h * 0.26)
+          ..lineTo(w * 0.88, h * 0.26)
+          ..lineTo(w * 0.94, h * 0.62)
+          ..lineTo(w * 0.06, h * 0.62)
+          ..close();
+        canvas.drawPath(path, Paint()..color = Colors.blue.shade800);
+      case 'capa vampiro':
+        final wave = sin(_runAnimTimer * 6.0) * 4.0;
+        final path = Path()
+          ..moveTo(w * 0.10, h * 0.24)
+          ..lineTo(w * 0.90, h * 0.24)
+          ..lineTo(w * 1.0, h * 0.80 + wave)
+          ..lineTo(w * 0.0, h * 0.80 - wave)
+          ..close();
+        canvas.drawPath(path, Paint()..color = Colors.grey.shade900);
+    }
+  }
+
   void _drawHeadwear(Canvas canvas, double w, double h) {
     switch (appearance.headwearType) {
       case HeadwearType.none:
         break;
       case HeadwearType.hair:
-        _rr(canvas,
-            Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), Colors.brown.shade700, 8);
+        _drawHair(canvas, w, h);
       case HeadwearType.helmet:
-        _rr(canvas,
-            Rect.fromLTWH(w * 0.05, -7, w * 0.90, h * 0.22), Colors.grey.shade600, 8);
-        canvas.drawRect(
-          Rect.fromLTWH(w * 0.26, h * 0.16, w * 0.48, 5),
-          Paint()..color = Colors.grey.shade800,
-        );
+        _drawHelmet(canvas, w, h);
       case HeadwearType.hat:
-        // Brim
-        _rr(canvas, Rect.fromLTWH(-3, h * 0.07, w + 6, h * 0.07), Colors.black87, 2);
-        // Crown
-        _rr(canvas,
-            Rect.fromLTWH(w * 0.13, -11, w * 0.74, h * 0.21), Colors.black87, 8);
+        _drawHat(canvas, w, h);
+    }
+  }
+
+  void _drawHair(Canvas canvas, double w, double h) {
+    final style = appearance.hairStyle ?? HairStyle.straight;
+    if (style == HairStyle.bald) return;
+    final color = hairColorFor(style);
+    final paint = Paint()..color = color;
+
+    switch (style) {
+      case HairStyle.straight:
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+      case HairStyle.curly:
+        for (var i = 0; i < 4; i++) {
+          canvas.drawCircle(
+              Offset(w * (0.20 + i * 0.20), h * 0.015), w * 0.13, paint);
+        }
+      case HairStyle.afro:
+        canvas.drawCircle(Offset(w * 0.5, h * 0.05), w * 0.40, paint);
+      case HairStyle.mohawk:
+        _rr(canvas, Rect.fromLTWH(w * 0.12, -3, w * 0.76, h * 0.09),
+            Colors.grey.shade800, 4);
+        _rr(canvas, Rect.fromLTWH(w * 0.44, -h * 0.10, w * 0.12, h * 0.22), color, 3);
+      case HairStyle.ponytail:
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+        // Tail hangs down the back — fully visible from behind
+        _rr(canvas, Rect.fromLTWH(w * 0.42, h * 0.10, w * 0.16, h * 0.28), color, 6);
+      case HairStyle.braids:
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+        _rr(canvas, Rect.fromLTWH(w * 0.12, h * 0.08, w * 0.10, h * 0.30), color, 5);
+        _rr(canvas, Rect.fromLTWH(w * 0.78, h * 0.08, w * 0.10, h * 0.30), color, 5);
+      case HairStyle.shaved:
+        _rr(canvas, Rect.fromLTWH(w * 0.11, -3, w * 0.78, h * 0.10), color, 5);
+      case HairStyle.bald:
+        break;
+    }
+  }
+
+  void _drawHelmet(Canvas canvas, double w, double h) {
+    final style = appearance.helmetStyle ?? HelmetStyle.medieval;
+    final color = helmetColorFor(style);
+
+    _rr(canvas, Rect.fromLTWH(w * 0.05, -7, w * 0.90, h * 0.22), color, 8);
+    canvas.drawRect(
+      Rect.fromLTWH(w * 0.26, h * 0.16, w * 0.48, 5),
+      Paint()..color = Colors.black.withValues(alpha: 0.25),
+    );
+
+    switch (style) {
+      case HelmetStyle.roman:
+        _rr(canvas, Rect.fromLTWH(w * 0.44, -h * 0.14, w * 0.12, h * 0.20),
+            Colors.red.shade900, 4);
+      case HelmetStyle.viking:
+        final horn = Paint()..color = const Color(0xFFF5F0E0);
+        final leftHorn = Path()
+          ..moveTo(w * 0.08, h * 0.06)
+          ..lineTo(-w * 0.06, -h * 0.10)
+          ..lineTo(w * 0.16, -h * 0.02)
+          ..close();
+        final rightHorn = Path()
+          ..moveTo(w * 0.92, h * 0.06)
+          ..lineTo(w * 1.06, -h * 0.10)
+          ..lineTo(w * 0.84, -h * 0.02)
+          ..close();
+        canvas.drawPath(leftHorn, horn);
+        canvas.drawPath(rightHorn, horn);
+      case HelmetStyle.firefighter:
+        _rr(canvas, Rect.fromLTWH(w * 0.0, h * 0.13, w, h * 0.06),
+            Colors.yellow.shade800, 3);
+      default:
+        break;
+    }
+  }
+
+  void _drawHat(Canvas canvas, double w, double h) {
+    final style = appearance.hatStyle ?? HatStyle.cap;
+    final color = hatColorFor(style);
+
+    switch (style) {
+      case HatStyle.wizard:
+        _rr(canvas, Rect.fromLTWH(w * 0.02, h * 0.07, w * 0.96, h * 0.06),
+            Colors.indigo.shade800, 2);
+        final cone = Path()
+          ..moveTo(w * 0.15, h * 0.08)
+          ..lineTo(w * 0.5, -h * 0.22)
+          ..lineTo(w * 0.85, h * 0.08)
+          ..close();
+        canvas.drawPath(cone, Paint()..color = color);
+      case HatStyle.cowboy:
+        _rr(canvas, Rect.fromLTWH(-w * 0.06, h * 0.07, w * 1.12, h * 0.07), color, 4);
+        _rr(canvas, Rect.fromLTWH(w * 0.20, -h * 0.08, w * 0.60, h * 0.16), color, 6);
+      case HatStyle.cap:
+        _rr(canvas, Rect.fromLTWH(w * 0.13, -6, w * 0.74, h * 0.18), color, 8);
+      case HatStyle.crown:
+        final path = Path()
+          ..moveTo(w * 0.18, h * 0.08)
+          ..lineTo(w * 0.18, -h * 0.09)
+          ..lineTo(w * 0.34, -h * 0.02)
+          ..lineTo(w * 0.5, -h * 0.12)
+          ..lineTo(w * 0.66, -h * 0.02)
+          ..lineTo(w * 0.82, -h * 0.09)
+          ..lineTo(w * 0.82, h * 0.08)
+          ..close();
+        canvas.drawPath(path, Paint()..color = color);
+      case HatStyle.tiara:
+        final path = Path()
+          ..moveTo(w * 0.28, h * 0.05)
+          ..lineTo(w * 0.28, -h * 0.02)
+          ..lineTo(w * 0.42, h * 0.0)
+          ..lineTo(w * 0.5, -h * 0.07)
+          ..lineTo(w * 0.58, h * 0.0)
+          ..lineTo(w * 0.72, -h * 0.02)
+          ..lineTo(w * 0.72, h * 0.05)
+          ..close();
+        canvas.drawPath(path, Paint()..color = color);
+      case HatStyle.topHat:
+        _rr(canvas, Rect.fromLTWH(-3, h * 0.07, w + 6, h * 0.07), color, 2);
+        _rr(canvas, Rect.fromLTWH(w * 0.18, -h * 0.20, w * 0.64, h * 0.28), color, 4);
+      case HatStyle.pirate:
+        final tricorn = Path()
+          ..moveTo(-w * 0.08, h * 0.10)
+          ..lineTo(w * 0.02, -h * 0.08)
+          ..quadraticBezierTo(w * 0.5, -h * 0.18, w * 0.98, -h * 0.08)
+          ..lineTo(w * 1.08, h * 0.10)
+          ..close();
+        canvas.drawPath(tricorn, Paint()..color = color);
     }
   }
 
@@ -267,10 +500,10 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   void _drawSliding(Canvas canvas) {
     final w = size.x;
     final h = size.y;
-    final skin = _skinColor(appearance.skinTone);
-    final torso = _torsoColor(appearance.torso);
-    final leg = _legColor(appearance.legDesign);
-    final shoe = _shoeColor(appearance.shoes);
+    final skin = skinColorFor(appearance.skinTone);
+    final torso = torsoColorFor(appearance.torso);
+    final leg = legColorFor(appearance.legDesign);
+    final shoe = shoeColorFor(appearance.shoes, skin);
 
     // Low torso
     _rr(canvas, Rect.fromLTWH(w * 0.0, h * 0.30, w, h * 0.46), torso, 9);
@@ -292,8 +525,8 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   void _drawDead(Canvas canvas) {
     final w = size.x;
     final h = size.y;
-    final skin = _skinColor(appearance.skinTone);
-    final torso = _torsoColor(appearance.torso);
+    final skin = skinColorFor(appearance.skinTone);
+    final torso = torsoColorFor(appearance.torso);
     final p = Paint()
       ..color = Colors.black87
       ..strokeWidth = 2.5
@@ -316,44 +549,4 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
       Paint()..color = color,
     );
   }
-
-  Color _skinColor(SkinTone t) => switch (t) {
-        SkinTone.light => const Color(0xFFFFDBAC),
-        SkinTone.medium => const Color(0xFFD4A574),
-        SkinTone.dark => const Color(0xFF8D5524),
-        SkinTone.blue => Colors.blue.shade400,
-        SkinTone.green => Colors.green.shade400,
-        SkinTone.purple => Colors.purple.shade400,
-        SkinTone.orange => Colors.orange.shade400,
-        SkinTone.silver => Colors.grey.shade400,
-        SkinTone.gold => const Color(0xFFFFD700),
-      };
-
-  Color _torsoColor(TorsoDesign d) => switch (d) {
-        TorsoDesign.plain => Colors.red.shade400,
-        TorsoDesign.police => Colors.blue.shade800,
-        TorsoDesign.firefighter => Colors.red.shade800,
-        TorsoDesign.ninja => Colors.black,
-        TorsoDesign.pirate => Colors.brown.shade700,
-        TorsoDesign.superhero => Colors.blue.shade600,
-        TorsoDesign.medieval => Colors.grey.shade600,
-        TorsoDesign.robot => Colors.blueGrey.shade400,
-        _ => Colors.teal.shade400,
-      };
-
-  Color _legColor(LegDesign d) => switch (d) {
-        LegDesign.plain => Colors.blue.shade700,
-        LegDesign.camouflage => Colors.green.shade700,
-        LegDesign.armor => Colors.grey.shade600,
-        LegDesign.flames => Colors.orange.shade700,
-        _ => Colors.indigo.shade600,
-      };
-
-  Color _shoeColor(ShoeType t) => switch (t) {
-        ShoeType.sneakers => Colors.white,
-        ShoeType.military => Colors.brown.shade800,
-        ShoeType.cowboy => Colors.brown.shade600,
-        ShoeType.witchBoots => Colors.black,
-        _ => Colors.grey.shade800,
-      };
 }
