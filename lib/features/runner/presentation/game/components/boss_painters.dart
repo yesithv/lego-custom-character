@@ -324,67 +324,114 @@ void _paintOverlord(
 
 // ── jungle: Gran Gorila ─────────────────────────────────────────────────────
 
+// Silueta de bruto: joroba con hombros sobre la cabeza, brazos enormes con
+// los nudillos al suelo, piernas cortas, colmillos hacia arriba, pintura de
+// guerra y taparrabos con cinturón dorado.
 void _paintGorilla(
     Canvas canvas, Size size, BossConfig cfg, double t, int enrage) {
   final w = size.width;
   final h = size.height;
   final pound = (sin(t * 5) * h * 0.02) * (enrage > 0 ? 1.5 : 1.0);
+  final body = Paint()..color = cfg.primary;
+  final darkFur = Paint()..color = _darker(cfg.primary, 0.08);
 
-  // Cuerpo masivo
-  canvas.drawOval(Rect.fromLTWH(w * 0.14, h * 0.30, w * 0.72, h * 0.62),
-      Paint()..color = cfg.primary);
+  // Piernas cortas y arqueadas (detrás del taparrabos)
+  canvas.drawOval(Rect.fromLTWH(w * 0.28, h * 0.68, w * 0.16, h * 0.28), body);
+  canvas.drawOval(Rect.fromLTWH(w * 0.56, h * 0.68, w * 0.16, h * 0.28), body);
 
-  // Brazos enormes con puños al suelo
-  final arm = Paint()..color = _darker(cfg.primary, 0.06);
+  // Torso jorobado: ancho de hombros arriba, se estrecha hacia la cadera
+  final hump = Path()
+    ..moveTo(w * 0.12, h * 0.22)
+    ..quadraticBezierTo(w * 0.5, h * -0.02, w * 0.88, h * 0.22)
+    ..quadraticBezierTo(w * 0.94, h * 0.48, w * 0.72, h * 0.74)
+    ..lineTo(w * 0.28, h * 0.74)
+    ..quadraticBezierTo(w * 0.06, h * 0.48, w * 0.12, h * 0.22)
+    ..close();
+  canvas.drawPath(hump, body);
+
+  // Brazos desproporcionados: del hombro al suelo, más gruesos que las piernas
   canvas.drawOval(
-      Rect.fromLTWH(w * 0.00, h * 0.34 + pound, w * 0.20, h * 0.50), arm);
+      Rect.fromLTWH(w * -0.02, h * 0.16 + pound, w * 0.26, h * 0.56), darkFur);
   canvas.drawOval(
-      Rect.fromLTWH(w * 0.80, h * 0.34 - pound, w * 0.20, h * 0.50), arm);
-  canvas.drawCircle(Offset(w * 0.10, h * 0.86 + pound), w * 0.10, arm);
-  canvas.drawCircle(Offset(w * 0.90, h * 0.86 - pound), w * 0.10, arm);
+      Rect.fromLTWH(w * 0.76, h * 0.16 - pound, w * 0.26, h * 0.56), darkFur);
+  // Puños-nudillos apoyados en el suelo
+  canvas.drawCircle(Offset(w * 0.11, h * 0.84 + pound), w * 0.115, darkFur);
+  canvas.drawCircle(Offset(w * 0.89, h * 0.84 - pound), w * 0.115, darkFur);
+  final knuckle = Paint()
+    ..color = Colors.black.withValues(alpha: 0.25)
+    ..strokeWidth = 2
+    ..style = PaintingStyle.stroke;
+  for (final x in [w * 0.11, w * 0.89]) {
+    final dy = x < w * 0.5 ? pound : -pound;
+    canvas.drawLine(Offset(x - w * 0.05, h * 0.82 + dy),
+        Offset(x - w * 0.05, h * 0.87 + dy), knuckle);
+    canvas.drawLine(Offset(x + w * 0.05, h * 0.82 + dy),
+        Offset(x + w * 0.05, h * 0.87 + dy), knuckle);
+  }
 
   // Pecho claro
-  canvas.drawOval(Rect.fromLTWH(w * 0.30, h * 0.46, w * 0.40, h * 0.36),
+  canvas.drawOval(Rect.fromLTWH(w * 0.32, h * 0.34, w * 0.36, h * 0.30),
       Paint()..color = cfg.secondary);
 
-  // Cabeza con cresta de pelo
-  canvas.drawOval(Rect.fromLTWH(w * 0.28, h * 0.06, w * 0.44, h * 0.34),
-      Paint()..color = cfg.primary);
-  final crest = Path()
-    ..moveTo(w * 0.36, h * 0.09)
-    ..lineTo(w * 0.42, h * 0.015)
-    ..lineTo(w * 0.48, h * 0.08)
-    ..lineTo(w * 0.54, h * 0.01)
-    ..lineTo(w * 0.60, h * 0.09)
+  // Taparrabos azul con cinturón dorado (acento de color del atuendo)
+  final cloth = Path()
+    ..moveTo(w * 0.33, h * 0.66)
+    ..lineTo(w * 0.67, h * 0.66)
+    ..lineTo(w * 0.63, h * 0.80)
+    ..lineTo(w * 0.55, h * 0.76)
+    ..lineTo(w * 0.5, h * 0.86)
+    ..lineTo(w * 0.45, h * 0.76)
+    ..lineTo(w * 0.37, h * 0.80)
     ..close();
-  canvas.drawPath(crest, Paint()..color = _darker(cfg.primary, 0.08));
+  canvas.drawPath(cloth, Paint()..color = Colors.blue.shade800);
+  _rrect(canvas, Rect.fromLTWH(w * 0.31, h * 0.62, w * 0.38, h * 0.05),
+      const Color(0xFFFFD700), 4);
 
-  // Cara clara
-  canvas.drawOval(Rect.fromLTWH(w * 0.34, h * 0.14, w * 0.32, h * 0.24),
+  // Melena oscura que enmarca la cabeza hundida entre los hombros
+  canvas.drawOval(Rect.fromLTWH(w * 0.30, h * 0.02, w * 0.40, h * 0.30),
+      Paint()..color = _darker(cfg.primary, 0.16));
+
+  // Cabeza pequeña, sin cuello, hundida en el torso
+  canvas.drawOval(Rect.fromLTWH(w * 0.36, h * 0.06, w * 0.28, h * 0.24),
       Paint()..color = cfg.secondary);
+  // Ceja pesada
+  _rrect(canvas, Rect.fromLTWH(w * 0.37, h * 0.09, w * 0.26, h * 0.045),
+      _darker(cfg.primary, 0.16), 4);
 
-  _angryEyes(canvas, Offset(w * 0.43, h * 0.22), Offset(w * 0.57, h * 0.22),
-      w * 0.03, Colors.black87, enrage);
+  // Pintura de guerra amarilla bajo los ojos
+  final paintMark = Paint()
+    ..color = Colors.yellow.shade600
+    ..strokeWidth = 2.5
+    ..strokeCap = StrokeCap.round;
+  canvas.drawLine(Offset(w * 0.40, h * 0.185), Offset(w * 0.445, h * 0.20),
+      paintMark);
+  canvas.drawLine(Offset(w * 0.555, h * 0.20), Offset(w * 0.60, h * 0.185),
+      paintMark);
 
-  // Nariz y boca con colmillos
+  _angryEyes(canvas, Offset(w * 0.44, h * 0.155), Offset(w * 0.56, h * 0.155),
+      w * 0.028, Colors.black87, enrage);
+
+  // Nariz
   final nose = Paint()..color = Colors.black87;
-  canvas.drawCircle(Offset(w * 0.47, h * 0.29), w * 0.013, nose);
-  canvas.drawCircle(Offset(w * 0.53, h * 0.29), w * 0.013, nose);
-  _rrect(canvas, Rect.fromLTWH(w * 0.41, h * 0.32, w * 0.18, h * 0.035),
-      Colors.black87, 3);
-  final teeth = Paint()..color = Colors.white;
-  final fangL = Path()
-    ..moveTo(w * 0.43, h * 0.325)
-    ..lineTo(w * 0.445, h * 0.30)
-    ..lineTo(w * 0.46, h * 0.325)
+  canvas.drawCircle(Offset(w * 0.475, h * 0.215), w * 0.012, nose);
+  canvas.drawCircle(Offset(w * 0.525, h * 0.215), w * 0.012, nose);
+
+  // Mandíbula protuberante con colmillos hacia ARRIBA
+  _rrect(canvas, Rect.fromLTWH(w * 0.39, h * 0.24, w * 0.22, h * 0.05),
+      Colors.black87, 5);
+  final tusk = Paint()..color = const Color(0xFFFFF3D6);
+  final tuskL = Path()
+    ..moveTo(w * 0.41, h * 0.275)
+    ..lineTo(w * 0.435, h * 0.225)
+    ..lineTo(w * 0.46, h * 0.275)
     ..close();
-  final fangR = Path()
-    ..moveTo(w * 0.54, h * 0.325)
-    ..lineTo(w * 0.555, h * 0.30)
-    ..lineTo(w * 0.57, h * 0.325)
+  final tuskR = Path()
+    ..moveTo(w * 0.54, h * 0.275)
+    ..lineTo(w * 0.565, h * 0.225)
+    ..lineTo(w * 0.59, h * 0.275)
     ..close();
-  canvas.drawPath(fangL, teeth);
-  canvas.drawPath(fangR, teeth);
+  canvas.drawPath(tuskL, tusk);
+  canvas.drawPath(tuskR, tusk);
 }
 
 // ── dark_city: Señor Sombra ─────────────────────────────────────────────────
@@ -512,10 +559,15 @@ void _paintKraken(
 
 // ── tundra: Yeti Glacial ────────────────────────────────────────────────────
 
+// Misma silueta de bruto que el gorila: joroba blanca, nudillos al suelo,
+// cabeza hundida, colmillos hacia arriba y pintura de guerra azul hielo.
 void _paintYeti(
     Canvas canvas, Size size, BossConfig cfg, double t, int enrage) {
   final w = size.width;
   final h = size.height;
+  final fur = Paint()..color = cfg.primary;
+  final shadowFur = Paint()..color = _darker(cfg.primary, 0.10);
+  final roar = sin(t * 2.5) * h * 0.015;
 
   // Copos de nieve alrededor
   final flake = Paint()..color = Colors.white.withValues(alpha: 0.8);
@@ -525,13 +577,43 @@ void _paintYeti(
         Offset(w * (0.08 + i * 0.21), h * phase), w * 0.012, flake);
   }
 
-  // Brazos alzados con garras
-  final fur = Paint()..color = cfg.primary;
-  final roar = sin(t * 2.5) * h * 0.015;
+  // Piernas cortas y arqueadas
+  canvas.drawOval(Rect.fromLTWH(w * 0.28, h * 0.70, w * 0.16, h * 0.26), fur);
+  canvas.drawOval(Rect.fromLTWH(w * 0.56, h * 0.70, w * 0.16, h * 0.26), fur);
+
+  // Torso jorobado: hombros por encima de la cabeza
+  final hump = Path()
+    ..moveTo(w * 0.13, h * 0.24)
+    ..quadraticBezierTo(w * 0.5, h * 0.00, w * 0.87, h * 0.24)
+    ..quadraticBezierTo(w * 0.93, h * 0.50, w * 0.72, h * 0.76)
+    ..lineTo(w * 0.28, h * 0.76)
+    ..quadraticBezierTo(w * 0.07, h * 0.50, w * 0.13, h * 0.24)
+    ..close();
+  canvas.drawPath(hump, fur);
+
+  // Picos de pelaje en los hombros
+  for (final xs in [
+    [0.16, 0.22, 0.28],
+    [0.72, 0.78, 0.84],
+  ]) {
+    final spike = Path()
+      ..moveTo(w * xs[0], h * 0.18)
+      ..lineTo(w * xs[1], h * 0.06)
+      ..lineTo(w * xs[2], h * 0.16)
+      ..close();
+    canvas.drawPath(spike, fur);
+  }
+
+  // Brazos al suelo con puños-nudillos
   canvas.drawOval(
-      Rect.fromLTWH(w * 0.00, h * 0.18 + roar, w * 0.20, h * 0.44), fur);
+      Rect.fromLTWH(w * -0.02, h * 0.18 + roar, w * 0.26, h * 0.54),
+      shadowFur);
   canvas.drawOval(
-      Rect.fromLTWH(w * 0.80, h * 0.18 - roar, w * 0.20, h * 0.44), fur);
+      Rect.fromLTWH(w * 0.76, h * 0.18 - roar, w * 0.26, h * 0.54),
+      shadowFur);
+  canvas.drawCircle(Offset(w * 0.11, h * 0.84 + roar), w * 0.115, shadowFur);
+  canvas.drawCircle(Offset(w * 0.89, h * 0.84 - roar), w * 0.115, shadowFur);
+  // Garras de hielo sobre los nudillos
   final claw = Paint()
     ..color = cfg.secondary
     ..strokeWidth = 2.5
@@ -539,54 +621,76 @@ void _paintYeti(
     ..style = PaintingStyle.stroke;
   for (var i = -1; i <= 1; i++) {
     canvas.drawLine(
-        Offset(w * 0.10 + i * w * 0.035, h * 0.20 + roar),
-        Offset(w * 0.10 + i * w * 0.045, h * 0.14 + roar),
+        Offset(w * 0.11 + i * w * 0.045, h * 0.79 + roar),
+        Offset(w * 0.11 + i * w * 0.055, h * 0.73 + roar),
         claw);
     canvas.drawLine(
-        Offset(w * 0.90 + i * w * 0.035, h * 0.20 - roar),
-        Offset(w * 0.90 + i * w * 0.045, h * 0.14 - roar),
+        Offset(w * 0.89 + i * w * 0.045, h * 0.79 - roar),
+        Offset(w * 0.89 + i * w * 0.055, h * 0.73 - roar),
         claw);
   }
 
-  // Cuerpo peludo con picos de pelaje en el contorno
-  canvas.drawOval(
-      Rect.fromLTWH(w * 0.16, h * 0.24, w * 0.68, h * 0.70), fur);
-  final tuft = Paint()..color = cfg.primary;
-  for (var i = 0; i < 6; i++) {
-    final x = w * (0.20 + i * 0.12);
-    final spike = Path()
-      ..moveTo(x, h * 0.92)
-      ..lineTo(x + w * 0.05, h * 0.99)
-      ..lineTo(x + w * 0.10, h * 0.92)
-      ..close();
-    canvas.drawPath(spike, tuft);
-  }
+  // Vientre claro
+  canvas.drawOval(Rect.fromLTWH(w * 0.33, h * 0.38, w * 0.34, h * 0.30),
+      Paint()..color = _lighter(cfg.secondary, 0.16));
 
+  // Taparrabos de pelaje oscuro con amuleto de hielo
+  final cloth = Path()
+    ..moveTo(w * 0.33, h * 0.68)
+    ..lineTo(w * 0.67, h * 0.68)
+    ..lineTo(w * 0.63, h * 0.79)
+    ..lineTo(w * 0.555, h * 0.76)
+    ..lineTo(w * 0.5, h * 0.86)
+    ..lineTo(w * 0.445, h * 0.76)
+    ..lineTo(w * 0.37, h * 0.79)
+    ..close();
+  canvas.drawPath(cloth, Paint()..color = const Color(0xFF4A6B8A));
+  final gem = Path()
+    ..moveTo(w * 0.5, h * 0.63)
+    ..lineTo(w * 0.535, h * 0.675)
+    ..lineTo(w * 0.5, h * 0.72)
+    ..lineTo(w * 0.465, h * 0.675)
+    ..close();
+  canvas.drawPath(gem, Paint()..color = cfg.secondary);
+
+  // Cabeza hundida entre los hombros, sin cuello
+  canvas.drawOval(Rect.fromLTWH(w * 0.34, h * 0.07, w * 0.32, h * 0.26), fur);
   // Cara azul hielo
-  canvas.drawOval(Rect.fromLTWH(w * 0.30, h * 0.10, w * 0.40, h * 0.30),
+  canvas.drawOval(Rect.fromLTWH(w * 0.38, h * 0.10, w * 0.24, h * 0.21),
       Paint()..color = cfg.secondary);
-  canvas.drawOval(Rect.fromLTWH(w * 0.34, h * 0.13, w * 0.32, h * 0.24),
-      Paint()..color = _lighter(cfg.secondary, 0.18));
+  // Ceja pesada de pelaje
+  _rrect(canvas, Rect.fromLTWH(w * 0.375, h * 0.115, w * 0.25, h * 0.04),
+      _darker(cfg.primary, 0.06), 4);
 
-  _angryEyes(canvas, Offset(w * 0.42, h * 0.22), Offset(w * 0.58, h * 0.22),
-      w * 0.032, const Color(0xFF01579B), enrage);
+  // Pintura de guerra azul oscuro bajo los ojos
+  final paintMark = Paint()
+    ..color = const Color(0xFF01579B)
+    ..strokeWidth = 2.5
+    ..strokeCap = StrokeCap.round;
+  canvas.drawLine(
+      Offset(w * 0.405, h * 0.205), Offset(w * 0.445, h * 0.22), paintMark);
+  canvas.drawLine(
+      Offset(w * 0.555, h * 0.22), Offset(w * 0.595, h * 0.205), paintMark);
 
-  // Boca rugiendo con colmillos
-  _rrect(canvas, Rect.fromLTWH(w * 0.41, h * 0.28, w * 0.18, h * 0.06),
-      const Color(0xFF01579B), 6);
-  final teeth = Paint()..color = Colors.white;
-  final fangL = Path()
-    ..moveTo(w * 0.43, h * 0.28)
-    ..lineTo(w * 0.445, h * 0.315)
-    ..lineTo(w * 0.46, h * 0.28)
+  _angryEyes(canvas, Offset(w * 0.445, h * 0.175), Offset(w * 0.555, h * 0.175),
+      w * 0.028, const Color(0xFF01579B), enrage);
+
+  // Mandíbula protuberante con colmillos hacia ARRIBA
+  _rrect(canvas, Rect.fromLTWH(w * 0.40, h * 0.25, w * 0.20, h * 0.05),
+      const Color(0xFF01579B), 5);
+  final tusk = Paint()..color = Colors.white;
+  final tuskL = Path()
+    ..moveTo(w * 0.42, h * 0.285)
+    ..lineTo(w * 0.445, h * 0.235)
+    ..lineTo(w * 0.47, h * 0.285)
     ..close();
-  final fangR = Path()
-    ..moveTo(w * 0.54, h * 0.28)
-    ..lineTo(w * 0.555, h * 0.315)
-    ..lineTo(w * 0.57, h * 0.28)
+  final tuskR = Path()
+    ..moveTo(w * 0.53, h * 0.285)
+    ..lineTo(w * 0.555, h * 0.235)
+    ..lineTo(w * 0.58, h * 0.285)
     ..close();
-  canvas.drawPath(fangL, teeth);
-  canvas.drawPath(fangR, teeth);
+  canvas.drawPath(tuskL, tusk);
+  canvas.drawPath(tuskR, tusk);
 }
 
 // ── robot_city: Mega-Bot X9 ─────────────────────────────────────────────────
