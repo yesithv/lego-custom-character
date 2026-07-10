@@ -62,7 +62,7 @@ class _HomeView extends StatelessWidget {
                 const Text('🏁', style: TextStyle(fontSize: 44)),
                 const SizedBox(height: 8),
                 const Text(
-                  'BrixRun',
+                  'Run For Win',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,

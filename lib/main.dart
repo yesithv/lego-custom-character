@@ -28,7 +28,7 @@ class BrixRunApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<RankingBloc>()),
       ],
       child: MaterialApp.router(
-        title: 'BrixRun',
+        title: 'Run For Win',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         routerConfig: AppRouter.router,
