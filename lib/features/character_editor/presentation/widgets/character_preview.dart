@@ -502,6 +502,99 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawCircle(Offset(torsoX + torsoW * 0.3, torsoTop + torsoH * 0.3), 2.5, dot);
         canvas.drawCircle(Offset(torsoX + torsoW * 0.65, torsoTop + torsoH * 0.5), 2.5, dot);
         canvas.drawCircle(Offset(torsoX + torsoW * 0.4, torsoTop + torsoH * 0.72), 2.5, dot);
+      case TorsoDesign.tactical:
+        // Chaleco táctico: correas verticales y bolsillos con solapa
+        final strapP = Paint()..color = const Color(0xFF3A4148);
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX + torsoW * 0.22, torsoTop, torsoW * 0.09, torsoH),
+            strapP);
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX + torsoW * 0.69, torsoTop, torsoW * 0.09, torsoH),
+            strapP);
+        final pouch = const Color(0xFF4A545C);
+        for (final px in [0.28, 0.54]) {
+          for (final py in [0.30, 0.62]) {
+            drawPlasticRect(
+                canvas,
+                Rect.fromLTWH(torsoX + torsoW * px, torsoTop + torsoH * py,
+                    torsoW * 0.18, torsoH * 0.22),
+                pouch,
+                2,
+                sheen: false);
+          }
+        }
+        // Cierre frontal
+        canvas.drawRect(
+            Rect.fromLTWH(cx - 1, torsoTop, 2, torsoH),
+            Paint()..color = Colors.black.withValues(alpha: 0.45));
+      case TorsoDesign.tanktop:
+        // Camiseta sin mangas: hombros de piel visibles y cinturón rojo
+        final skinP = Paint()..color = skin;
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX, torsoTop, torsoW * 0.14, torsoH * 0.30), skinP);
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX + torsoW * 0.86, torsoTop, torsoW * 0.14,
+                torsoH * 0.30),
+            skinP);
+        // Tirantes
+        final strap = Paint()..color = darkenColor(torsoColor, 0.15);
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX + torsoW * 0.14, torsoTop, torsoW * 0.10,
+                torsoH * 0.30),
+            strap);
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX + torsoW * 0.76, torsoTop, torsoW * 0.10,
+                torsoH * 0.30),
+            strap);
+        // Cinturón rojo con hebilla
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX, torsoTop + torsoH * 0.82, torsoW, torsoH * 0.16),
+            Paint()..color = const Color(0xFFC62828));
+        drawPlasticRect(
+            canvas,
+            Rect.fromCenter(
+                center: Offset(cx, torsoTop + torsoH * 0.90),
+                width: torsoW * 0.14,
+                height: torsoH * 0.12),
+            const Color(0xFFB0BEC5),
+            2,
+            sheen: false);
+      case TorsoDesign.commando:
+        // Chaleco comando: manchas de camuflaje y bandolera con bolsillos
+        final blotch = Paint()..color = const Color(0xFF37432B);
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(torsoX + torsoW * 0.30, torsoTop + torsoH * 0.28),
+                width: torsoW * 0.32,
+                height: torsoH * 0.18),
+            blotch);
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(torsoX + torsoW * 0.68, torsoTop + torsoH * 0.60),
+                width: torsoW * 0.30,
+                height: torsoH * 0.16),
+            blotch);
+        // Bandolera diagonal
+        canvas.drawPath(
+          Path()
+            ..moveTo(torsoX + torsoW * 0.10, torsoTop)
+            ..lineTo(torsoX + torsoW * 0.24, torsoTop)
+            ..lineTo(torsoX + torsoW * 0.96, torsoTop + torsoH)
+            ..lineTo(torsoX + torsoW * 0.82, torsoTop + torsoH)
+            ..close(),
+          Paint()..color = const Color(0xFF2E2A20),
+        );
+        // Bolsillos amarillos del cinturón
+        final ammo = const Color(0xFFC9B037);
+        for (final px in [0.16, 0.42]) {
+          drawPlasticRect(
+              canvas,
+              Rect.fromLTWH(torsoX + torsoW * px, torsoTop + torsoH * 0.74,
+                  torsoW * 0.16, torsoH * 0.20),
+              ammo,
+              2,
+              sheen: false);
+        }
     }
   }
 
@@ -820,6 +913,23 @@ class _CharacterPainter extends CustomPainter {
           drawPlasticSphere(canvas, Offset(px, py),
               w * (i == 0 ? 0.024 : 0.019), const Color(0xFFF7F3EE));
         }
+      case 'bandana':
+        // Pañuelo amarillo anudado al cuello, con pico triangular
+        final yellow = const Color(0xFFE8D44D);
+        final kerchief = Path()
+          ..moveTo(cx - torsoW * 0.30, torsoTop - h * 0.004)
+          ..lineTo(cx + torsoW * 0.30, torsoTop - h * 0.004)
+          ..lineTo(cx, torsoTop + torsoH * 0.42)
+          ..close();
+        drawShadedPath(canvas, kerchief, yellow);
+        // Pliegues del nudo
+        final foldLine = Paint()
+          ..color = darkenColor(yellow, 0.18).withValues(alpha: 0.6)
+          ..strokeWidth = 1.2;
+        canvas.drawLine(Offset(cx - torsoW * 0.12, torsoTop + h * 0.008),
+            Offset(cx - torsoW * 0.02, torsoTop + torsoH * 0.28), foldLine);
+        canvas.drawLine(Offset(cx + torsoW * 0.12, torsoTop + h * 0.008),
+            Offset(cx + torsoW * 0.02, torsoTop + torsoH * 0.28), foldLine);
       case 'bufanda':
         final scarf = Paint()..color = Colors.red.shade600;
         _drawRoundRect(
@@ -965,6 +1075,43 @@ class _CharacterPainter extends CustomPainter {
         // Lazo en lo alto de la cabeza, ladeado
         final bowC = Offset(hx + hs * 0.80, headTop - hs * 0.02);
         _drawBow(canvas, bowC, hs * 0.22, Colors.pink.shade400);
+      case 'ojo biónico':
+        // Implante biónico sobre el ojo derecho, con cicatriz
+        canvas.drawCircle(Offset(eyeRX, eyeY), hs * 0.15,
+            Paint()..color = const Color(0xFF37474F));
+        canvas.drawCircle(Offset(eyeRX, eyeY), hs * 0.085,
+            Paint()..color = const Color(0xFFFF1744));
+        canvas.drawCircle(Offset(eyeRX, eyeY), hs * 0.15,
+            Paint()
+              ..color = const Color(0xFFFF1744).withValues(alpha: 0.25)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3.0);
+        // Cicatriz que cruza la ceja y la mejilla
+        final scar = Paint()
+          ..color = const Color(0xFF8D5524).withValues(alpha: 0.85)
+          ..strokeWidth = 1.8
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(Offset(eyeRX - hs * 0.05, eyeY - hs * 0.24),
+            Offset(eyeRX + hs * 0.02, eyeY - hs * 0.17), scar);
+        canvas.drawLine(Offset(eyeRX + hs * 0.06, eyeY + hs * 0.17),
+            Offset(eyeRX + hs * 0.13, eyeY + hs * 0.26), scar);
+      case 'gafas tácticas':
+        // Visor envolvente oscuro de una pieza
+        final visor = Path()
+          ..moveTo(hx + hs * 0.06, eyeY - hs * 0.09)
+          ..lineTo(hx + hs * 0.94, eyeY - hs * 0.09)
+          ..lineTo(hx + hs * 0.88, eyeY + hs * 0.11)
+          ..quadraticBezierTo(hx + hs * 0.5, eyeY + hs * 0.17,
+              hx + hs * 0.12, eyeY + hs * 0.11)
+          ..close();
+        drawShadedPath(canvas, visor, const Color(0xFF1C1C1C));
+        // Reflejo diagonal en el visor
+        canvas.drawLine(
+            Offset(hx + hs * 0.24, eyeY + hs * 0.07),
+            Offset(hx + hs * 0.40, eyeY - hs * 0.06),
+            Paint()
+              ..color = Colors.white.withValues(alpha: 0.45)
+              ..strokeWidth = 2.2);
       case 'pendientes':
         final gold = const Color(0xFFFFD700);
         final earY = headTop + hs * 0.55;
@@ -1347,6 +1494,69 @@ class _CharacterPainter extends CustomPainter {
       case HairStyle.shaved:
         _drawRoundRect(canvas,
             Rect.fromLTWH(hx - 1, hy - hs * 0.05, hs + 2, hs * 0.16), color, 4);
+      case HairStyle.messy:
+        // Pelo revuelto: mechones esféricos desordenados de distintos tamaños
+        final tufts = [
+          (0.12, -0.06, 0.15),
+          (0.34, -0.14, 0.17),
+          (0.58, -0.10, 0.16),
+          (0.80, -0.04, 0.14),
+          (0.02, 0.10, 0.12),
+          (0.96, 0.10, 0.12),
+          (0.46, -0.02, 0.15),
+        ];
+        for (final (tx, ty, tr) in tufts) {
+          drawPlasticSphere(
+              canvas, Offset(hx + hs * tx, hy + hs * ty), hs * tr, color);
+        }
+      case HairStyle.swept:
+        // Flequillo barrido hacia un lado, con caída sobre la sien derecha
+        final sweep = Path()
+          ..moveTo(hx - hs * 0.06, hy + hs * 0.28)
+          ..quadraticBezierTo(hx - hs * 0.08, hy - hs * 0.14, hx + hs * 0.30,
+              hy - hs * 0.16)
+          ..quadraticBezierTo(hx + hs * 0.85, hy - hs * 0.20,
+              hx + hs * 1.08, hy + hs * 0.10)
+          ..lineTo(hx + hs * 1.02, hy + hs * 0.42)
+          ..quadraticBezierTo(hx + hs * 0.94, hy + hs * 0.16,
+              hx + hs * 0.72, hy + hs * 0.14)
+          ..quadraticBezierTo(hx + hs * 0.40, hy + hs * 0.20, hx + hs * 0.16,
+              hy + hs * 0.12)
+          ..quadraticBezierTo(hx + hs * 0.04, hy + hs * 0.16, hx - hs * 0.06,
+              hy + hs * 0.28)
+          ..close();
+        drawShadedPath(canvas, sweep, color);
+      case HairStyle.fringe:
+        // Casquete con flequillo dentado sobre la frente
+        _drawRoundRect(canvas,
+            Rect.fromLTWH(hx - 2, hy - hs * 0.12, hs + 4, hs * 0.22), color, 6);
+        // Flequillo lateral sólido con corte diagonal (estilo anime)
+        final fringe = Path()
+          ..moveTo(hx - 2, hy + hs * 0.06)
+          ..lineTo(hx - 2, hy + hs * 0.30)
+          ..quadraticBezierTo(
+              hx + hs * 0.16, hy + hs * 0.38, hx + hs * 0.34, hy + hs * 0.32)
+          ..lineTo(hx + hs * 0.68, hy + hs * 0.12)
+          ..lineTo(hx + hs + 2, hy + hs * 0.18)
+          ..lineTo(hx + hs + 2, hy + hs * 0.06)
+          ..close();
+        canvas.drawPath(fringe, Paint()..color = color);
+        // Mechón suelto sobre la frente
+        final lock = Path()
+          ..moveTo(hx + hs * 0.52, hy + hs * 0.21)
+          ..lineTo(hx + hs * 0.60, hy + hs * 0.36)
+          ..lineTo(hx + hs * 0.68, hy + hs * 0.19)
+          ..close();
+        canvas.drawPath(lock, Paint()..color = color);
+        // Patillas
+        _drawRoundRect(canvas,
+            Rect.fromLTWH(hx - 2, hy + hs * 0.06, hs * 0.12, hs * 0.42), color, 3);
+        _drawRoundRect(
+            canvas,
+            Rect.fromLTWH(hx + hs - hs * 0.12 + 2, hy + hs * 0.06, hs * 0.12,
+                hs * 0.42),
+            color,
+            3);
       case HairStyle.bald:
         break;
     }
@@ -1635,6 +1845,23 @@ class _CharacterPainter extends CustomPainter {
         ..moveTo(eyeRX - eyeR, eyeY)
         ..quadraticBezierTo(eyeRX, eyeY - eyeR * 0.8, eyeRX + eyeR, eyeY);
       canvas.drawPath(winkPath, strokePaint);
+    } else if (appearance.eyes == EyeStyle.determined) {
+      // Mirada de esfuerzo: ojos entrecerrados con cejas rectas inclinadas
+      for (final x in [eyeLX, eyeRX]) {
+        canvas.drawCircle(Offset(x, eyeY), eyeR * 0.92, blackPaint);
+        // Párpado inferior que sube (esfuerzo)
+        canvas.drawRect(
+            Rect.fromLTWH(x - eyeR * 1.2, eyeY + eyeR * 0.25, eyeR * 2.4,
+                eyeR * 1.0),
+            Paint()..color = skinColor);
+        canvas.drawCircle(Offset(x - eyeR * 0.25, eyeY - eyeR * 0.30),
+            eyeR * 0.24, Paint()..color = Colors.white.withValues(alpha: 0.85));
+      }
+      // Cejas rectas hacia el centro
+      canvas.drawLine(Offset(eyeLX - eyeR * 1.1, eyeY - eyeR * 2.2),
+          Offset(eyeLX + eyeR * 1.0, eyeY - eyeR * 1.5), strokePaint);
+      canvas.drawLine(Offset(eyeRX - eyeR * 1.0, eyeY - eyeR * 1.5),
+          Offset(eyeRX + eyeR * 1.1, eyeY - eyeR * 2.2), strokePaint);
     } else if (appearance.eyes == EyeStyle.crying) {
       pupil(Offset(eyeLX, eyeY), eyeR);
       pupil(Offset(eyeRX, eyeY), eyeR);
