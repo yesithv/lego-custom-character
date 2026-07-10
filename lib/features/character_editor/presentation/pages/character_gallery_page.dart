@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../economy/presentation/bloc/wallet_bloc.dart';
-import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../../economy/presentation/widgets/coin_balance_chip.dart';
 import '../bloc/character_editor_bloc.dart';
 import '../bloc/character_editor_event.dart';
@@ -32,50 +30,22 @@ class _GalleryView extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F0E8),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFD700),
+        leading: BackButton(
+          color: Colors.black87,
+          onPressed: () => context.goNamed('home'),
+        ),
         title: const Text(
-          'BrixRun',
+          'Mis Personajes',
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            fontSize: 26,
+            fontSize: 22,
             color: Colors.black87,
           ),
         ),
-        actions: [
-          // Coin balance
-          const Padding(
-            padding: EdgeInsets.only(right: 4),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
             child: Center(child: CoinBalanceChip()),
-          ),
-          // Ruleta diaria
-          BlocBuilder<WalletBloc, WalletState>(
-            builder: (context, walletState) => Stack(
-              alignment: Alignment.topRight,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.casino_rounded, color: Colors.black87),
-                  tooltip: 'Ruleta diaria',
-                  onPressed: () => context.goNamed('roulette'),
-                ),
-                if (walletState.wallet.canClaimRoulette)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.sports_score_rounded, color: Colors.black87),
-            tooltip: 'Mundos',
-            onPressed: () => context.goNamed('worlds'),
           ),
         ],
       ),
