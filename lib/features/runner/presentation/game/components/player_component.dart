@@ -196,7 +196,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         ..lineTo(w * 0.96, h * 0.74)
         ..lineTo(w * 0.04, h * 0.74)
         ..close();
-      canvas.drawPath(skirt, Paint()..color = legColorFor(appearance.legDesign));
+      drawShadedPath(canvas, skirt, legColorFor(appearance.legDesign));
     }
 
     // Shoes (flippers extend outwards)
@@ -230,13 +230,20 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
     // Fists — colored by glove type
     final glove = gloveColorFor(appearance.gloves, skin);
     final fistR = appearance.gloves == GloveType.boxing ? 8.5 : 6.5;
-    canvas.drawCircle(
-        Offset(0.5, h * 0.27 + armSwing + h * 0.28 + 3), fistR, Paint()..color = glove);
-    canvas.drawCircle(
-        Offset(w - 0.5, h * 0.27 - armSwing + h * 0.28 + 3), fistR, Paint()..color = glove);
+    drawPlasticSphere(
+        canvas, Offset(0.5, h * 0.27 + armSwing + h * 0.28 + 3), fistR, glove);
+    drawPlasticSphere(
+        canvas, Offset(w - 0.5, h * 0.27 - armSwing + h * 0.28 + 3), fistR, glove);
 
     // Head (back of head)
     _rr(canvas, Rect.fromLTWH(w * 0.15, 0, w * 0.70, h * 0.27), skin, 10);
+    // Contact shadow cast by the head onto the shoulders
+    drawContactShadow(
+        canvas,
+        Rect.fromCenter(
+            center: Offset(w / 2, h * 0.27),
+            width: w * 0.60,
+            height: h * 0.035));
 
     _drawHeadwear(canvas, w, h);
   }
@@ -287,14 +294,14 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
       ..quadraticBezierTo(w + 6, h * 0.82, w * 0.94, h * 0.74 - wave)
       ..lineTo(w * 0.80, h * 0.26)
       ..close();
-    canvas.drawPath(path, Paint()..color = capeColor.withValues(alpha: 0.90));
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.14)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    drawShadedPath(canvas, path, capeColor);
+    // Inner fold shading follows the flutter of the cape
+    final fold = Paint()
+      ..color = darkenColor(capeColor, 0.18).withValues(alpha: 0.45)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(w * 0.32, h * 0.32), Offset(w * 0.20, h * 0.70 + wave), fold);
+    canvas.drawLine(Offset(w * 0.68, h * 0.32), Offset(w * 0.80, h * 0.70 - wave), fold);
   }
 
   void _drawBackAccessory(Canvas canvas, double w, double h) {
@@ -336,23 +343,37 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..close();
         canvas.drawPath(leftWing, wing);
         canvas.drawPath(rightWing, wing);
+        final wingOutline = Paint()
+          ..color = Colors.grey.shade400
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.3;
+        canvas.drawPath(leftWing, wingOutline);
+        canvas.drawPath(rightWing, wingOutline);
       case 'capa corta':
         final path = Path()
           ..moveTo(w * 0.12, h * 0.26)
           ..lineTo(w * 0.88, h * 0.26)
           ..lineTo(w * 0.94, h * 0.62)
-          ..lineTo(w * 0.06, h * 0.62)
+          ..quadraticBezierTo(w * 0.5, h * 0.65, w * 0.06, h * 0.62)
           ..close();
-        canvas.drawPath(path, Paint()..color = Colors.blue.shade800);
+        drawShadedPath(canvas, path, Colors.blue.shade800);
       case 'capa vampiro':
         final wave = sin(_runAnimTimer * 6.0) * 4.0;
+        // Jagged bat-wing hem
         final path = Path()
           ..moveTo(w * 0.10, h * 0.24)
           ..lineTo(w * 0.90, h * 0.24)
-          ..lineTo(w * 1.0, h * 0.80 + wave)
-          ..lineTo(w * 0.0, h * 0.80 - wave)
-          ..close();
-        canvas.drawPath(path, Paint()..color = Colors.grey.shade900);
+          ..lineTo(w * 1.0, h * 0.80 + wave);
+        const points = 4;
+        for (var i = 1; i <= points; i++) {
+          final x = w * (1.0 - i / points);
+          final dip = h * 0.80 + wave * (1 - 2 * i / points);
+          path
+            ..lineTo(x + w / points / 2, dip - h * 0.035)
+            ..lineTo(x, dip);
+        }
+        path.close();
+        drawShadedPath(canvas, path, Colors.grey.shade900);
     }
   }
 
@@ -430,8 +451,8 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..lineTo(w * 1.06, -h * 0.10)
           ..lineTo(w * 0.84, -h * 0.02)
           ..close();
-        canvas.drawPath(leftHorn, horn);
-        canvas.drawPath(rightHorn, horn);
+        drawShadedPath(canvas, leftHorn, horn.color);
+        drawShadedPath(canvas, rightHorn, horn.color);
       case HelmetStyle.firefighter:
         _rr(canvas, Rect.fromLTWH(w * 0.0, h * 0.13, w, h * 0.06),
             Colors.yellow.shade800, 3);
@@ -453,7 +474,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..lineTo(w * 0.5, -h * 0.22)
           ..lineTo(w * 0.85, h * 0.08)
           ..close();
-        canvas.drawPath(cone, Paint()..color = color);
+        drawShadedPath(canvas, cone, color);
       case HatStyle.cowboy:
         _rr(canvas, Rect.fromLTWH(-w * 0.06, h * 0.07, w * 1.12, h * 0.07), color, 4);
         _rr(canvas, Rect.fromLTWH(w * 0.20, -h * 0.08, w * 0.60, h * 0.16), color, 6);
@@ -469,7 +490,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..lineTo(w * 0.82, -h * 0.09)
           ..lineTo(w * 0.82, h * 0.08)
           ..close();
-        canvas.drawPath(path, Paint()..color = color);
+        drawShadedPath(canvas, path, color);
       case HatStyle.tiara:
         final path = Path()
           ..moveTo(w * 0.28, h * 0.05)
@@ -480,7 +501,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..lineTo(w * 0.72, -h * 0.02)
           ..lineTo(w * 0.72, h * 0.05)
           ..close();
-        canvas.drawPath(path, Paint()..color = color);
+        drawShadedPath(canvas, path, color);
       case HatStyle.topHat:
         _rr(canvas, Rect.fromLTWH(-3, h * 0.07, w + 6, h * 0.07), color, 2);
         _rr(canvas, Rect.fromLTWH(w * 0.18, -h * 0.20, w * 0.64, h * 0.28), color, 4);
@@ -491,7 +512,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..quadraticBezierTo(w * 0.5, -h * 0.18, w * 0.98, -h * 0.08)
           ..lineTo(w * 1.08, h * 0.10)
           ..close();
-        canvas.drawPath(tricorn, Paint()..color = color);
+        drawShadedPath(canvas, tricorn, color);
     }
   }
 
@@ -544,9 +565,6 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _rr(Canvas canvas, Rect rect, Color color, double radius) {
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-      Paint()..color = color,
-    );
+    drawPlasticRect(canvas, rect, color, radius);
   }
 }

@@ -115,22 +115,27 @@ class _CharacterPainter extends CustomPainter {
   void _drawHeadBlock(Canvas canvas) {
     // Stud on top of head (drawn first — head rect covers its lower half)
     final studR = headSize * 0.16;
-    canvas.drawCircle(Offset(w / 2, headTop - studR * 0.35), studR, Paint()..color = skin);
-    canvas.drawCircle(
-      Offset(w / 2, headTop - studR * 0.35),
-      studR,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.20)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    drawPlasticSphere(canvas, Offset(w / 2, headTop - studR * 0.35), studR, skin);
     _drawRoundRect(canvas, Rect.fromLTWH(hx, headTop, headSize, headSize), skin, 8);
+    // Extra glossy highlight on the cheek — LEGO heads are the shiniest piece
+    canvas.drawOval(
+      Rect.fromLTWH(hx + headSize * 0.08, headTop + headSize * 0.10,
+          headSize * 0.22, headSize * 0.34),
+      Paint()..color = Colors.white.withValues(alpha: 0.14),
+    );
   }
 
   void _drawNeckAndTorso(Canvas canvas) {
     final neckW = headSize * 0.30;
     _drawRoundRect(canvas, Rect.fromLTWH((w - neckW) / 2, neckTop, neckW, neckH), skin, 3);
     _drawRoundRect(canvas, Rect.fromLTWH(torsoX, torsoTop, torsoW, torsoH), torsoColor, 6);
+    // Contact shadow cast by the head onto the shoulders
+    drawContactShadow(
+        canvas,
+        Rect.fromCenter(
+            center: Offset(w / 2, torsoTop + torsoH * 0.05),
+            width: headSize * 0.85,
+            height: torsoH * 0.10));
     _drawTorsoDetail(canvas);
   }
 
@@ -140,14 +145,15 @@ class _CharacterPainter extends CustomPainter {
 
     // Shoulder knobs (torso color, at arm-torso junction)
     final knobR = armW * 0.55;
-    canvas.drawCircle(Offset(torsoX, armTop + knobR), knobR, Paint()..color = torsoColor);
-    canvas.drawCircle(Offset(torsoX + torsoW, armTop + knobR), knobR, Paint()..color = torsoColor);
+    drawPlasticSphere(canvas, Offset(torsoX, armTop + knobR), knobR, torsoColor);
+    drawPlasticSphere(
+        canvas, Offset(torsoX + torsoW, armTop + knobR), knobR, torsoColor);
 
     // Fists — colored by glove type
     final gloveColor = gloveColorFor(appearance.gloves, skin);
     final r = appearance.gloves == GloveType.boxing ? fistR * 1.35 : fistR;
-    canvas.drawCircle(leftFist, r, Paint()..color = gloveColor);
-    canvas.drawCircle(rightFist, r, Paint()..color = gloveColor);
+    drawPlasticSphere(canvas, leftFist, r, gloveColor);
+    drawPlasticSphere(canvas, rightFist, r, gloveColor);
     if (appearance.gloves == GloveType.claws) {
       final clawPaint = Paint()
         ..color = Colors.grey.shade100
@@ -180,6 +186,13 @@ class _CharacterPainter extends CustomPainter {
     final legType = appearance.legType;
     final hipColor = legType == LegType.spacesuit ? Colors.white : legColor;
     _drawRoundRect(canvas, Rect.fromLTWH((w - hipW) / 2, hipTop, hipW, hipH), hipColor, 4);
+    // Contact shadow cast by the torso onto the hip piece
+    drawContactShadow(
+        canvas,
+        Rect.fromCenter(
+            center: Offset(w / 2, hipTop + hipH * 0.18),
+            width: torsoW * 0.90,
+            height: hipH * 0.30));
 
     final leftRect = Rect.fromLTWH(leftLegX, legTop, legW, legH);
     final rightRect = Rect.fromLTWH(rightLegX, legTop, legW, legH);
@@ -201,13 +214,26 @@ class _CharacterPainter extends CustomPainter {
       case LegType.skirt:
         _drawRoundRect(canvas, leftRect, skin, 4);
         _drawRoundRect(canvas, rightRect, skin, 4);
+        final skirtL = (w - hipW) / 2 - w * 0.05;
+        final skirtR = (w + hipW) / 2 + w * 0.05;
+        final skirtHem = legTop + legH * 0.40;
         final skirt = Path()
           ..moveTo((w - hipW) / 2, hipTop)
           ..lineTo((w + hipW) / 2, hipTop)
-          ..lineTo((w + hipW) / 2 + w * 0.05, legTop + legH * 0.40)
-          ..lineTo((w - hipW) / 2 - w * 0.05, legTop + legH * 0.40)
+          ..lineTo(skirtR, skirtHem)
+          ..quadraticBezierTo(w * 0.62, skirtHem + w * 0.03, w / 2, skirtHem)
+          ..quadraticBezierTo(w * 0.38, skirtHem + w * 0.03, skirtL, skirtHem)
           ..close();
-        canvas.drawPath(skirt, Paint()..color = legColor);
+        drawShadedPath(canvas, skirt, legColor);
+        // Fold lines
+        final fold = Paint()
+          ..color = darkenColor(legColor, 0.16).withValues(alpha: 0.55)
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke;
+        for (final fx in [0.38, 0.5, 0.62]) {
+          canvas.drawLine(Offset(w * fx, hipTop + hipH * 0.8),
+              Offset(w * fx, skirtHem - 2), fold);
+        }
 
       case LegType.legArmor:
         _drawPatternedLeg(canvas, leftRect);
@@ -481,20 +507,30 @@ class _CharacterPainter extends CustomPainter {
 
   void _drawLongCape(Canvas canvas) {
     final capeColor = Colors.red.shade700;
+    final hemY = legTop + legH * 0.55;
+    final capeL = torsoX - armW * 1.1;
+    final capeR = torsoX + torsoW + armW * 1.1;
+    // Wavy hem so the fabric reads as cloth, not a flat block
     final path = Path()
       ..moveTo(torsoX - armW * 0.4, torsoTop)
       ..lineTo(torsoX + torsoW + armW * 0.4, torsoTop)
-      ..lineTo(torsoX + torsoW + armW * 1.1, legTop + legH * 0.55)
-      ..lineTo(torsoX - armW * 1.1, legTop + legH * 0.55)
+      ..lineTo(capeR, hemY)
+      ..quadraticBezierTo(
+          capeR - (capeR - capeL) * 0.17, hemY + h * 0.020, w * 0.62, hemY)
+      ..quadraticBezierTo(w / 2, hemY + h * 0.024, w * 0.38, hemY)
+      ..quadraticBezierTo(
+          capeL + (capeR - capeL) * 0.17, hemY + h * 0.020, capeL, hemY)
       ..close();
-    canvas.drawPath(path, Paint()..color = capeColor);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    drawShadedPath(canvas, path, capeColor);
+    // Inner fold shading
+    final fold = Paint()
+      ..color = darkenColor(capeColor, 0.18).withValues(alpha: 0.50)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(torsoX + torsoW * 0.16, torsoTop + torsoH * 0.3),
+        Offset(capeL + armW * 0.7, hemY - 3), fold);
+    canvas.drawLine(Offset(torsoX + torsoW * 0.84, torsoTop + torsoH * 0.3),
+        Offset(capeR - armW * 0.7, hemY - 3), fold);
   }
 
   // ── Accessories ─────────────────────────────────────────────────────────────
@@ -504,21 +540,32 @@ class _CharacterPainter extends CustomPainter {
     if (id == null) return;
     switch (id) {
       case 'capa corta':
+        final hemY = hipTop + hipH;
         final path = Path()
           ..moveTo(torsoX - armW * 0.3, torsoTop)
           ..lineTo(torsoX + torsoW + armW * 0.3, torsoTop)
-          ..lineTo(torsoX + torsoW + armW * 0.7, hipTop + hipH)
-          ..lineTo(torsoX - armW * 0.7, hipTop + hipH)
+          ..lineTo(torsoX + torsoW + armW * 0.7, hemY)
+          ..quadraticBezierTo(w * 0.5, hemY + h * 0.018, torsoX - armW * 0.7, hemY)
           ..close();
-        canvas.drawPath(path, Paint()..color = Colors.blue.shade800);
+        drawShadedPath(canvas, path, Colors.blue.shade800);
       case 'capa vampiro':
+        final vHemY = legTop + legH * 0.5;
+        final vL = torsoX - armW * 1.3;
+        final vR = torsoX + torsoW + armW * 1.3;
+        // Jagged bat-wing hem
         final path = Path()
           ..moveTo(torsoX - armW * 0.5, torsoTop)
           ..lineTo(torsoX + torsoW + armW * 0.5, torsoTop)
-          ..lineTo(torsoX + torsoW + armW * 1.3, legTop + legH * 0.5)
-          ..lineTo(torsoX - armW * 1.3, legTop + legH * 0.5)
-          ..close();
-        canvas.drawPath(path, Paint()..color = Colors.grey.shade900);
+          ..lineTo(vR, vHemY);
+        const points = 4;
+        for (var i = 1; i <= points; i++) {
+          final x = vR - (vR - vL) * i / points;
+          path
+            ..lineTo(x + (vR - vL) / points / 2, vHemY - h * 0.022)
+            ..lineTo(x, vHemY);
+        }
+        path.close();
+        drawShadedPath(canvas, path, Colors.grey.shade900);
         // High collar behind the head
         final collar = Paint()..color = Colors.grey.shade900;
         final collarL = Path()
@@ -583,6 +630,21 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawPath(leftWing, outline);
         canvas.drawPath(rightWing, wing);
         canvas.drawPath(rightWing, outline);
+        // Feather separation strokes
+        final feather = Paint()
+          ..color = Colors.grey.shade400.withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2;
+        for (final t in [0.35, 0.55]) {
+          canvas.drawLine(
+              Offset(torsoX - w * 0.22 + w * 0.05, torsoTop + torsoH * t),
+              Offset(torsoX - w * 0.02, torsoTop + torsoH * (t + 0.12)),
+              feather);
+          canvas.drawLine(
+              Offset(torsoX + torsoW + w * 0.22 - w * 0.05, torsoTop + torsoH * t),
+              Offset(torsoX + torsoW + w * 0.02, torsoTop + torsoH * (t + 0.12)),
+              feather);
+        }
     }
   }
 
@@ -673,8 +735,8 @@ class _CharacterPainter extends CustomPainter {
             Offset(cx, torsoTop + torsoH * 0.3), chain);
         canvas.drawLine(Offset(cx + w * 0.09, torsoTop),
             Offset(cx, torsoTop + torsoH * 0.3), chain);
-        canvas.drawCircle(Offset(cx, torsoTop + torsoH * 0.36), w * 0.045,
-            Paint()..color = const Color(0xFFFFD700));
+        drawPlasticSphere(canvas, Offset(cx, torsoTop + torsoH * 0.36),
+            w * 0.045, const Color(0xFFFFD700));
       case 'bufanda':
         final scarf = Paint()..color = Colors.red.shade600;
         _drawRoundRect(
@@ -845,17 +907,36 @@ class _CharacterPainter extends CustomPainter {
                 w * 0.035, fistR * 1.2),
             metal);
       case 'espada':
-        final blade = Paint()..color = Colors.grey.shade400;
-        canvas.drawRRect(
-            RRect.fromRectAndRadius(
-                Rect.fromLTWH(fist.dx - w * 0.014, fist.dy - h * 0.17,
-                    w * 0.028, h * 0.15),
-                const Radius.circular(2)),
-            blade);
-        canvas.drawRect(
-            Rect.fromLTWH(fist.dx - w * 0.045, fist.dy - h * 0.03,
-                w * 0.09, h * 0.012),
-            Paint()..color = Colors.brown.shade700);
+        // Polished blade with a pointed tip and center ridge
+        final bladeRect = Rect.fromLTWH(
+            fist.dx - w * 0.014, fist.dy - h * 0.165, w * 0.028, h * 0.145);
+        final bladePath = Path()
+          ..moveTo(fist.dx, bladeRect.top - h * 0.014)
+          ..lineTo(bladeRect.right, bladeRect.top)
+          ..lineTo(bladeRect.right, bladeRect.bottom)
+          ..lineTo(bladeRect.left, bladeRect.bottom)
+          ..lineTo(bladeRect.left, bladeRect.top)
+          ..close();
+        canvas.drawPath(bladePath, metalPaint(bladeRect.inflate(2)));
+        canvas.drawPath(
+            bladePath,
+            Paint()
+              ..color = Colors.blueGrey.shade700.withValues(alpha: 0.7)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.0);
+        canvas.drawLine(Offset(fist.dx, bladeRect.top),
+            Offset(fist.dx, bladeRect.bottom),
+            Paint()
+              ..color = Colors.white.withValues(alpha: 0.6)
+              ..strokeWidth = 0.9);
+        // Golden cross-guard + grip
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.045, fist.dy - h * 0.032,
+                w * 0.09, h * 0.014),
+            const Color(0xFFD4A017),
+            2,
+            sheen: false);
       case 'varita':
         canvas.drawRect(
             Rect.fromLTWH(fist.dx - w * 0.008, fist.dy - h * 0.13,
@@ -928,13 +1009,19 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(fist.dx, fist.dy + h * 0.055)
           ..lineTo(fist.dx - w * 0.06, fist.dy + h * 0.02)
           ..close();
-        canvas.drawPath(shield, Paint()..color = Colors.grey.shade500);
+        canvas.drawPath(
+            shield,
+            metalPaint(Rect.fromCenter(
+                center: fist, width: w * 0.14, height: h * 0.12)));
         canvas.drawPath(
             shield,
             Paint()
-              ..color = Colors.grey.shade800
+              ..color = Colors.blueGrey.shade800
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 2);
+              ..strokeWidth = 1.6);
+        // Heraldic center boss
+        drawPlasticSphere(canvas, Offset(fist.dx, fist.dy - h * 0.005),
+            w * 0.022, const Color(0xFFD4A017));
       case 'libro':
         _drawRoundRect(
             canvas,
@@ -998,17 +1085,16 @@ class _CharacterPainter extends CustomPainter {
       case HairStyle.straight:
         _drawRoundRect(canvas, Rect.fromLTWH(hx - 2, hy - hs * 0.12, hs + 4, hs * 0.35), color, 6);
       case HairStyle.curly:
-        final paint = Paint()..color = color;
         final r = hs * 0.14;
         for (var i = 0; i < 5; i++) {
-          canvas.drawCircle(
-              Offset(hx + hs * (0.1 + i * 0.2), hy - hs * 0.02), r, paint);
+          drawPlasticSphere(
+              canvas, Offset(hx + hs * (0.1 + i * 0.2), hy - hs * 0.02), r, color);
         }
-        canvas.drawCircle(Offset(hx, hy + hs * 0.14), r * 0.9, paint);
-        canvas.drawCircle(Offset(hx + hs, hy + hs * 0.14), r * 0.9, paint);
+        drawPlasticSphere(canvas, Offset(hx, hy + hs * 0.14), r * 0.9, color);
+        drawPlasticSphere(canvas, Offset(hx + hs, hy + hs * 0.14), r * 0.9, color);
       case HairStyle.afro:
-        canvas.drawCircle(
-            Offset(hx + hs / 2, hy - hs * 0.02), hs * 0.42, Paint()..color = color);
+        drawPlasticSphere(
+            canvas, Offset(hx + hs / 2, hy - hs * 0.02), hs * 0.42, color);
       case HairStyle.mohawk:
         _drawRoundRect(canvas, Rect.fromLTWH(hx - 1, hy - hs * 0.04, hs + 2, hs * 0.16),
             Colors.grey.shade800, 4);
@@ -1084,8 +1170,8 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(hx + hs + hs * 0.20, hy - hs * 0.28)
           ..lineTo(hx + hs - hs * 0.06, hy - hs * 0.06)
           ..close();
-        canvas.drawPath(leftHorn, horn);
-        canvas.drawPath(rightHorn, horn);
+        drawShadedPath(canvas, leftHorn, horn.color);
+        drawShadedPath(canvas, rightHorn, horn.color);
       case HelmetStyle.firefighter:
         // Wide protective brim
         _drawRoundRect(canvas,
@@ -1117,7 +1203,7 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(hx + hs * 0.5, hy - hs * 0.45)
           ..lineTo(hx + hs * 0.9, hy + hs * 0.04)
           ..close();
-        canvas.drawPath(cone, Paint()..color = color);
+        drawShadedPath(canvas, cone, color);
         drawStar4(canvas, Offset(hx + hs * 0.5, hy - hs * 0.16), hs * 0.08,
             Paint()..color = Colors.yellow.shade600);
       case HatStyle.cowboy:
@@ -1148,9 +1234,9 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(hx + hs * 0.85, hy - hs * 0.22)
           ..lineTo(hx + hs * 0.85, hy + hs * 0.02)
           ..close();
-        canvas.drawPath(path, Paint()..color = color);
-        canvas.drawCircle(Offset(hx + hs * 0.5, hy - hs * 0.06), hs * 0.05,
-            Paint()..color = Colors.red.shade600);
+        drawShadedPath(canvas, path, color);
+        drawPlasticSphere(canvas, Offset(hx + hs * 0.5, hy - hs * 0.06),
+            hs * 0.05, Colors.red.shade600);
       case HatStyle.tiara:
         // Thinner silver band with a pink gem
         final path = Path()
@@ -1162,9 +1248,9 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(hx + hs * 0.75, hy - hs * 0.08)
           ..lineTo(hx + hs * 0.75, hy + hs * 0.02)
           ..close();
-        canvas.drawPath(path, Paint()..color = color);
-        canvas.drawCircle(Offset(hx + hs * 0.5, hy - hs * 0.08), hs * 0.045,
-            Paint()..color = Colors.pink.shade300);
+        drawShadedPath(canvas, path, color);
+        drawPlasticSphere(canvas, Offset(hx + hs * 0.5, hy - hs * 0.08),
+            hs * 0.045, Colors.pink.shade300);
       case HatStyle.topHat:
         _drawRoundRect(canvas,
             Rect.fromLTWH(hx - hs * 0.1, hy + hs * 0.02, hs * 1.2, hs * 0.10), color, 3);
@@ -1182,7 +1268,7 @@ class _CharacterPainter extends CustomPainter {
               hx + hs + hs * 0.10, hy - hs * 0.22)
           ..lineTo(hx + hs + hs * 0.18, hy + hs * 0.10)
           ..close();
-        canvas.drawPath(tricorn, Paint()..color = color);
+        drawShadedPath(canvas, tricorn, color);
         // Skull mark
         canvas.drawCircle(Offset(hx + hs * 0.5, hy - hs * 0.12), hs * 0.06,
             Paint()..color = Colors.white);
@@ -1203,24 +1289,42 @@ class _CharacterPainter extends CustomPainter {
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
+    // Pupil with a white specular glint — the classic LEGO face detail
+    void pupil(Offset c, double r) {
+      canvas.drawCircle(c, r, blackPaint);
+      canvas.drawCircle(Offset(c.dx - r * 0.30, c.dy - r * 0.32), r * 0.30,
+          Paint()..color = Colors.white.withValues(alpha: 0.85));
+    }
+
     if (appearance.eyes == EyeStyle.laser) {
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, Paint()..color = Colors.red);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, Paint()..color = Colors.red);
+      for (final x in [eyeLX, eyeRX]) {
+        canvas.drawCircle(Offset(x, eyeY), eyeR * 1.6,
+            Paint()..color = Colors.red.withValues(alpha: 0.30));
+        canvas.drawCircle(Offset(x, eyeY), eyeR, Paint()..color = Colors.red);
+        canvas.drawCircle(Offset(x, eyeY), eyeR * 0.45,
+            Paint()..color = Colors.orange.shade200);
+      }
     } else if (appearance.eyes == EyeStyle.robot) {
-      final p = Paint()..color = Colors.cyan;
-      canvas.drawRect(Rect.fromCenter(center: Offset(eyeLX, eyeY), width: eyeR * 2.2, height: eyeR * 1.4), p);
-      canvas.drawRect(Rect.fromCenter(center: Offset(eyeRX, eyeY), width: eyeR * 2.2, height: eyeR * 1.4), p);
+      for (final x in [eyeLX, eyeRX]) {
+        final r = Rect.fromCenter(
+            center: Offset(x, eyeY), width: eyeR * 2.2, height: eyeR * 1.4);
+        canvas.drawRect(r.inflate(1.5), Paint()..color = Colors.grey.shade800);
+        canvas.drawRect(r, Paint()..color = Colors.cyan);
+        canvas.drawRect(
+            Rect.fromLTWH(r.left, r.top, r.width, r.height * 0.35),
+            Paint()..color = Colors.white.withValues(alpha: 0.45));
+      }
     } else if (appearance.eyes == EyeStyle.starry) {
       canvas.drawCircle(Offset(eyeLX, eyeY), eyeR * 1.5, Paint()..color = Colors.yellow.withValues(alpha: 0.5));
       canvas.drawCircle(Offset(eyeRX, eyeY), eyeR * 1.5, Paint()..color = Colors.yellow.withValues(alpha: 0.5));
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, blackPaint);
+      pupil(Offset(eyeLX, eyeY), eyeR);
+      pupil(Offset(eyeRX, eyeY), eyeR);
     } else if (appearance.eyes == EyeStyle.surprised) {
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR * 1.5, blackPaint);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR * 1.5, blackPaint);
+      pupil(Offset(eyeLX, eyeY), eyeR * 1.5);
+      pupil(Offset(eyeRX, eyeY), eyeR * 1.5);
     } else if (appearance.eyes == EyeStyle.angry) {
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, blackPaint);
+      pupil(Offset(eyeLX, eyeY), eyeR);
+      pupil(Offset(eyeRX, eyeY), eyeR);
       // Angry V-shaped brows
       canvas.drawLine(Offset(eyeLX - eyeR, eyeY - eyeR * 1.8), Offset(eyeLX + eyeR, eyeY - eyeR * 2.8), strokePaint);
       canvas.drawLine(Offset(eyeRX - eyeR, eyeY - eyeR * 2.8), Offset(eyeRX + eyeR, eyeY - eyeR * 1.8), strokePaint);
@@ -1235,23 +1339,31 @@ class _CharacterPainter extends CustomPainter {
       canvas.drawLine(Offset(eyeLX - eyeR, eyeY - eyeR * 0.2), Offset(eyeLX + eyeR, eyeY - eyeR * 0.2), strokePaint);
       canvas.drawLine(Offset(eyeRX - eyeR, eyeY - eyeR * 0.2), Offset(eyeRX + eyeR, eyeY - eyeR * 0.2), strokePaint);
     } else if (appearance.eyes == EyeStyle.wink) {
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
+      pupil(Offset(eyeLX, eyeY), eyeR);
       // Right eye winked (curved line)
       final winkPath = Path()
         ..moveTo(eyeRX - eyeR, eyeY)
         ..quadraticBezierTo(eyeRX, eyeY - eyeR * 0.8, eyeRX + eyeR, eyeY);
       canvas.drawPath(winkPath, strokePaint);
     } else if (appearance.eyes == EyeStyle.crying) {
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, blackPaint);
-      // Tears
+      pupil(Offset(eyeLX, eyeY), eyeR);
+      pupil(Offset(eyeRX, eyeY), eyeR);
+      // Tears with a glossy highlight
       final tearPaint = Paint()..color = Colors.lightBlue.shade300;
-      canvas.drawOval(Rect.fromCenter(center: Offset(eyeLX - eyeR * 0.2, eyeY + eyeR * 2.5), width: eyeR * 0.7, height: eyeR * 1.8), tearPaint);
-      canvas.drawOval(Rect.fromCenter(center: Offset(eyeRX + eyeR * 0.2, eyeY + eyeR * 2.5), width: eyeR * 0.7, height: eyeR * 1.8), tearPaint);
+      for (final t in [
+        Offset(eyeLX - eyeR * 0.2, eyeY + eyeR * 2.5),
+        Offset(eyeRX + eyeR * 0.2, eyeY + eyeR * 2.5),
+      ]) {
+        canvas.drawOval(
+            Rect.fromCenter(center: t, width: eyeR * 0.7, height: eyeR * 1.8),
+            tearPaint);
+        canvas.drawCircle(Offset(t.dx - eyeR * 0.12, t.dy - eyeR * 0.35),
+            eyeR * 0.16, Paint()..color = Colors.white.withValues(alpha: 0.8));
+      }
     } else {
       // happy — default
-      canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
-      canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, blackPaint);
+      pupil(Offset(eyeLX, eyeY), eyeR);
+      pupil(Offset(eyeRX, eyeY), eyeR);
     }
   }
 
@@ -1327,17 +1439,7 @@ class _CharacterPainter extends CustomPainter {
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   void _drawRoundRect(Canvas canvas, Rect rect, Color color, double radius) {
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-      Paint()..color = color,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-      Paint()
-        ..color = color.withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    );
+    drawPlasticRect(canvas, rect, color, radius);
   }
 
   @override

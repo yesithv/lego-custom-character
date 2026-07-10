@@ -202,6 +202,122 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
   canvas.restore();
 }
 
+// ── Acabado de plástico LEGO ──────────────────────────────────────────────────
+// Helpers compartidos por el editor y el juego para que cada pieza se pinte
+// como plástico ABS brillante: degradado de luz cenital, reflejo especular y
+// contorno tonal (una versión oscura del propio color, nunca negro plano).
+
+Color lightenColor(Color c, double amount) {
+  final hsl = HSLColor.fromColor(c);
+  return hsl
+      .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+      .toColor();
+}
+
+Color darkenColor(Color c, double amount) {
+  final hsl = HSLColor.fromColor(c);
+  return hsl
+      .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+      .toColor();
+}
+
+/// Contorno tonal: oscuro y saturado en piezas claras, sutil en oscuras.
+Paint outlinePaintFor(Color color, {double width = 1.4}) => Paint()
+  ..color = darkenColor(color, 0.28).withValues(alpha: 0.85)
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = width;
+
+/// Rectángulo redondeado con acabado de plástico brillante: degradado
+/// vertical (luz desde arriba), banda de reflejo y contorno tonal.
+void drawPlasticRect(Canvas canvas, Rect rect, Color color, double radius,
+    {bool sheen = true}) {
+  final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+  canvas.drawRRect(
+    rrect,
+    Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [lightenColor(color, 0.10), color, darkenColor(color, 0.12)],
+        stops: const [0.0, 0.52, 1.0],
+      ).createShader(rect),
+  );
+
+  if (sheen && rect.width > 10 && rect.height > 10) {
+    final sheenRect = Rect.fromLTWH(
+      rect.left + rect.width * 0.10,
+      rect.top + rect.height * 0.07,
+      rect.width * 0.42,
+      (rect.height * 0.14).clamp(2.0, 10.0),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(sheenRect, Radius.circular(radius * 0.8)),
+      Paint()..color = Colors.white.withValues(alpha: 0.20),
+    );
+  }
+
+  final ow = (rect.shortestSide * 0.10).clamp(0.9, 1.5);
+  canvas.drawRRect(rrect, outlinePaintFor(color, width: ow));
+}
+
+/// Esfera de plástico brillante (studs, puños, pomos de hombro).
+void drawPlasticSphere(Canvas canvas, Offset center, double r, Color color) {
+  final rect = Rect.fromCircle(center: center, radius: r);
+  canvas.drawCircle(
+    center,
+    r,
+    Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.35, -0.40),
+        colors: [lightenColor(color, 0.16), color, darkenColor(color, 0.16)],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(rect),
+  );
+  canvas.drawCircle(
+    Offset(center.dx - r * 0.30, center.dy - r * 0.36),
+    r * 0.24,
+    Paint()..color = Colors.white.withValues(alpha: 0.55),
+  );
+  canvas.drawCircle(
+      center, r, outlinePaintFor(color, width: (r * 0.14).clamp(0.8, 1.4)));
+}
+
+/// Camino relleno con el mismo acabado de plástico (capas, faldas, alas).
+void drawShadedPath(Canvas canvas, Path path, Color color,
+    {double outlineWidth = 1.3}) {
+  final bounds = path.getBounds();
+  canvas.drawPath(
+    path,
+    Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [lightenColor(color, 0.08), color, darkenColor(color, 0.14)],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(bounds.isEmpty ? const Rect.fromLTWH(0, 0, 1, 1) : bounds),
+  );
+  canvas.drawPath(path, outlinePaintFor(color, width: outlineWidth));
+}
+
+/// Pintura metálica pulida (espadas, armaduras, hebillas).
+Paint metalPaint(Rect rect) => Paint()
+  ..shader = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Colors.blueGrey.shade400,
+      Colors.grey.shade100,
+      Colors.blueGrey.shade300,
+    ],
+    stops: const [0.0, 0.45, 1.0],
+  ).createShader(rect);
+
+/// Sombra de contacto suave entre piezas (oclusión ambiental barata).
+void drawContactShadow(Canvas canvas, Rect rect) {
+  canvas.drawOval(
+      rect, Paint()..color = Colors.black.withValues(alpha: 0.12));
+}
+
 /// Estrella de 4 puntas.
 void drawStar4(Canvas canvas, Offset center, double r, Paint paint) {
   final inner = r * 0.38;
