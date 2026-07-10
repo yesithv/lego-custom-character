@@ -412,12 +412,38 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         _rr(canvas, Rect.fromLTWH(w * 0.44, -h * 0.10, w * 0.12, h * 0.22), color, 3);
       case HairStyle.ponytail:
         _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
-        // Tail hangs down the back — fully visible from behind
-        _rr(canvas, Rect.fromLTWH(w * 0.42, h * 0.10, w * 0.16, h * 0.28), color, 6);
+        // Long tail swaying down the back — fully visible from behind
+        final sway = sin(_runAnimTimer * 7.0) * w * 0.04;
+        final tail = Path()
+          ..moveTo(w * 0.42, h * 0.10)
+          ..lineTo(w * 0.58, h * 0.10)
+          ..quadraticBezierTo(
+              w * 0.58 + sway, h * 0.34, w * 0.54 + sway, h * 0.52)
+          ..quadraticBezierTo(
+              w * 0.50 + sway, h * 0.58, w * 0.46 + sway, h * 0.52)
+          ..quadraticBezierTo(w * 0.42 + sway, h * 0.34, w * 0.42, h * 0.10)
+          ..close();
+        drawShadedPath(canvas, tail, color);
+        // Coletero
+        _rr(canvas,
+            Rect.fromLTWH(w * 0.415, h * 0.155, w * 0.17, h * 0.030),
+            Colors.pink.shade400, 2);
+        // Puntita
+        drawPlasticSphere(
+            canvas, Offset(w * 0.50 + sway, h * 0.545), w * 0.055, color);
       case HairStyle.braids:
         _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
-        _rr(canvas, Rect.fromLTWH(w * 0.12, h * 0.08, w * 0.10, h * 0.30), color, 5);
-        _rr(canvas, Rect.fromLTWH(w * 0.78, h * 0.08, w * 0.10, h * 0.30), color, 5);
+        // Long segmented braids reaching the mid-back
+        for (final bx in [w * 0.17, w * 0.83]) {
+          for (var i = 0; i < 5; i++) {
+            drawPlasticSphere(canvas,
+                Offset(bx, h * (0.11 + i * 0.085)), w * (0.075 - i * 0.005), color);
+          }
+          _rr(canvas,
+              Rect.fromLTWH(bx - w * 0.055, h * 0.48, w * 0.11, h * 0.028),
+              Colors.red.shade400, 2);
+          drawPlasticSphere(canvas, Offset(bx, h * 0.535), w * 0.04, color);
+        }
       case HairStyle.shaved:
         _rr(canvas, Rect.fromLTWH(w * 0.11, -3, w * 0.78, h * 0.10), color, 5);
       case HairStyle.bald:

@@ -96,6 +96,8 @@ class _CharacterPainter extends CustomPainter {
     // Torso + arms
     _drawNeckAndTorso(canvas);
     _drawArmsAndHands(canvas);
+    // Long hair falls over the shoulders, in front of the torso
+    _drawLongHairOverlay(canvas);
     _drawShoulderAccessory(canvas);
     _drawNeckAccessory(canvas);
 
@@ -1105,27 +1107,82 @@ class _CharacterPainter extends CustomPainter {
             3);
       case HairStyle.ponytail:
         _drawRoundRect(canvas, Rect.fromLTWH(hx - 2, hy - hs * 0.12, hs + 4, hs * 0.35), color, 6);
-        _drawRoundRect(
-            canvas,
-            Rect.fromLTWH(hx + hs * 0.92, hy + hs * 0.10, hs * 0.15, hs * 0.58),
-            color,
-            5);
+        // La cola larga se dibuja en _drawLongHairOverlay, sobre el torso
       case HairStyle.braids:
         _drawRoundRect(canvas, Rect.fromLTWH(hx - 2, hy - hs * 0.12, hs + 4, hs * 0.35), color, 6);
-        _drawRoundRect(canvas,
-            Rect.fromLTWH(hx - hs * 0.10, hy + hs * 0.10, hs * 0.13, hs * 0.62), color, 5);
-        _drawRoundRect(canvas,
-            Rect.fromLTWH(hx + hs * 0.97, hy + hs * 0.10, hs * 0.13, hs * 0.62), color, 5);
-        final tie = Paint()..color = Colors.red.shade400;
-        canvas.drawRect(
-            Rect.fromLTWH(hx - hs * 0.10, hy + hs * 0.60, hs * 0.13, hs * 0.06), tie);
-        canvas.drawRect(
-            Rect.fromLTWH(hx + hs * 0.97, hy + hs * 0.60, hs * 0.13, hs * 0.06), tie);
+        // Las trenzas largas se dibujan en _drawLongHairOverlay, sobre el torso
       case HairStyle.shaved:
         _drawRoundRect(canvas,
             Rect.fromLTWH(hx - 1, hy - hs * 0.05, hs + 2, hs * 0.16), color, 4);
       case HairStyle.bald:
         break;
+    }
+  }
+
+  /// Melenas largas (cola de caballo, trenzas) que caen sobre los hombros:
+  /// se pintan después del torso y los brazos para que queden por delante.
+  void _drawLongHairOverlay(Canvas canvas) {
+    if (appearance.headwearType != HeadwearType.hair) return;
+    final style = appearance.hairStyle;
+    final hs = headSize;
+    final hy = headTop;
+
+    if (style == HairStyle.ponytail) {
+      final color = hairColorFor(HairStyle.ponytail);
+      // Cola larga que cae por el lado derecho hasta el pecho
+      final tail = Path()
+        ..moveTo(hx + hs * 0.90, hy + hs * 0.14)
+        ..quadraticBezierTo(
+            hx + hs * 1.26, hy + hs * 0.50, hx + hs * 1.18, hy + hs * 1.02)
+        ..quadraticBezierTo(
+            hx + hs * 1.13, hy + hs * 1.38, hx + hs * 0.96, hy + hs * 1.55)
+        ..quadraticBezierTo(
+            hx + hs * 0.90, hy + hs * 1.28, hx + hs * 0.95, hy + hs * 1.00)
+        ..quadraticBezierTo(
+            hx + hs * 1.00, hy + hs * 0.48, hx + hs * 0.84, hy + hs * 0.22)
+        ..close();
+      drawShadedPath(canvas, tail, color);
+      // Mechón de brillo siguiendo la caída
+      canvas.drawPath(
+        Path()
+          ..moveTo(hx + hs * 0.98, hy + hs * 0.30)
+          ..quadraticBezierTo(
+              hx + hs * 1.14, hy + hs * 0.70, hx + hs * 1.06, hy + hs * 1.20),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.25)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+      // Coletero
+      _drawRoundRect(
+          canvas,
+          Rect.fromLTWH(hx + hs * 0.92, hy + hs * 0.30, hs * 0.26, hs * 0.10),
+          Colors.pink.shade400,
+          3);
+    } else if (style == HairStyle.braids) {
+      final color = hairColorFor(HairStyle.braids);
+      // Trenzas largas por delante de los hombros, en segmentos
+      for (final bx in [hx - hs * 0.02, hx + hs * 1.02]) {
+        final drift = bx < w / 2 ? -hs * 0.05 : hs * 0.05;
+        for (var i = 0; i < 6; i++) {
+          final r = hs * (0.11 - i * 0.008);
+          drawPlasticSphere(
+              canvas,
+              Offset(bx + drift * (i / 5), hy + hs * (0.28 + i * 0.20)),
+              r,
+              color);
+        }
+        // Lazo al final de la trenza
+        _drawRoundRect(
+            canvas,
+            Rect.fromLTWH(bx + drift - hs * 0.085, hy + hs * 1.36,
+                hs * 0.17, hs * 0.07),
+            Colors.red.shade400,
+            2);
+        // Puntita
+        drawPlasticSphere(canvas,
+            Offset(bx + drift, hy + hs * 1.50), hs * 0.06, color);
+      }
     }
   }
 
