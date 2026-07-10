@@ -1,4 +1,4 @@
-# BrixRun — Instrucciones de proyecto para Claude Code
+# Run For Win — Instrucciones de proyecto para Claude Code
 
 ## Flujo de trabajo Git
 

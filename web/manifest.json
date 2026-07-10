@@ -1,6 +1,6 @@
 {
-    "name": "BrixRun",
-    "short_name": "BrixRun",
+    "name": "Run For Win",
+    "short_name": "Run For Win",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#1a1a2e",

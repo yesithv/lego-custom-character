@@ -1,4 +1,4 @@
-name: Deploy BrixRun to GitHub Pages
+name: Deploy Run For Win to GitHub Pages
 
 on:
   push:
