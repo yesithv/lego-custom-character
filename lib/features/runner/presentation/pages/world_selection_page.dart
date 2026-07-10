@@ -110,8 +110,15 @@ class WorldSelectionPage extends StatelessWidget {
   }
 }
 
-class _WorldSelectionView extends StatelessWidget {
+class _WorldSelectionView extends StatefulWidget {
   const _WorldSelectionView();
+
+  @override
+  State<_WorldSelectionView> createState() => _WorldSelectionViewState();
+}
+
+class _WorldSelectionViewState extends State<_WorldSelectionView> {
+  int _selectedCharacter = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +128,7 @@ class _WorldSelectionView extends StatelessWidget {
         backgroundColor: const Color(0xFFFFD700),
         leading: BackButton(
           color: Colors.black87,
-          onPressed: () => context.goNamed('gallery'),
+          onPressed: () => context.goNamed('home'),
         ),
         title: const Text(
           'Elige tu Mundo',
@@ -158,16 +165,22 @@ class _WorldSelectionView extends StatelessWidget {
           }
 
           // Character selector at top
+          final safeIndex =
+              _selectedCharacter.clamp(0, characters.length - 1);
           return Column(
             children: [
-              _CharacterSelector(characters: characters),
+              _CharacterSelector(
+                characters: characters,
+                selectedIndex: safeIndex,
+                onSelect: (i) => setState(() => _selectedCharacter = i),
+              ),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _worlds.length,
                   itemBuilder: (context, i) => _WorldCard(
                     world: _worlds[i],
-                    characters: characters,
+                    character: characters[safeIndex],
                   ),
                 ),
               ),
@@ -179,18 +192,16 @@ class _WorldSelectionView extends StatelessWidget {
   }
 }
 
-class _CharacterSelector extends StatefulWidget {
+class _CharacterSelector extends StatelessWidget {
   final List<Character> characters;
-  const _CharacterSelector({required this.characters});
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
 
-  @override
-  State<_CharacterSelector> createState() => _CharacterSelectorState();
-}
-
-class _CharacterSelectorState extends State<_CharacterSelector> {
-  int _selected = 0;
-
-  Character get selectedCharacter => widget.characters[_selected];
+  const _CharacterSelector({
+    required this.characters,
+    required this.selectedIndex,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -209,12 +220,12 @@ class _CharacterSelectorState extends State<_CharacterSelector> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: widget.characters.length,
+              itemCount: characters.length,
               itemBuilder: (context, i) {
-                final c = widget.characters[i];
-                final isSelected = i == _selected;
+                final c = characters[i];
+                final isSelected = i == selectedIndex;
                 return GestureDetector(
-                  onTap: () => setState(() => _selected = i),
+                  onTap: () => onSelect(i),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.only(right: 12),
@@ -249,36 +260,17 @@ class _CharacterSelectorState extends State<_CharacterSelector> {
               },
             ),
           ),
-          // Store selected character in inherited widget so _WorldCard can access it
-          _SelectedCharacterInherited(
-            character: selectedCharacter,
-            child: const SizedBox.shrink(),
-          ),
         ],
       ),
     );
   }
 }
 
-// Simple InheritedWidget to pass selected character down
-class _SelectedCharacterInherited extends InheritedWidget {
-  final Character character;
-  const _SelectedCharacterInherited(
-      {required this.character, required super.child});
-
-  static _SelectedCharacterInherited? of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_SelectedCharacterInherited>();
-
-  @override
-  bool updateShouldNotify(_SelectedCharacterInherited old) =>
-      character != old.character;
-}
-
 class _WorldCard extends StatelessWidget {
   final WorldData world;
-  final List<Character> characters;
+  final Character character;
 
-  const _WorldCard({required this.world, required this.characters});
+  const _WorldCard({required this.world, required this.character});
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +288,6 @@ class _WorldCard extends StatelessWidget {
                   ),
                 )
             : () {
-                final character = characters.first;
                 context.goNamed(
                   'pre-run',
                   extra: {
