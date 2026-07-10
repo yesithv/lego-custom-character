@@ -18,6 +18,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   double _slideTimer = 0;
   double _targetX = 0;
   double _runAnimTimer = 0;
+  double _dashTimer = 0;
 
   static const double _w = 58.0;
   static const double _h = 86.0;
@@ -44,6 +45,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
   @override
   void update(double dt) {
     _runAnimTimer += dt;
+    if (_dashTimer > 0) _dashTimer -= dt;
 
     // Smooth lane slide
     final absTargetX = _targetX - size.x / 2;
@@ -103,6 +105,9 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
 
   void kill() => _state = PlayerState.dead;
 
+  /// Embestida contra el jefe: ráfaga visual breve de velocidad.
+  void dash() => _dashTimer = 0.5;
+
   @override
   void render(Canvas canvas) {
     _drawGroundShadow(canvas);
@@ -116,7 +121,25 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         _drawSliding(canvas);
       default:
         _drawRunning(canvas);
+        if (_dashTimer > 0) _drawDashLines(canvas);
         if (game.magnetActive) _drawMagnetAura(canvas);
+    }
+  }
+
+  // Líneas de velocidad durante la embestida al jefe
+  void _drawDashLines(Canvas canvas) {
+    final strength = (_dashTimer / 0.5).clamp(0.0, 1.0);
+    final line = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.85 * strength)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 4; i++) {
+      final y = size.y * (0.15 + i * 0.22);
+      final len = size.x * (0.35 + (i % 2) * 0.2);
+      canvas.drawLine(Offset(-len - 4, y + size.y * 0.10),
+          Offset(-4, y), line);
+      canvas.drawLine(Offset(size.x + 4, y),
+          Offset(size.x + len + 4, y + size.y * 0.10), line);
     }
   }
 
