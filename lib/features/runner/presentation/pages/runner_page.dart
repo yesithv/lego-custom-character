@@ -160,6 +160,25 @@ class _RunnerPageState extends State<RunnerPage> {
                         onExit: () => context.goNamed('worlds'),
                       ),
                     ),
+                'victory': (context, game) =>
+                    BlocBuilder<MissionBloc, MissionState>(
+                      builder: (context, missionState) => _VictoryOverlay(
+                        game: game,
+                        completedMissions: missionState.justCompleted,
+                        worldId: widget.worldId,
+                        worldName: widget.worldName,
+                        worldEmoji: widget.worldEmoji,
+                        worldColor: widget.worldColor,
+                        onRestart: () {
+                          setState(() {
+                            _showChest = false;
+                            _isPaused = false;
+                          });
+                          game.restart();
+                        },
+                        onExit: () => context.goNamed('worlds'),
+                      ),
+                    ),
               },
             ),
           ),
@@ -269,10 +288,105 @@ class _HudOverlayState extends State<_HudOverlay>
               ],
             ),
             const SizedBox(height: 4),
-            _ZoneBadge(zone: g.currentZone),
+            if (g.phase == GamePhase.running)
+              _ZoneBadge(zone: g.currentZone)
+            else
+              _BossBar(game: g),
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Boss bar (nombre + corazones + carga de embestida) ───────────────────────
+
+class _BossBar extends StatelessWidget {
+  final BrixRunGame game;
+  const _BossBar({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = game.bossConfig;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.red.shade400, width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Text(cfg.emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  game.phase == GamePhase.bossIntro
+                      ? '¡${cfg.name} se acerca!'
+                      : cfg.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              // Corazones del jefe
+              ...List.generate(BrixRunGame.maxBossHearts, (i) {
+                final alive = i < game.bossHearts;
+                return Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Text(
+                    alive ? '❤️' : '🖤',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Barra de carga de la embestida
+        Container(
+          height: 12,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: game.dashCharge.clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.shade400,
+                        Colors.orange.shade700,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        const Text(
+          '⚡ Esquiva ataques para cargar tu EMBESTIDA',
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -675,6 +789,212 @@ class _GameOverOverlay extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Victory Overlay ───────────────────────────────────────────────────────────
+
+class _VictoryOverlay extends StatelessWidget {
+  final BrixRunGame game;
+  final List<Mission> completedMissions;
+  final String worldId;
+  final String worldName;
+  final String worldEmoji;
+  final Color worldColor;
+  final VoidCallback onRestart;
+  final VoidCallback onExit;
+
+  const _VictoryOverlay({
+    required this.game,
+    required this.completedMissions,
+    required this.worldId,
+    required this.worldName,
+    required this.worldEmoji,
+    required this.worldColor,
+    required this.onRestart,
+    required this.onExit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = game.bossConfig;
+    return Container(
+      color: Colors.black.withValues(alpha: 0.78),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🏆', style: TextStyle(fontSize: 44)),
+                const SizedBox(height: 4),
+                Text(
+                  '¡$worldName superado!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${cfg.emoji} Derrotaste a ${cfg.name}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB8860B).withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                  ),
+                  child: Text(
+                    '✦ +${BrixRunGame.victoryCoinBonus} monedas de botín',
+                    style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _StatBox(label: 'Metros', value: '${game.meters}m'),
+                    _StatBox(label: 'Monedas', value: '✦ ${game.coins}'),
+                    _StatBox(
+                      label: 'Puntos',
+                      value: '${game.score}',
+                      highlight: true,
+                    ),
+                  ],
+                ),
+
+                // Personal best from ranking
+                BlocBuilder<RankingBloc, RankingState>(
+                  builder: (context, rankingState) {
+                    if (rankingState.scores.isEmpty ||
+                        rankingState.worldId != worldId) {
+                      return const SizedBox.shrink();
+                    }
+                    final pb = rankingState.scores.first.score;
+                    final isNew = game.score >= pb;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: isNew
+                          ? const Text(
+                              '🎉 ¡Nuevo récord!',
+                              style: TextStyle(
+                                color: Color(0xFFFFD700),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            )
+                          : Text(
+                              'Récord: $pb pts',
+                              style: const TextStyle(
+                                  color: Colors.white54, fontSize: 12),
+                            ),
+                    );
+                  },
+                ),
+
+                if (completedMissions.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '🎯 Misiones completadas',
+                      style: TextStyle(
+                        color: Colors.green.shade300,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ...completedMissions
+                      .map((m) => MissionCard(mission: m, compact: true)),
+                ],
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD700),
+                      foregroundColor: Colors.black87,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: onRestart,
+                    icon: const Icon(Icons.replay_rounded),
+                    label: const Text(
+                      'Jugar de nuevo',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Colors.white30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: onExit,
+                    icon: const Icon(Icons.map_outlined, size: 18),
+                    label: const Text('Elegir mundo'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => context.goNamed(
+                    'ranking',
+                    pathParameters: {'worldId': worldId},
+                    extra: {
+                      'worldName': worldName,
+                      'worldEmoji': worldEmoji,
+                      'worldColor': worldColor,
+                    },
+                  ),
+                  icon: const Icon(Icons.emoji_events_outlined,
+                      size: 16, color: Color(0xFFFFD700)),
+                  label: const Text(
+                    'Ver ranking',
+                    style: TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
