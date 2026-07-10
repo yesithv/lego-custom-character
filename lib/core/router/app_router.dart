@@ -5,6 +5,7 @@ import '../../features/character_editor/domain/entities/character.dart';
 import '../../features/character_editor/presentation/pages/character_editor_page.dart';
 import '../../features/character_editor/presentation/pages/character_gallery_page.dart';
 import '../../features/economy/presentation/pages/daily_roulette_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/ranking/presentation/pages/ranking_page.dart';
 import '../../features/runner/presentation/pages/pre_run_page.dart';
 import '../../features/runner/presentation/pages/runner_page.dart';
@@ -12,17 +13,22 @@ import '../../features/runner/presentation/pages/world_selection_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/gallery',
-    errorBuilder: (context, state) => const CharacterGalleryPage(),
+    initialLocation: '/',
+    errorBuilder: (context, state) => const HomePage(),
     redirect: (context, state) {
       // extra is ephemeral and lost on browser refresh / direct URL access
       final needsExtra = ['/pre-run', '/runner'];
       if (needsExtra.contains(state.matchedLocation) && state.extra == null) {
-        return '/gallery';
+        return '/';
       }
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (context, state) => const HomePage(),
+      ),
       GoRoute(
         path: '/gallery',
         name: 'gallery',
