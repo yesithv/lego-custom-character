@@ -27,6 +27,7 @@ class CharacterEditorBloc
     on<UpdateName>(_onUpdateName);
     on<UpdateCharacterType>(_onUpdateCharacterType);
     on<UpdateAppearance>(_onUpdateAppearance);
+    on<UpdateMusicTrack>(_onUpdateMusicTrack);
     on<SaveCurrentCharacter>(_onSaveCurrentCharacter);
     on<DeleteCharacterById>(_onDeleteCharacter);
     on<DuplicateCharacter>(_onDuplicateCharacter);
@@ -98,6 +99,18 @@ class CharacterEditorBloc
     ));
   }
 
+  void _onUpdateMusicTrack(
+      UpdateMusicTrack event, Emitter<CharacterEditorState> emit) {
+    final current = state.currentCharacter;
+    if (current == null) return;
+    emit(state.copyWith(
+      currentCharacter: current.copyWith(
+        musicTrack: event.track,
+        updatedAt: DateTime.now(),
+      ),
+    ));
+  }
+
   Future<void> _onSaveCurrentCharacter(
       SaveCurrentCharacter event, Emitter<CharacterEditorState> emit) async {
     final current = state.currentCharacter;
@@ -146,6 +159,7 @@ class CharacterEditorBloc
       appearance: original.appearance,
       createdAt: now,
       updatedAt: now,
+      musicTrack: original.musicTrack,
     );
     await saveCharacter(duplicate);
     final updated = await getAllCharacters();

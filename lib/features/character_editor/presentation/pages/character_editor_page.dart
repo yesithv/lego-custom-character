@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/audio_service.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../domain/entities/character.dart';
+import '../../domain/entities/music_catalog.dart';
 import '../bloc/character_editor_bloc.dart';
 import '../bloc/character_editor_event.dart';
 import '../bloc/character_editor_state.dart';
@@ -112,7 +114,10 @@ class _EditorView extends StatelessWidget {
                 _PreviewSection(character: state.currentCharacter!),
                 // Category tabs
                 Expanded(
-                  child: _EditorTabs(appearance: state.currentCharacter!.appearance),
+                  child: _EditorTabs(
+                    appearance: state.currentCharacter!.appearance,
+                    musicTrack: state.currentCharacter!.musicTrack,
+                  ),
                 ),
               ],
             );
@@ -225,12 +230,13 @@ class _TypeSelector extends StatelessWidget {
 
 class _EditorTabs extends StatelessWidget {
   final CharacterAppearance appearance;
-  const _EditorTabs({required this.appearance});
+  final MusicTrack musicTrack;
+  const _EditorTabs({required this.appearance, required this.musicTrack});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Column(
         children: [
           const TabBar(
@@ -242,6 +248,7 @@ class _EditorTabs extends StatelessWidget {
               Tab(text: 'Torso'),
               Tab(text: 'Piernas'),
               Tab(text: 'Accesorios'),
+              Tab(text: '🎵 Música'),
             ],
           ),
           Expanded(
@@ -252,11 +259,141 @@ class _EditorTabs extends StatelessWidget {
                 _TorsoTab(appearance: appearance),
                 _LegsTab(appearance: appearance),
                 _AccessoriesTab(appearance: appearance),
+                _MusicTab(selected: musicTrack),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Tab: Music ────────────────────────────────────────────────────────────────
+
+class _MusicTab extends StatefulWidget {
+  final MusicTrack selected;
+  const _MusicTab({required this.selected});
+
+  @override
+  State<_MusicTab> createState() => _MusicTabState();
+}
+
+class _MusicTabState extends State<_MusicTab> {
+  MusicTrack? _previewing;
+
+  @override
+  void dispose() {
+    // Detiene cualquier preview al salir del editor
+    if (_previewing != null) AudioService.instance.stopMusic();
+    super.dispose();
+  }
+
+  void _togglePreview(MusicTrack track) {
+    if (_previewing == track) {
+      AudioService.instance.stopMusic();
+      setState(() => _previewing = null);
+    } else {
+      AudioService.instance.playMusic(musicInfoFor(track).asset);
+      setState(() => _previewing = track);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text(
+          'Música de la partida',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Elige la pista que sonará mientras corres. '
+          'Toca ▶ para escucharla.',
+          style: TextStyle(fontSize: 12, color: Colors.black54),
+        ),
+        const SizedBox(height: 12),
+        ...MusicTrack.values.map((track) {
+          final info = musicInfoFor(track);
+          final isSelected = widget.selected == track;
+          final isPlaying = _previewing == track;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: GestureDetector(
+              onTap: () => context
+                  .read<CharacterEditorBloc>()
+                  .add(UpdateMusicTrack(track)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFFFF4C2) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFFFFD700)
+                        : Colors.grey.shade300,
+                    width: isSelected ? 2.5 : 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(info.emoji, style: const TextStyle(fontSize: 26)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            info.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            info.description,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(Icons.check_circle,
+                            color: Color(0xFFB8860B), size: 22),
+                      ),
+                    GestureDetector(
+                      onTap: () => _togglePreview(track),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isPlaying
+                              ? const Color(0xFFB8860B)
+                              : Colors.grey.shade200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isPlaying
+                              ? Icons.stop_rounded
+                              : Icons.play_arrow_rounded,
+                          color: isPlaying ? Colors.white : Colors.black54,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 }

@@ -157,6 +157,8 @@ class CharacterModel extends HiveObject {
   int totalCoinsEarned;
   @HiveField(8)
   int bestRunScore;
+  @HiveField(9)
+  int musicTrack;
 
   CharacterModel({
     required this.id,
@@ -168,6 +170,7 @@ class CharacterModel extends HiveObject {
     required this.updatedAt,
     this.totalCoinsEarned = 0,
     this.bestRunScore = 0,
+    this.musicTrack = 0,
   });
 
   factory CharacterModel.fromEntity(Character c) => CharacterModel(
@@ -180,6 +183,7 @@ class CharacterModel extends HiveObject {
         updatedAt: c.updatedAt,
         totalCoinsEarned: c.totalCoinsEarned,
         bestRunScore: c.bestRunScore,
+        musicTrack: c.musicTrack.index,
       );
 
   Character toEntity() => Character(
@@ -192,5 +196,9 @@ class CharacterModel extends HiveObject {
         updatedAt: updatedAt,
         totalCoinsEarned: totalCoinsEarned,
         bestRunScore: bestRunScore,
+        // Compatibilidad con personajes guardados antes de esta versión
+        musicTrack: musicTrack >= 0 && musicTrack < MusicTrack.values.length
+            ? MusicTrack.values[musicTrack]
+            : MusicTrack.ratRave,
       );
 }
