@@ -224,14 +224,35 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
 
     // Shoes (flippers extend outwards)
     final shoeStretch = appearance.shoes == ShoeType.flippers ? w * 0.12 : 0.0;
-    _rr(canvas,
-        Rect.fromLTWH(w * 0.07 - shoeStretch, h * 0.90 + legBob * 0.55,
-            w * 0.38 + shoeStretch, h * 0.12),
-        shoe, 5);
-    _rr(canvas,
-        Rect.fromLTWH(w * 0.55, h * 0.90 - legBob * 0.55,
-            w * 0.38 + shoeStretch, h * 0.12),
-        shoe, 5);
+    final leftShoeR = Rect.fromLTWH(w * 0.07 - shoeStretch,
+        h * 0.90 + legBob * 0.55, w * 0.38 + shoeStretch, h * 0.12);
+    final rightShoeR = Rect.fromLTWH(
+        w * 0.55, h * 0.90 - legBob * 0.55, w * 0.38 + shoeStretch, h * 0.12);
+    _rr(canvas, leftShoeR, shoe, 5);
+    _rr(canvas, rightShoeR, shoe, 5);
+
+    // El pie que patea hacia atrás enseña la suela — señal inequívoca de
+    // que el personaje corre alejándose de la cámara
+    final sole = Paint()..color = darkenColor(shoe, 0.30);
+    final kicked = legBob < -1.5 ? leftShoeR : (legBob > 1.5 ? rightShoeR : null);
+    if (kicked != null) {
+      canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(kicked.center.dx, kicked.bottom - h * 0.012),
+            width: kicked.width * 0.88,
+            height: h * 0.055),
+        sole,
+      );
+      // Tacos de la suela
+      final tread = Paint()..color = darkenColor(shoe, 0.45);
+      for (var i = -1; i <= 1; i++) {
+        canvas.drawCircle(
+            Offset(kicked.center.dx + i * kicked.width * 0.24,
+                kicked.bottom - h * 0.012),
+            w * 0.025,
+            tread);
+      }
+    }
 
     // Torso (back view — solid color with subtle spine stripe)
     _rr(canvas, Rect.fromLTWH(w * 0.07, h * 0.25, w * 0.86, h * 0.37), torso, 8);
@@ -441,24 +462,31 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
     final style = appearance.hairStyle ?? HairStyle.straight;
     if (style == HairStyle.bald) return;
     final color = hairColorFor(style);
-    final paint = Paint()..color = color;
 
     switch (style) {
       case HairStyle.straight:
-        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+        // La melena cubre casi toda la nuca — desde atrás se ve pelo, no piel
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.215), color, 8);
       case HairStyle.curly:
         for (var i = 0; i < 4; i++) {
-          canvas.drawCircle(
-              Offset(w * (0.20 + i * 0.20), h * 0.015), w * 0.13, paint);
+          drawPlasticSphere(
+              canvas, Offset(w * (0.20 + i * 0.20), h * 0.015), w * 0.13, color);
+        }
+        // Segunda fila de rizos cubriendo la nuca
+        for (var i = 0; i < 3; i++) {
+          drawPlasticSphere(
+              canvas, Offset(w * (0.30 + i * 0.20), h * 0.105), w * 0.12, color);
         }
       case HairStyle.afro:
-        canvas.drawCircle(Offset(w * 0.5, h * 0.05), w * 0.40, paint);
+        drawPlasticSphere(canvas, Offset(w * 0.5, h * 0.07), w * 0.42, color);
       case HairStyle.mohawk:
         _rr(canvas, Rect.fromLTWH(w * 0.12, -3, w * 0.76, h * 0.09),
             Colors.grey.shade800, 4);
         _rr(canvas, Rect.fromLTWH(w * 0.44, -h * 0.10, w * 0.12, h * 0.22), color, 3);
+        // La cresta continúa por la nuca
+        _rr(canvas, Rect.fromLTWH(w * 0.44, h * 0.06, w * 0.12, h * 0.18), color, 3);
       case HairStyle.ponytail:
-        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.215), color, 8);
         // Long tail swaying down the back — fully visible from behind
         final sway = sin(_runAnimTimer * 7.0) * w * 0.04;
         final tail = Path()
@@ -479,7 +507,7 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         drawPlasticSphere(
             canvas, Offset(w * 0.50 + sway, h * 0.545), w * 0.055, color);
       case HairStyle.braids:
-        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.16), color, 8);
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.215), color, 8);
         // Long segmented braids reaching the mid-back
         for (final bx in [w * 0.17, w * 0.83]) {
           for (var i = 0; i < 5; i++) {
@@ -493,6 +521,43 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         }
       case HairStyle.shaved:
         _rr(canvas, Rect.fromLTWH(w * 0.11, -3, w * 0.78, h * 0.10), color, 5);
+      case HairStyle.messy:
+        // Mechones revueltos cubriendo toda la parte trasera de la cabeza
+        final tufts = [
+          (0.18, 0.00, 0.115),
+          (0.38, -0.02, 0.125),
+          (0.60, -0.01, 0.12),
+          (0.80, 0.01, 0.11),
+          (0.28, 0.10, 0.105),
+          (0.52, 0.11, 0.11),
+          (0.74, 0.10, 0.10),
+        ];
+        for (final (tx, ty, tr) in tufts) {
+          drawPlasticSphere(canvas, Offset(w * tx, h * ty), w * tr, color);
+        }
+      case HairStyle.swept:
+        // Masa barrida hacia un lado vista desde atrás
+        final sweep = Path()
+          ..moveTo(w * 0.08, h * 0.20)
+          ..quadraticBezierTo(w * 0.04, -h * 0.06, w * 0.42, -h * 0.075)
+          ..quadraticBezierTo(w * 0.85, -h * 0.09, w * 0.94, h * 0.10)
+          ..quadraticBezierTo(w * 0.98, h * 0.22, w * 0.86, h * 0.24)
+          ..quadraticBezierTo(w * 0.50, h * 0.16, w * 0.24, h * 0.235)
+          ..quadraticBezierTo(w * 0.12, h * 0.25, w * 0.08, h * 0.20)
+          ..close();
+        drawShadedPath(canvas, sweep, color);
+      case HairStyle.fringe:
+        // Corte recto: casquete que cubre la nuca con puntas
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.19), color, 8);
+        final tips = Path()..moveTo(w * 0.09, h * 0.17);
+        const spikes = 5;
+        for (var i = 0; i < spikes; i++) {
+          tips
+            ..lineTo(w * (0.09 + 0.82 * (i + 0.5) / spikes), h * 0.235)
+            ..lineTo(w * (0.09 + 0.82 * (i + 1.0) / spikes), h * 0.17);
+        }
+        tips.close();
+        canvas.drawPath(tips, Paint()..color = color);
       case HairStyle.bald:
         break;
     }

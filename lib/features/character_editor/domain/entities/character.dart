@@ -7,12 +7,12 @@ enum SkinTone {
   blue, green, purple, orange, silver, gold  // fantastic
 }
 
-enum EyeStyle { happy, angry, surprised, sleepy, wink, laser, robot, crying, starry }
+enum EyeStyle { happy, angry, surprised, sleepy, wink, laser, robot, crying, starry, determined }
 enum MouthStyle { smile, frown, teeth, fangs, mustache, tongueOut, silent }
 enum EyebrowStyle { normal, arched, angry, friendly, absent }
 enum FacialExtra { none, freckles, blush, scar, tribalTattoo, warPaint, monocle }
 
-enum HairStyle { straight, curly, afro, mohawk, ponytail, braids, shaved, bald }
+enum HairStyle { straight, curly, afro, mohawk, ponytail, braids, shaved, bald, messy, swept, fringe }
 enum HeadwearType { none, hair, helmet, hat }
 enum HelmetStyle { medieval, space, roman, viking, firefighter, biker, astronaut }
 enum HatStyle { wizard, cowboy, cap, crown, tiara, topHat, pirate }
@@ -20,11 +20,12 @@ enum HatStyle { wizard, cowboy, cap, crown, tiara, topHat, pirate }
 enum TorsoDesign {
   plain, police, firefighter, astronaut, doctor, chef, military,
   ninja, pirate, superhero, casual, medieval, futuristic, samurai,
-  dinosaur, robot, monster, alien
+  dinosaur, robot, monster, alien,
+  tactical, tanktop, commando
 }
 
 enum GloveType { none, boxing, medieval, superhero, claws }
-enum LegDesign { plain, camouflage, stripes, checkered, flames, stars, armor }
+enum LegDesign { plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo, mechanic, urbanCamo }
 enum LegType { pants, shorts, skirt, legArmor, spacesuit }
 enum ShoeType { sneakers, military, cowboy, sandals, skates, flippers, witchBoots, barefoot }
 

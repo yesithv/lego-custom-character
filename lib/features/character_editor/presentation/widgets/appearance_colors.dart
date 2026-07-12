@@ -37,6 +37,9 @@ Color torsoColorFor(TorsoDesign design) => switch (design) {
       TorsoDesign.robot => Colors.blueGrey.shade400,
       TorsoDesign.monster => Colors.purple.shade600,
       TorsoDesign.alien => Colors.lightGreen.shade600,
+      TorsoDesign.tactical => const Color(0xFF23272B),
+      TorsoDesign.tanktop => const Color(0xFF8E9499),
+      TorsoDesign.commando => const Color(0xFF4E5D3A),
     };
 
 Color legColorFor(LegDesign design) => switch (design) {
@@ -47,6 +50,9 @@ Color legColorFor(LegDesign design) => switch (design) {
       LegDesign.flames => Colors.grey.shade900,
       LegDesign.stars => Colors.indigo.shade700,
       LegDesign.armor => Colors.grey.shade600,
+      LegDesign.desertCamo => const Color(0xFFC2B280),
+      LegDesign.mechanic => const Color(0xFF212121),
+      LegDesign.urbanCamo => const Color(0xFF3A3F44),
     };
 
 /// [skin] se usa para sandalias y pies descalzos.
@@ -70,6 +76,9 @@ Color hairColorFor(HairStyle style) => switch (style) {
       HairStyle.braids => Colors.brown.shade400,
       HairStyle.shaved => Colors.grey.shade800,
       HairStyle.bald => Colors.transparent,
+      HairStyle.messy => const Color(0xFFB4622D),
+      HairStyle.swept => const Color(0xFF7E2A22),
+      HairStyle.fringe => const Color(0xFF1C1C1C),
     };
 
 Color helmetColorFor(HelmetStyle style) => switch (style) {
@@ -198,6 +207,78 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
           Offset(rect.center.dx, rect.top + rect.height * 0.12), 1.8, rivet);
       canvas.drawCircle(
           Offset(rect.center.dx, rect.top + rect.height * 0.62), 1.8, rivet);
+    case LegDesign.desertCamo:
+      // Camuflaje desierto: manchas marrones y grises + correa de equipo
+      final blotchA = Paint()..color = const Color(0xFF8B7355);
+      final blotchB = Paint()..color = const Color(0xFF9E9E8E);
+      canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(rect.left + rect.width * 0.32,
+                  rect.top + rect.height * 0.22),
+              width: rect.width * 0.5,
+              height: rect.height * 0.15),
+          blotchA);
+      canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(rect.left + rect.width * 0.72,
+                  rect.top + rect.height * 0.50),
+              width: rect.width * 0.45,
+              height: rect.height * 0.14),
+          blotchB);
+      canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(rect.left + rect.width * 0.35,
+                  rect.top + rect.height * 0.76),
+              width: rect.width * 0.45,
+              height: rect.height * 0.13),
+          blotchA);
+      // Correa con hebilla a la altura del muslo
+      canvas.drawRect(
+          Rect.fromLTWH(rect.left, rect.top + rect.height * 0.36,
+              rect.width, rect.height * 0.05),
+          Paint()..color = const Color(0xFF5D4E37));
+    case LegDesign.mechanic:
+      // Estilo mecánico: franja roja lateral, guiones azules y rodillera
+      canvas.drawRect(
+          Rect.fromLTWH(rect.left + rect.width * 0.10, rect.top,
+              rect.width * 0.10, rect.height),
+          Paint()..color = const Color(0xFFC62828));
+      final dash = Paint()..color = const Color(0xFF2196F3);
+      for (var i = 0; i < 3; i++) {
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left + rect.width * 0.68,
+                rect.top + rect.height * (0.55 + i * 0.10),
+                rect.width * 0.16, rect.height * 0.04),
+            dash);
+      }
+      canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(rect.center.dx, rect.top + rect.height * 0.34),
+              width: rect.width * 0.5,
+              height: rect.height * 0.16),
+          Paint()..color = const Color(0xFF9EA7AD));
+    case LegDesign.urbanCamo:
+      // Camuflaje urbano: parches grises angulosos sobre fondo oscuro
+      final patchA = Paint()..color = const Color(0xFF5C666E);
+      final patchB = Paint()..color = const Color(0xFF23272B);
+      final p1 = Path()
+        ..moveTo(rect.left, rect.top + rect.height * 0.15)
+        ..lineTo(rect.left + rect.width * 0.55, rect.top + rect.height * 0.10)
+        ..lineTo(rect.left + rect.width * 0.35, rect.top + rect.height * 0.32)
+        ..close();
+      final p2 = Path()
+        ..moveTo(rect.right, rect.top + rect.height * 0.45)
+        ..lineTo(rect.left + rect.width * 0.40, rect.top + rect.height * 0.55)
+        ..lineTo(rect.right - rect.width * 0.15, rect.top + rect.height * 0.70)
+        ..close();
+      final p3 = Path()
+        ..moveTo(rect.left + rect.width * 0.15, rect.top + rect.height * 0.78)
+        ..lineTo(rect.left + rect.width * 0.60, rect.top + rect.height * 0.85)
+        ..lineTo(rect.left + rect.width * 0.25, rect.top + rect.height * 0.95)
+        ..close();
+      canvas.drawPath(p1, patchA);
+      canvas.drawPath(p2, patchB);
+      canvas.drawPath(p3, patchA);
   }
   canvas.restore();
 }
