@@ -651,6 +651,13 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
           ..lineTo(w * 1.08, h * 0.10)
           ..close();
         drawShadedPath(canvas, tricorn, color);
+      case HatStyle.conical:
+        final cone = Path()
+          ..moveTo(-w * 0.14, h * 0.10)
+          ..lineTo(w * 0.5, -h * 0.20)
+          ..lineTo(w * 1.14, h * 0.10)
+          ..close();
+        drawShadedPath(canvas, cone, color);
     }
   }
 

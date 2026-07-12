@@ -36,6 +36,11 @@ const partCatalog = <String, CatalogEntry>{
   'helado': CatalogEntry(id: 'helado', name: 'Helado', slot: 'rightHand', rarity: AccessoryRarity.common),
   'cetro real': CatalogEntry(id: 'cetro real', name: 'Cetro de princesa', slot: 'rightHand', rarity: AccessoryRarity.common),
   'globo corazón': CatalogEntry(id: 'globo corazón', name: 'Globo de corazón', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'katana': CatalogEntry(id: 'katana', name: 'Katana', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'katana dorada': CatalogEntry(id: 'katana dorada', name: 'Katana dorada', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'bastón bo': CatalogEntry(id: 'bastón bo', name: 'Bastón bo', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'cuchillo': CatalogEntry(id: 'cuchillo', name: 'Cuchillo de combate', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'garfio': CatalogEntry(id: 'garfio', name: 'Garfio dorado', slot: 'rightHand', rarity: AccessoryRarity.common),
 
   // ── Left hand ──────────────────────────────────────────────────────────────
   'bolso': CatalogEntry(id: 'bolso', name: 'Bolso', slot: 'leftHand', rarity: AccessoryRarity.common),
@@ -46,6 +51,9 @@ const partCatalog = <String, CatalogEntry>{
   'escoba': CatalogEntry(id: 'escoba', name: 'Escoba de bruja', slot: 'leftHand', rarity: AccessoryRarity.rare, coinCost: 200),
   'peluche': CatalogEntry(id: 'peluche', name: 'Osito de peluche', slot: 'leftHand', rarity: AccessoryRarity.common),
   'espejo': CatalogEntry(id: 'espejo', name: 'Espejo de mano', slot: 'leftHand', rarity: AccessoryRarity.common),
+  'escudo capitán': CatalogEntry(id: 'escudo capitán', name: 'Escudo del Capitán', slot: 'leftHand', rarity: AccessoryRarity.common),
+  'escudo dragón': CatalogEntry(id: 'escudo dragón', name: 'Escudo dragón dorado', slot: 'leftHand', rarity: AccessoryRarity.common),
+  'pistola bláster': CatalogEntry(id: 'pistola bláster', name: 'Pistola bláster', slot: 'leftHand', rarity: AccessoryRarity.common),
 
   // ── Back ───────────────────────────────────────────────────────────────────
   'capa corta': CatalogEntry(id: 'capa corta', name: 'Capa corta', slot: 'back', rarity: AccessoryRarity.common),
@@ -54,12 +62,14 @@ const partCatalog = <String, CatalogEntry>{
   'alas': CatalogEntry(id: 'alas', name: 'Alas', slot: 'back', rarity: AccessoryRarity.rare, coinCost: 200),
   'capa vampiro': CatalogEntry(id: 'capa vampiro', name: 'Capa vampiro', slot: 'back', rarity: AccessoryRarity.epic, coinCost: 500),
   'alas mariposa': CatalogEntry(id: 'alas mariposa', name: 'Alas de mariposa', slot: 'back', rarity: AccessoryRarity.common),
+  'katanas dobles': CatalogEntry(id: 'katanas dobles', name: 'Katanas dobles', slot: 'back', rarity: AccessoryRarity.common),
 
   // ── Shoulders ──────────────────────────────────────────────────────────────
   'hombreras': CatalogEntry(id: 'hombreras', name: 'Hombreras', slot: 'shoulders', rarity: AccessoryRarity.common),
   'loro pirata': CatalogEntry(id: 'loro pirata', name: 'Loro pirata', slot: 'shoulders', rarity: AccessoryRarity.rare, coinCost: 200),
   'insignia': CatalogEntry(id: 'insignia', name: 'Insignia de rango', slot: 'shoulders', rarity: AccessoryRarity.epic, coinCost: 500),
   'gatito': CatalogEntry(id: 'gatito', name: 'Gatito', slot: 'shoulders', rarity: AccessoryRarity.common),
+  'hombreras doradas': CatalogEntry(id: 'hombreras doradas', name: 'Hombreras doradas', slot: 'shoulders', rarity: AccessoryRarity.common),
 
   // ── Waist ──────────────────────────────────────────────────────────────────
   'cinturón herramientas': CatalogEntry(id: 'cinturón herramientas', name: 'Cinturón herramientas', slot: 'waist', rarity: AccessoryRarity.common),
@@ -84,6 +94,8 @@ const partCatalog = <String, CatalogEntry>{
   'pendientes': CatalogEntry(id: 'pendientes', name: 'Pendientes', slot: 'face', rarity: AccessoryRarity.common),
   'ojo biónico': CatalogEntry(id: 'ojo biónico', name: 'Ojo biónico', slot: 'face', rarity: AccessoryRarity.common),
   'gafas tácticas': CatalogEntry(id: 'gafas tácticas', name: 'Gafas tácticas', slot: 'face', rarity: AccessoryRarity.common),
+  'barba larga': CatalogEntry(id: 'barba larga', name: 'Barba larga', slot: 'face', rarity: AccessoryRarity.common),
+  'gafas piloto': CatalogEntry(id: 'gafas piloto', name: 'Gafas de piloto', slot: 'face', rarity: AccessoryRarity.common),
 
   // ── Feet ───────────────────────────────────────────────────────────────────
   'espuelas': CatalogEntry(id: 'espuelas', name: 'Espuelas cowboy', slot: 'feet', rarity: AccessoryRarity.common),

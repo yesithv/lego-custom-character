@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/character.dart';
+import '../../domain/entities/preset_characters.dart';
 
 sealed class CharacterEditorEvent extends Equatable {
   const CharacterEditorEvent();
@@ -14,6 +15,16 @@ class LoadCharacters extends CharacterEditorEvent {
 
 class StartNewCharacter extends CharacterEditorEvent {
   const StartNewCharacter();
+}
+
+/// Load a preconfigured (preset) character into the editor as a new, editable
+/// character. The user keeps the preset's name + full appearance but can then
+/// change anything (mouth, hair, accessories, …) before saving.
+class StartFromPreset extends CharacterEditorEvent {
+  final PresetCharacter preset;
+  const StartFromPreset(this.preset);
+  @override
+  List<Object?> get props => [preset.id];
 }
 
 class LoadCharacterForEdit extends CharacterEditorEvent {

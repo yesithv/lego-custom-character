@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/character_editor/domain/entities/character.dart';
+import '../../features/character_editor/domain/entities/preset_characters.dart';
 import '../../features/character_editor/presentation/pages/character_editor_page.dart';
 import '../../features/character_editor/presentation/pages/character_gallery_page.dart';
+import '../../features/character_editor/presentation/pages/preset_gallery_page.dart';
 import '../../features/economy/presentation/pages/daily_roulette_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/ranking/presentation/pages/ranking_page.dart';
@@ -37,7 +39,13 @@ class AppRouter {
       GoRoute(
         path: '/editor',
         name: 'editor-new',
-        builder: (context, state) => const CharacterEditorPage(),
+        builder: (context, state) =>
+            CharacterEditorPage(preset: state.extra as PresetCharacter?),
+      ),
+      GoRoute(
+        path: '/presets',
+        name: 'presets',
+        builder: (context, state) => const PresetGalleryPage(),
       ),
       GoRoute(
         path: '/editor/:id',

@@ -18,18 +18,22 @@ enum FacialExtra { none, freckles, blush, scar, tribalTattoo, warPaint, monocle 
 
 enum HairStyle { straight, curly, afro, mohawk, ponytail, braids, shaved, bald, messy, swept, fringe }
 enum HeadwearType { none, hair, helmet, hat }
-enum HelmetStyle { medieval, space, roman, viking, firefighter, biker, astronaut }
-enum HatStyle { wizard, cowboy, cap, crown, tiara, topHat, pirate }
+// New values are appended at the end: Hive stores enums by index.
+enum HelmetStyle {
+  medieval, space, roman, viking, firefighter, biker, astronaut,
+  ninjaHood, ironMan, spiderMan, blackPanther, deadpool, wolverine,
+}
+enum HatStyle { wizard, cowboy, cap, crown, tiara, topHat, pirate, conical }
 
 enum TorsoDesign {
   plain, police, firefighter, astronaut, doctor, chef, military,
   ninja, pirate, superhero, casual, medieval, futuristic, samurai,
   dinosaur, robot, monster, alien,
-  tactical, tanktop, commando
+  tactical, tanktop, commando, golden
 }
 
 enum GloveType { none, boxing, medieval, superhero, claws }
-enum LegDesign { plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo, mechanic, urbanCamo }
+enum LegDesign { plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo, mechanic, urbanCamo, golden }
 enum LegType { pants, shorts, skirt, legArmor, spacesuit }
 enum ShoeType { sneakers, military, cowboy, sandals, skates, flippers, witchBoots, barefoot }
 

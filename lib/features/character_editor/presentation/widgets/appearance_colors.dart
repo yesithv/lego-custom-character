@@ -40,6 +40,7 @@ Color torsoColorFor(TorsoDesign design) => switch (design) {
       TorsoDesign.tactical => const Color(0xFF23272B),
       TorsoDesign.tanktop => const Color(0xFF8E9499),
       TorsoDesign.commando => const Color(0xFF4E5D3A),
+      TorsoDesign.golden => const Color(0xFFD4AF37),
     };
 
 Color legColorFor(LegDesign design) => switch (design) {
@@ -53,6 +54,7 @@ Color legColorFor(LegDesign design) => switch (design) {
       LegDesign.desertCamo => const Color(0xFFC2B280),
       LegDesign.mechanic => const Color(0xFF212121),
       LegDesign.urbanCamo => const Color(0xFF3A3F44),
+      LegDesign.golden => const Color(0xFFD4AF37),
     };
 
 /// [skin] se usa para sandalias y pies descalzos.
@@ -89,6 +91,12 @@ Color helmetColorFor(HelmetStyle style) => switch (style) {
       HelmetStyle.firefighter => Colors.yellow.shade700,
       HelmetStyle.biker => Colors.black,
       HelmetStyle.astronaut => const Color(0xFFECEFF1),
+      HelmetStyle.ninjaHood => const Color(0xFFB8860B),
+      HelmetStyle.ironMan => Colors.red.shade700,
+      HelmetStyle.spiderMan => Colors.red.shade600,
+      HelmetStyle.blackPanther => const Color(0xFF1A1A1A),
+      HelmetStyle.deadpool => Colors.red.shade800,
+      HelmetStyle.wolverine => Colors.amber.shade700,
     };
 
 Color hatColorFor(HatStyle style) => switch (style) {
@@ -99,6 +107,7 @@ Color hatColorFor(HatStyle style) => switch (style) {
       HatStyle.tiara => const Color(0xFFE0E0E0),
       HatStyle.topHat => Colors.black,
       HatStyle.pirate => Colors.black,
+      HatStyle.conical => Colors.brown.shade400,
     };
 
 Color gloveColorFor(GloveType glove, Color skin) => switch (glove) {
@@ -116,6 +125,7 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
   canvas.clipRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4)));
   switch (design) {
     case LegDesign.plain:
+    case LegDesign.golden:
       break;
     case LegDesign.camouflage:
       final blotch = Paint()..color = Colors.green.shade900;
