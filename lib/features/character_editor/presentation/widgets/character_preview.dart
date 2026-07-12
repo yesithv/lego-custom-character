@@ -595,6 +595,19 @@ class _CharacterPainter extends CustomPainter {
               2,
               sheen: false);
         }
+      case TorsoDesign.golden:
+        // Túnica dorada con nudo en V y ribete oscuro (estilo ninja/samurái)
+        final trim = Paint()..color = const Color(0xFF8C6D1F);
+        canvas.drawPath(
+          Path()
+            ..moveTo(cx, torsoTop + torsoH * 0.62)
+            ..lineTo(torsoX + torsoW * 0.30, torsoTop + torsoH * 0.10)
+            ..lineTo(torsoX + torsoW * 0.70, torsoTop + torsoH * 0.10)
+            ..close(),
+          trim,
+        );
+        drawStar4(canvas, Offset(cx, torsoTop + torsoH * 0.34), torsoW * 0.09,
+            Paint()..color = const Color(0xFFFFE9A8));
     }
   }
 
@@ -769,6 +782,23 @@ class _CharacterPainter extends CustomPainter {
               w * 0.026, spot);
           canvas.restore();
         }
+      case 'katanas dobles':
+        // Dos katanas cruzadas asomando por detrás de los hombros
+        final cx = torsoX + torsoW / 2;
+        for (final s in [-1.0, 1.0]) {
+          canvas.save();
+          canvas.translate(cx, torsoTop);
+          canvas.rotate(s * 0.5);
+          // Hoja
+          canvas.drawRect(
+              Rect.fromLTWH(-w * 0.011, -h * 0.20, w * 0.022, h * 0.22),
+              metalPaint(Rect.fromLTWH(-w * 0.011, -h * 0.20, w * 0.022, h * 0.22)));
+          // Empuñadura
+          canvas.drawRect(
+              Rect.fromLTWH(-w * 0.011, h * 0.0, w * 0.022, h * 0.05),
+              Paint()..color = Colors.black87);
+          canvas.restore();
+        }
     }
   }
 
@@ -859,6 +889,19 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawCircle(Offset(headC.dx + w * 0.013, headC.dy - w * 0.006), 1.1, dot);
         canvas.drawCircle(Offset(headC.dx, headC.dy + w * 0.008), 1.0,
             Paint()..color = Colors.pink.shade300);
+      case 'hombreras doradas':
+        // Placas doradas curvas sobre ambos hombros
+        for (final side in [-1.0, 1.0]) {
+          final anchorX = side < 0 ? torsoX : torsoX + torsoW;
+          final pad = Path()
+            ..moveTo(anchorX - side * w * 0.02, armTop - h * 0.01)
+            ..quadraticBezierTo(
+                anchorX + side * w * 0.10, armTop - h * 0.03,
+                anchorX + side * w * 0.09, armTop + h * 0.03)
+            ..lineTo(anchorX - side * w * 0.01, armTop + h * 0.02)
+            ..close();
+          drawShadedPath(canvas, pad, const Color(0xFFD4AF37));
+        }
     }
   }
 
@@ -1125,6 +1168,38 @@ class _CharacterPainter extends CustomPainter {
                   height: hs * 0.11),
               Paint()..color = Colors.pink.shade300);
         }
+      case 'barba larga':
+        // Barba blanca larga que cae bajo la barbilla
+        final beard = Path()
+          ..moveTo(hx + hs * 0.22, headTop + hs * 0.55)
+          ..quadraticBezierTo(hx + hs * 0.28, headTop + hs * 1.35,
+              hx + hs * 0.5, headTop + hs * 1.45)
+          ..quadraticBezierTo(hx + hs * 0.72, headTop + hs * 1.35,
+              hx + hs * 0.78, headTop + hs * 0.55)
+          ..quadraticBezierTo(hx + hs * 0.5, headTop + hs * 0.78,
+              hx + hs * 0.22, headTop + hs * 0.55)
+          ..close();
+        drawShadedPath(canvas, beard, const Color(0xFFECECEC));
+      case 'gafas piloto':
+        // Gafas de aviador: dos lentes ámbar con puente y correa
+        final frame = const Color(0xFF5D4037);
+        final lens = Colors.amber.shade200.withValues(alpha: 0.9);
+        for (final lx in [eyeLX, eyeRX]) {
+          canvas.drawCircle(Offset(lx, eyeY), hs * 0.15, Paint()..color = lens);
+          canvas.drawCircle(Offset(lx, eyeY), hs * 0.15,
+              Paint()
+                ..color = frame
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 2.4);
+        }
+        canvas.drawLine(Offset(eyeLX + hs * 0.15, eyeY),
+            Offset(eyeRX - hs * 0.15, eyeY),
+            Paint()
+              ..color = frame
+              ..strokeWidth = 2.4);
+        canvas.drawRect(
+            Rect.fromLTWH(hx - 3, eyeY - hs * 0.05, hs + 6, hs * 0.06),
+            Paint()..color = frame.withValues(alpha: 0.6));
     }
   }
 
@@ -1440,6 +1515,131 @@ class _CharacterPainter extends CustomPainter {
             Paint()
               ..color = Colors.white.withValues(alpha: 0.85)
               ..strokeWidth = 2.0);
+
+      // ── Personajes precargados: armas y escudos ──────────────────────────
+      case 'katana':
+      case 'katana dorada':
+        final gold = id == 'katana dorada';
+        final bladeRect = Rect.fromLTWH(
+            fist.dx - w * 0.011, fist.dy - h * 0.185, w * 0.022, h * 0.16);
+        final blade = Path()
+          ..moveTo(bladeRect.left, bladeRect.bottom)
+          ..lineTo(bladeRect.left, bladeRect.top + h * 0.02)
+          ..lineTo(fist.dx + w * 0.006, bladeRect.top)
+          ..lineTo(bladeRect.right, bladeRect.top + h * 0.03)
+          ..lineTo(bladeRect.right, bladeRect.bottom)
+          ..close();
+        if (gold) {
+          drawShadedPath(canvas, blade, const Color(0xFFFFD700));
+        } else {
+          canvas.drawPath(blade, metalPaint(bladeRect.inflate(2)));
+          canvas.drawPath(blade, outlinePaintFor(Colors.blueGrey.shade400));
+        }
+        // Tsuba (guarda circular) + empuñadura negra
+        canvas.drawCircle(Offset(fist.dx, fist.dy - h * 0.02), w * 0.026,
+            Paint()..color = gold ? const Color(0xFFB8860B) : Colors.black87);
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.009, fist.dy - h * 0.015,
+                w * 0.018, h * 0.05),
+            Colors.black87,
+            2,
+            sheen: false);
+      case 'bastón bo':
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.011, fist.dy - h * 0.19,
+                w * 0.022, h * 0.34),
+            Colors.brown.shade600,
+            3);
+        for (final dy in [-h * 0.17, h * 0.13]) {
+          canvas.drawRect(
+              Rect.fromLTWH(fist.dx - w * 0.013, fist.dy + dy, w * 0.026, h * 0.02),
+              Paint()..color = const Color(0xFFB8860B));
+        }
+      case 'cuchillo':
+        final bladeRect = Rect.fromLTWH(
+            fist.dx - w * 0.010, fist.dy - h * 0.085, w * 0.020, h * 0.075);
+        final blade = Path()
+          ..moveTo(bladeRect.left, bladeRect.bottom)
+          ..lineTo(bladeRect.left, bladeRect.top)
+          ..lineTo(fist.dx, bladeRect.top - h * 0.015)
+          ..lineTo(bladeRect.right, bladeRect.top)
+          ..lineTo(bladeRect.right, bladeRect.bottom)
+          ..close();
+        canvas.drawPath(blade, metalPaint(bladeRect.inflate(2)));
+        canvas.drawPath(blade, outlinePaintFor(Colors.blueGrey.shade400));
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.014, fist.dy - h * 0.012,
+                w * 0.028, h * 0.03),
+            Colors.brown.shade900,
+            2,
+            sheen: false);
+      case 'garfio':
+        final hookColor = const Color(0xFFD4A017);
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.009, fist.dy - h * 0.05,
+                w * 0.018, h * 0.06),
+            hookColor,
+            2,
+            sheen: false);
+        final hook = Path()
+          ..moveTo(fist.dx, fist.dy - h * 0.05)
+          ..cubicTo(fist.dx + w * 0.09, fist.dy - h * 0.11,
+              fist.dx + w * 0.09, fist.dy - h * 0.02, fist.dx + w * 0.02,
+              fist.dy - h * 0.03);
+        canvas.drawPath(
+            hook,
+            Paint()
+              ..color = hookColor
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = w * 0.02
+              ..strokeCap = StrokeCap.round);
+      case 'escudo capitán':
+        final c = Offset(fist.dx, fist.dy - fistR * 0.2);
+        canvas.drawCircle(c, w * 0.11, Paint()..color = Colors.red.shade700);
+        canvas.drawCircle(c, w * 0.085, Paint()..color = Colors.white);
+        canvas.drawCircle(c, w * 0.06, Paint()..color = Colors.red.shade700);
+        canvas.drawCircle(c, w * 0.038, Paint()..color = Colors.blue.shade800);
+        drawStar4(canvas, c, w * 0.032, Paint()..color = Colors.white);
+        canvas.drawCircle(c, w * 0.11, outlinePaintFor(Colors.red.shade700));
+      case 'escudo dragón':
+        final c = Offset(fist.dx, fist.dy - fistR * 0.2);
+        canvas.drawCircle(c, w * 0.11, Paint()..color = const Color(0xFFD4AF37));
+        canvas.drawCircle(c, w * 0.085, Paint()..color = const Color(0xFF8C6D1F));
+        // Silueta de dragón simplificada (S)
+        final dragon = Path()
+          ..moveTo(c.dx - w * 0.04, c.dy + w * 0.04)
+          ..quadraticBezierTo(c.dx + w * 0.05, c.dy + w * 0.02,
+              c.dx, c.dy - w * 0.01)
+          ..quadraticBezierTo(c.dx - w * 0.05, c.dy - w * 0.03,
+              c.dx + w * 0.04, c.dy - w * 0.05);
+        canvas.drawPath(
+            dragon,
+            Paint()
+              ..color = const Color(0xFFFFE9A8)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = w * 0.012);
+        canvas.drawCircle(c, w * 0.11, outlinePaintFor(const Color(0xFFD4AF37)));
+      case 'pistola bláster':
+        final body = Paint()..color = Colors.blueGrey.shade900;
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(
+                Rect.fromLTWH(fist.dx - w * 0.02, fist.dy - fistR * 2.1,
+                    w * 0.15, fistR * 1.0),
+                const Radius.circular(3)),
+            body);
+        // Cañón con acento energético
+        canvas.drawRect(
+            Rect.fromLTWH(fist.dx + w * 0.09, fist.dy - fistR * 1.75,
+                w * 0.05, fistR * 0.3),
+            Paint()..color = Colors.cyanAccent);
+        canvas.drawRect(
+            Rect.fromLTWH(fist.dx - w * 0.02, fist.dy - fistR * 1.2,
+                w * 0.04, fistR * 1.35),
+            body);
     }
   }
 
@@ -1633,6 +1833,69 @@ class _CharacterPainter extends CustomPainter {
     final style = appearance.helmetStyle ?? HelmetStyle.medieval;
     final color = helmetColorFor(style);
 
+    // Full-face masks cover the whole head; open helmets keep a dome + visor.
+    const masks = {
+      HelmetStyle.ironMan,
+      HelmetStyle.spiderMan,
+      HelmetStyle.blackPanther,
+      HelmetStyle.deadpool,
+    };
+    if (masks.contains(style)) {
+      _drawRoundRect(
+          canvas, Rect.fromLTWH(hx - 3, hy - hs * 0.12, hs + 6, hs * 0.9), color, 10);
+      final lens = style == HelmetStyle.ironMan
+          ? Colors.lightBlueAccent
+          : Colors.white;
+      if (style == HelmetStyle.spiderMan) {
+        // Big angular spider eyes
+        for (final s in [-1.0, 1.0]) {
+          final eye = Path()
+            ..moveTo(hx + hs * (0.5 + s * 0.06), hy + hs * 0.34)
+            ..lineTo(hx + hs * (0.5 + s * 0.34), hy + hs * 0.30)
+            ..lineTo(hx + hs * (0.5 + s * 0.30), hy + hs * 0.52)
+            ..close();
+          canvas.drawPath(eye, Paint()..color = lens);
+          canvas.drawPath(eye, outlinePaintFor(color));
+        }
+      } else {
+        canvas.drawOval(Rect.fromLTWH(hx + hs * 0.16, hy + hs * 0.34, hs * 0.24, hs * 0.16),
+            Paint()..color = lens);
+        canvas.drawOval(Rect.fromLTWH(hx + hs * 0.60, hy + hs * 0.34, hs * 0.24, hs * 0.16),
+            Paint()..color = lens);
+        if (style == HelmetStyle.ironMan) {
+          // Faceplate mouth slits
+          canvas.drawRect(Rect.fromLTWH(hx + hs * 0.32, hy + hs * 0.62, hs * 0.36, hs * 0.05),
+              Paint()..color = darkenColor(color, 0.25));
+        }
+      }
+      return;
+    }
+    if (style == HelmetStyle.ninjaHood) {
+      // Cloth hood with a horizontal eye slot
+      _drawRoundRect(
+          canvas, Rect.fromLTWH(hx - 4, hy - hs * 0.15, hs + 8, hs * 0.92), color, 14);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromLTWH(hx + hs * 0.12, hy + hs * 0.36, hs * 0.76, hs * 0.16),
+            const Radius.circular(4)),
+        Paint()..color = darkenColor(color, 0.3),
+      );
+      return;
+    }
+    if (style == HelmetStyle.wolverine) {
+      // Cowl with two pointed side tips
+      _drawRoundRect(canvas, Rect.fromLTWH(hx - 3, hy - hs * 0.15, hs + 6, hs * 0.42), color, 8);
+      for (final s in [-1.0, 1.0]) {
+        final tip = Path()
+          ..moveTo(hx + hs * (0.5 + s * 0.52), hy - hs * 0.12)
+          ..lineTo(hx + hs * (0.5 + s * 0.72), hy - hs * 0.55)
+          ..lineTo(hx + hs * (0.5 + s * 0.34), hy - hs * 0.08)
+          ..close();
+        drawShadedPath(canvas, tip, color);
+      }
+      return;
+    }
+
     // Dome — bikers get a lower-profile shell
     final domeH = style == HelmetStyle.biker ? hs * 0.38 : hs * 0.5;
     _drawRoundRect(canvas, Rect.fromLTWH(hx - 3, hy - hs * 0.15, hs + 6, domeH), color, 10);
@@ -1686,6 +1949,14 @@ class _CharacterPainter extends CustomPainter {
         _drawRoundRect(canvas,
             Rect.fromLTWH(hx + hs * 0.12, hy + hs * 0.12, hs * 0.76, hs * 0.26),
             Colors.amber.withValues(alpha: 0.75), 8);
+      // Estos estilos se dibujan por completo antes del switch (return arriba).
+      case HelmetStyle.ninjaHood:
+      case HelmetStyle.ironMan:
+      case HelmetStyle.spiderMan:
+      case HelmetStyle.blackPanther:
+      case HelmetStyle.deadpool:
+      case HelmetStyle.wolverine:
+        break;
     }
   }
 
@@ -1772,6 +2043,18 @@ class _CharacterPainter extends CustomPainter {
         // Skull mark
         canvas.drawCircle(Offset(hx + hs * 0.5, hy - hs * 0.12), hs * 0.06,
             Paint()..color = Colors.white);
+      case HatStyle.conical:
+        // Sombrero cónico de paja (estilo maestro/sensei)
+        final cone = Path()
+          ..moveTo(hx - hs * 0.28, hy + hs * 0.14)
+          ..lineTo(hx + hs * 0.5, hy - hs * 0.34)
+          ..lineTo(hx + hs + hs * 0.28, hy + hs * 0.14)
+          ..close();
+        drawShadedPath(canvas, cone, color);
+        canvas.drawLine(
+            Offset(hx + hs * 0.5, hy - hs * 0.30),
+            Offset(hx + hs * 0.5, hy + hs * 0.10),
+            outlinePaintFor(color));
     }
   }
 

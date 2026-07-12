@@ -23,6 +23,7 @@ class CharacterEditorBloc
   }) : super(const CharacterEditorState()) {
     on<LoadCharacters>(_onLoadCharacters);
     on<StartNewCharacter>(_onStartNewCharacter);
+    on<StartFromPreset>(_onStartFromPreset);
     on<LoadCharacterForEdit>(_onLoadCharacterForEdit);
     on<UpdateName>(_onUpdateName);
     on<UpdateCharacterType>(_onUpdateCharacterType);
@@ -50,6 +51,22 @@ class CharacterEditorBloc
         name: '',
         type: CharacterType.hero,
         appearance: const CharacterAppearance(),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ));
+  }
+
+  void _onStartFromPreset(
+      StartFromPreset event, Emitter<CharacterEditorState> emit) {
+    final now = DateTime.now();
+    emit(state.copyWith(
+      status: EditorStatus.editing,
+      currentCharacter: Character(
+        id: _uuid.v4(),
+        name: event.preset.name,
+        type: event.preset.type,
+        appearance: event.preset.appearance,
         createdAt: now,
         updatedAt: now,
       ),

@@ -58,6 +58,7 @@ class _GalleryView extends StatelessWidget {
           if (state.characters.isEmpty) {
             return _EmptyState(
               onCreateTap: () => _openNewEditor(context),
+              onPresetsTap: () => context.goNamed('presets'),
             );
           }
 
@@ -87,14 +88,32 @@ class _GalleryView extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openNewEditor(context),
-        backgroundColor: const Color(0xFFFFD700),
-        icon: const Icon(Icons.add, color: Colors.black87),
-        label: const Text(
-          'Nuevo',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
-        ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab-presets',
+            onPressed: () => context.goNamed('presets'),
+            backgroundColor: Colors.white,
+            icon: const Icon(Icons.auto_awesome, color: Color(0xFFB8860B)),
+            label: const Text(
+              'Precargados',
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'fab-new',
+            onPressed: () => _openNewEditor(context),
+            backgroundColor: const Color(0xFFFFD700),
+            icon: const Icon(Icons.add, color: Colors.black87),
+            label: const Text(
+              'Nuevo',
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,7 +201,8 @@ class _CharacterCard extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final VoidCallback onCreateTap;
-  const _EmptyState({required this.onCreateTap});
+  final VoidCallback onPresetsTap;
+  const _EmptyState({required this.onCreateTap, required this.onPresetsTap});
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +231,17 @@ class _EmptyState extends StatelessWidget {
               backgroundColor: const Color(0xFFFFD700),
               foregroundColor: Colors.black87,
               minimumSize: const Size(180, 52),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onPresetsTap,
+            icon: const Icon(Icons.auto_awesome, color: Color(0xFFB8860B)),
+            label: const Text('Ver personajes precargados'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              minimumSize: const Size(180, 52),
+              side: const BorderSide(color: Color(0xFFFFD700), width: 2),
             ),
           ),
         ],

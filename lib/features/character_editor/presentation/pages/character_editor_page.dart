@@ -10,6 +10,7 @@ import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/music_catalog.dart';
+import '../../domain/entities/preset_characters.dart';
 import '../bloc/character_editor_bloc.dart';
 import '../bloc/character_editor_event.dart';
 import '../bloc/character_editor_state.dart';
@@ -17,8 +18,9 @@ import '../widgets/character_preview.dart';
 
 class CharacterEditorPage extends StatelessWidget {
   final String? characterId;
+  final PresetCharacter? preset;
 
-  const CharacterEditorPage({super.key, this.characterId});
+  const CharacterEditorPage({super.key, this.characterId, this.preset});
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,8 @@ class CharacterEditorPage extends StatelessWidget {
         final bloc = sl<CharacterEditorBloc>()..add(const LoadCharacters());
         if (characterId != null) {
           bloc.add(LoadCharacterForEdit(characterId!));
+        } else if (preset != null) {
+          bloc.add(StartFromPreset(preset!));
         } else {
           bloc.add(const StartNewCharacter());
         }
