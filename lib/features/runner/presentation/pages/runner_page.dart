@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/services/audio_service.dart';
 import '../../../character_editor/domain/entities/character.dart';
-import '../../../character_editor/domain/entities/music_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
@@ -31,6 +30,10 @@ class RunnerPage extends StatefulWidget {
   final String worldEmoji;
   final Color worldColor;
 
+  /// Pista de fondo elegida para esta partida (relativa a `assets/audio/`).
+  /// `null` si el jugador desactivó la música antes de correr.
+  final String? musicAsset;
+
   const RunnerPage({
     super.key,
     required this.character,
@@ -38,6 +41,7 @@ class RunnerPage extends StatefulWidget {
     required this.worldName,
     required this.worldEmoji,
     required this.worldColor,
+    this.musicAsset,
   });
 
   @override
@@ -62,9 +66,14 @@ class _RunnerPageState extends State<RunnerPage> {
     );
     // Pre-load ranking for this world to show personal best in game over
     context.read<RankingBloc>().add(LoadRanking(widget.worldId));
-    // Música de fondo elegida para este personaje (en bucle)
-    AudioService.instance
-        .playMusic(musicInfoFor(widget.character.musicTrack).asset);
+    // Música de fondo temática del mundo elegida antes de correr (en bucle).
+    // Si el jugador la desactivó, nos aseguramos de que no suene nada.
+    final asset = widget.musicAsset;
+    if (asset != null) {
+      AudioService.instance.playMusic(asset);
+    } else {
+      AudioService.instance.stopMusic();
+    }
   }
 
   void _onRunComplete(int coins) {

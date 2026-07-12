@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/services/audio_service.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../missions/presentation/bloc/mission_bloc.dart';
 import '../../../missions/presentation/bloc/mission_state.dart';
 import '../../../missions/presentation/widgets/mission_card.dart';
+import '../../domain/entities/world_music.dart';
 
-class PreRunPage extends StatelessWidget {
+class PreRunPage extends StatefulWidget {
   final Character character;
   final String worldId;
   final String worldName;
@@ -25,6 +27,65 @@ class PreRunPage extends StatelessWidget {
   });
 
   @override
+  State<PreRunPage> createState() => _PreRunPageState();
+}
+
+class _PreRunPageState extends State<PreRunPage> {
+  late final List<WorldTrack> _tracks;
+
+  /// Si el jugador quiere música de fondo en esta partida.
+  bool _musicEnabled = true;
+
+  /// Índice de la pista del mundo elegida para la partida.
+  int _selectedTrack = 0;
+
+  /// Índice de la pista que se está escuchando en la vista previa (si alguna).
+  int? _previewing;
+
+  @override
+  void initState() {
+    super.initState();
+    _tracks = worldTracksFor(widget.worldId);
+  }
+
+  @override
+  void dispose() {
+    // Detiene cualquier vista previa al abandonar la pantalla previa.
+    if (_previewing != null) AudioService.instance.stopMusic();
+    super.dispose();
+  }
+
+  void _togglePreview(int index) {
+    if (_previewing == index) {
+      AudioService.instance.stopMusic();
+      setState(() => _previewing = null);
+    } else {
+      AudioService.instance.playMusic(_tracks[index].asset);
+      setState(() => _previewing = index);
+    }
+  }
+
+  void _startRun() {
+    final musicAsset =
+        _musicEnabled && _tracks.isNotEmpty ? _tracks[_selectedTrack].asset : null;
+    // Dejamos que el runner sea la única autoridad sobre la música: arrancará
+    // la pista elegida (o la detendrá si no hay). Ponemos [_previewing] a null
+    // para que el dispose de esta pantalla no corte la música recién iniciada.
+    _previewing = null;
+    context.goNamed(
+      'runner',
+      extra: {
+        'character': widget.character,
+        'worldId': widget.worldId,
+        'worldName': widget.worldName,
+        'worldEmoji': widget.worldEmoji,
+        'worldColor': widget.worldColor,
+        'musicAsset': musicAsset,
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -32,7 +93,11 @@ class PreRunPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [worldColor, worldColor.withValues(alpha: 0.7), Colors.black87],
+            colors: [
+              widget.worldColor,
+              widget.worldColor.withValues(alpha: 0.7),
+              Colors.black87
+            ],
           ),
         ),
         child: SafeArea(
@@ -48,7 +113,7 @@ class PreRunPage extends StatelessWidget {
                       onPressed: () => context.pop(),
                     ),
                     Text(
-                      '$worldEmoji  $worldName',
+                      '${widget.worldEmoji}  ${widget.worldName}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -67,10 +132,11 @@ class PreRunPage extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // Character preview
-                      CharacterPreview(appearance: character.appearance, size: 120),
+                      CharacterPreview(
+                          appearance: widget.character.appearance, size: 120),
                       const SizedBox(height: 8),
                       Text(
-                        character.name,
+                        widget.character.name,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
@@ -78,7 +144,7 @@ class PreRunPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      _CharacterTypeBadge(type: character.type),
+                      _CharacterTypeBadge(type: widget.character.type),
 
                       const SizedBox(height: 24),
 
@@ -116,10 +182,35 @@ class PreRunPage extends StatelessWidget {
                                     ),
                                   )
                                 else
-                                  ...state.missions.map((m) => MissionCard(mission: m, compact: true)),
+                                  ...state.missions.map((m) =>
+                                      MissionCard(mission: m, compact: true)),
                               ],
                             ),
                           ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Music panel
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _MusicPanel(
+                          tracks: _tracks,
+                          enabled: _musicEnabled,
+                          selectedIndex: _selectedTrack,
+                          previewingIndex: _previewing,
+                          onToggleEnabled: (v) {
+                            if (!v && _previewing != null) {
+                              AudioService.instance.stopMusic();
+                            }
+                            setState(() {
+                              _musicEnabled = v;
+                              if (!v) _previewing = null;
+                            });
+                          },
+                          onSelect: (i) => setState(() => _selectedTrack = i),
+                          onPreview: _togglePreview,
                         ),
                       ),
 
@@ -143,16 +234,7 @@ class PreRunPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onPressed: () => context.goNamed(
-                      'runner',
-                      extra: {
-                        'character': character,
-                        'worldId': worldId,
-                        'worldName': worldName,
-                        'worldEmoji': worldEmoji,
-                        'worldColor': worldColor,
-                      },
-                    ),
+                    onPressed: _startRun,
                     child: const Text(
                       '¡CORRER!',
                       style: TextStyle(
@@ -167,6 +249,159 @@ class PreRunPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Music panel ───────────────────────────────────────────────────────────────
+
+class _MusicPanel extends StatelessWidget {
+  final List<WorldTrack> tracks;
+  final bool enabled;
+  final int selectedIndex;
+  final int? previewingIndex;
+  final ValueChanged<bool> onToggleEnabled;
+  final ValueChanged<int> onSelect;
+  final ValueChanged<int> onPreview;
+
+  const _MusicPanel({
+    required this.tracks,
+    required this.enabled,
+    required this.selectedIndex,
+    required this.previewingIndex,
+    required this.onToggleEnabled,
+    required this.onSelect,
+    required this.onPreview,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '🎵  Música del mundo',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Switch(
+                value: enabled,
+                activeColor: const Color(0xFFFFD700),
+                onChanged: onToggleEnabled,
+              ),
+            ],
+          ),
+          if (enabled) ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Elige la pista que sonará mientras corres. Toca ▶ para escucharla.',
+              style: TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            ...List.generate(tracks.length, (i) {
+              final track = tracks[i];
+              final isSelected = i == selectedIndex;
+              final isPlaying = i == previewingIndex;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: () => onSelect(i),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFFFD700).withValues(alpha: 0.18)
+                          : Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFFFD700)
+                            : Colors.white24,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(track.emoji,
+                            style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                track.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                track.description,
+                                style: const TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 4),
+                            child: Icon(Icons.check_circle,
+                                color: Color(0xFFFFD700), size: 20),
+                          ),
+                        GestureDetector(
+                          onTap: () => onPreview(i),
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: isPlaying
+                                  ? const Color(0xFFFFD700)
+                                  : Colors.white24,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isPlaying
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
+                              color:
+                                  isPlaying ? Colors.black87 : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ] else ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Correrás en silencio. Activa el interruptor para elegir una pista.',
+              style: TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+          ],
+        ],
       ),
     );
   }
