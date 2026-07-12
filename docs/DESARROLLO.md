@@ -179,7 +179,7 @@ La **música de fondo** usa un reproductor propio en bucle: `playMusic(asset)` /
 
 - **Mundo:** añade su entrada en `world_config.dart` (`WorldColors`, incluidos colores de obstáculo), su `BossConfig` en `boss_config.dart`, y sus metadatos/estado en `world_selection_page.dart` (`WorldData`).
 - **Jefe:** cada mundo mapea a un `BossConfig` (nombre, emoji, colores y pesos de ataque). El comportamiento vive en `BossComponent`/`BossAttackComponent`; los tres tipos de ataque (`projectile`, `shockwave`, `sweep`) ya están cableados a los controles.
-- **Pista de música:** añade el valor **al final** del enum `MusicTrack` (`character.dart`), su `MusicTrackInfo` en `music_catalog.dart` y el MP3 en `assets/audio/music/`.
+- **Pista de música (por mundo):** la música es temática de cada mundo y se elige en la pantalla previa a correr. Añade/edita las 3–4 pistas del mundo en `worldMusicCatalog` (`runner/domain/entities/world_music.dart`) y, si hace falta un MP3 nuevo, ponlo en `assets/audio/music/`.
 - **Preset:** añade un `PresetCharacter` a la lista de `preset_characters.dart` con su `collection`; aparecerá automáticamente en `/presets`.
 - **Accesorio / pieza:** añade un `CatalogEntry` a `part_catalog.dart` en la ranura y rareza correctas (el coste se deriva de la rareza).
 
@@ -193,7 +193,8 @@ La **música de fondo** usa un reproductor propio en bucle: `playMusic(asset)` /
   - `boss_fight_test.dart` — máquina de fases y lógica de la pelea contra el jefe (usa `bossTriggerMeters` para forzar el trigger).
   - `boss_render_test.dart` — renderizado de jefes y sus pintores.
   - `character_preview_render_test.dart` — que todas las opciones de apariencia se dibujan.
-  - `music_track_test.dart` — catálogo de música.
+  - `music_track_test.dart` — pista heredada `MusicTrack` (persistencia/compatibilidad).
+  - `world_music_test.dart` — catálogo de música temática por mundo.
   - `preset_characters_test.dart` — personajes precargados.
 - Ejecuta `flutter test`.
 - Al probar BLoCs, mockea los usecases/repositorios con `mocktail` y usa `blocTest` para verificar la secuencia de estados emitida.

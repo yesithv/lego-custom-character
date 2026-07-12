@@ -88,6 +88,7 @@ class AppRouter {
             worldName: extra['worldName'] as String,
             worldEmoji: extra['worldEmoji'] as String,
             worldColor: extra['worldColor'] as Color,
+            musicAsset: extra['musicAsset'] as String?,
           );
         },
       ),

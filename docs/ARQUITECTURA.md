@@ -44,7 +44,7 @@ Las features viven en `lib/features/`:
 | Feature | Responsabilidad |
 |---------|-----------------|
 | `home` | Pantalla de inicio enfocada en la carrera (CTA "¡JUGAR!"); ruta inicial. |
-| `character_editor` | Crear, editar, listar y borrar personajes (galería + editor), presets precargados y elección de música. |
+| `character_editor` | Crear, editar, listar y borrar personajes (galería + editor) y presets precargados. |
 | `economy` | Monedas, ruleta diaria, cofres, desbloqueo/compra de piezas, streak de juego. |
 | `missions` | Generar y avanzar 3 misiones activas rotativas. |
 | `ranking` | Registrar y consultar puntuaciones por mundo. |

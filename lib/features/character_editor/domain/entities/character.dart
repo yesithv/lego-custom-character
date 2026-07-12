@@ -2,8 +2,10 @@ import 'package:equatable/equatable.dart';
 
 enum CharacterType { hero, villain, neutral, mysterious }
 
-/// Pista musical que suena durante la partida. Cada personaje guarda su
-/// propia elección. El orden importa: se persiste por índice en Hive.
+/// Pista musical heredada. Antes cada personaje guardaba su propia elección de
+/// música; ahora la música se escoge por mundo justo antes de correr (ver
+/// `world_music.dart`). Se conserva solo por compatibilidad con los personajes
+/// ya guardados en Hive. El orden importa: se persiste por índice.
 enum MusicTrack { ratRave, neon, chiptune, chill }
 
 enum SkinTone {
@@ -179,6 +181,9 @@ class Character extends Equatable {
   final DateTime updatedAt;
   final int totalCoinsEarned;
   final int bestRunScore;
+
+  /// Campo heredado; la música ahora se elige por mundo antes de correr.
+  /// Se mantiene por compatibilidad con datos guardados. Ver [MusicTrack].
   final MusicTrack musicTrack;
 
   const Character({

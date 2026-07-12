@@ -30,7 +30,7 @@ Documentación de las reglas del juego tal como están implementadas. Todos los 
 
 ## El editor de personajes
 
-Un personaje (`Character`) tiene: `id`, `name`, `type`, `specialPower` opcional, `appearance`, `musicTrack` (pista de música de partida), marcas de tiempo y estadísticas (`totalCoinsEarned`, `bestRunScore`).
+Un personaje (`Character`) tiene: `id`, `name`, `type`, `specialPower` opcional, `appearance`, marcas de tiempo y estadísticas (`totalCoinsEarned`, `bestRunScore`). (El campo heredado `musicTrack` se conserva solo por compatibilidad con datos guardados; la música ya no se elige por personaje — ver [Música de partida](#música-de-partida)).
 
 La apariencia (`CharacterAppearance`) se compone por capas:
 
@@ -51,16 +51,14 @@ El personaje se dibuja por código (formas y colores), no con sprites, y se guar
 
 ## Música de partida
 
-Cada personaje guarda una pista de música (`MusicTrack`) que suena en bucle durante la carrera. Catálogo en `music_catalog.dart`:
+La música es **temática de cada mundo** y se elige justo antes de correr, no por personaje. En la pantalla previa (`PreRunPage`, tras seleccionar un mundo) el jugador:
 
-| `MusicTrack` | Nombre | Estilo | Archivo |
-|--------------|--------|--------|---------|
-| `ratRave` (por defecto) | Fiebre Rata 🐀 | Hyper-pop meme | `music/rat_rave.mp3` |
-| `neon` | Turbo Neón 🌆 | Synthwave retro | `music/neon.mp3` |
-| `chiptune` | Bloques 8-bit 🎮 | Chiptune arcade | `music/chiptune.mp3` |
-| `chill` | Onda Chill 🌙 | Lo-fi relajado | `music/chill.mp3` |
+1. Decide con un interruptor si quiere música de fondo (activada por defecto).
+2. Si la activa, elige una de las **3–4 pistas ambientadas en ese mundo** (p. ej. en el Reino Medieval: *Marcha del Castillo*, *Justa del Torneo*, *Taberna del Reino*, *Bosque Encantado*). Puede escuchar cada una con ▶ antes de decidir.
 
-La música la reproduce `AudioService.playMusic(asset)` con `ReleaseMode.loop` y volumen `0.55`. `toggleMute()` la silencia en caliente sin cortar la pista. Los fallos de reproducción (p. ej. autoplay bloqueado en web) se ignoran silenciosamente.
+El repertorio por mundo está en `runner/domain/entities/world_music.dart` (`worldMusicCatalog`, `worldTracksFor(worldId)`). Como los ficheros de audio son limitados, varias pistas temáticas reutilizan el mismo MP3 (`music/rat_rave.mp3`, `music/neon.mp3`, `music/chiptune.mp3`, `music/chill.mp3`) bajo nombres y ambientación propios del mundo.
+
+La pista elegida (o `null` si la música está desactivada) se pasa al `RunnerPage` como `musicAsset`. El runner la reproduce con `AudioService.playMusic(asset)` en `ReleaseMode.loop` y volumen `0.55`; si es `null`, corre en silencio. `toggleMute()` la silencia en caliente sin cortar la pista. Los fallos de reproducción (p. ej. autoplay bloqueado en web) se ignoran silenciosamente.
 
 ---
 
