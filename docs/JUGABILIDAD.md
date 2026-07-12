@@ -56,7 +56,7 @@ La música es **temática de cada mundo** y se elige justo antes de correr, no p
 1. Decide con un interruptor si quiere música de fondo (activada por defecto).
 2. Si la activa, elige una de las **3–4 pistas ambientadas en ese mundo** (p. ej. en el Reino Medieval: *Marcha del Castillo*, *Justa del Torneo*, *Taberna del Reino*, *Bosque Encantado*). Puede escuchar cada una con ▶ antes de decidir.
 
-El repertorio por mundo está en `runner/domain/entities/world_music.dart` (`worldMusicCatalog`, `worldTracksFor(worldId)`). Como los ficheros de audio son limitados, varias pistas temáticas reutilizan el mismo MP3 (`music/rat_rave.mp3`, `music/neon.mp3`, `music/chiptune.mp3`, `music/chill.mp3`) bajo nombres y ambientación propios del mundo.
+El repertorio por mundo está en `runner/domain/entities/world_music.dart` (`worldMusicCatalog`, `worldTracksFor(worldId)`). Cada pista tiene su **propio fichero** en `assets/audio/music/<mundo>_<n>.wav`, sintetizado a medida con un estilo chiptune acorde al mundo: el mundo aporta la escala/tonalidad y la progresión, y cada pista un estilo (tempo, timbre, percusión). Los WAV se generan de forma determinista con `tool/gen_music.py` (Python puro, sin dependencias).
 
 La pista elegida (o `null` si la música está desactivada) se pasa al `RunnerPage` como `musicAsset`. El runner la reproduce con `AudioService.playMusic(asset)` en `ReleaseMode.loop` y volumen `0.55`; si es `null`, corre en silencio. `toggleMute()` la silencia en caliente sin cortar la pista. Los fallos de reproducción (p. ej. autoplay bloqueado en web) se ignoran silenciosamente.
 
