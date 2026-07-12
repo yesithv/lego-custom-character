@@ -26,13 +26,15 @@ class CharacterModelAdapter extends TypeAdapter<CharacterModel> {
       updatedAt: fields[6] as DateTime,
       totalCoinsEarned: fields[7] as int,
       bestRunScore: fields[8] as int,
+      // Personajes guardados antes de la música no tienen el campo 9
+      musicTrack: fields[9] == null ? 0 : fields[9] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, CharacterModel obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +52,9 @@ class CharacterModelAdapter extends TypeAdapter<CharacterModel> {
       ..writeByte(7)
       ..write(obj.totalCoinsEarned)
       ..writeByte(8)
-      ..write(obj.bestRunScore);
+      ..write(obj.bestRunScore)
+      ..writeByte(9)
+      ..write(obj.musicTrack);
   }
 
   @override

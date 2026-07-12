@@ -2,6 +2,10 @@ import 'package:equatable/equatable.dart';
 
 enum CharacterType { hero, villain, neutral, mysterious }
 
+/// Pista musical que suena durante la partida. Cada personaje guarda su
+/// propia elección. El orden importa: se persiste por índice en Hive.
+enum MusicTrack { ratRave, neon, chiptune, chill }
+
 enum SkinTone {
   light, medium, dark,       // realistic
   blue, green, purple, orange, silver, gold  // fantastic
@@ -171,6 +175,7 @@ class Character extends Equatable {
   final DateTime updatedAt;
   final int totalCoinsEarned;
   final int bestRunScore;
+  final MusicTrack musicTrack;
 
   const Character({
     required this.id,
@@ -182,6 +187,7 @@ class Character extends Equatable {
     required this.updatedAt,
     this.totalCoinsEarned = 0,
     this.bestRunScore = 0,
+    this.musicTrack = MusicTrack.ratRave,
   });
 
   Character copyWith({
@@ -192,6 +198,7 @@ class Character extends Equatable {
     DateTime? updatedAt,
     int? totalCoinsEarned,
     int? bestRunScore,
+    MusicTrack? musicTrack,
   }) =>
       Character(
         id: id,
@@ -203,9 +210,12 @@ class Character extends Equatable {
         updatedAt: updatedAt ?? this.updatedAt,
         totalCoinsEarned: totalCoinsEarned ?? this.totalCoinsEarned,
         bestRunScore: bestRunScore ?? this.bestRunScore,
+        musicTrack: musicTrack ?? this.musicTrack,
       );
 
   @override
-  List<Object?> get props =>
-      [id, name, type, specialPower, appearance, createdAt, updatedAt];
+  List<Object?> get props => [
+        id, name, type, specialPower, appearance, createdAt, updatedAt,
+        musicTrack,
+      ];
 }

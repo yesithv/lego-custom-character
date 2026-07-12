@@ -44,6 +44,13 @@ class UpdateAppearance extends CharacterEditorEvent {
   List<Object?> get props => [appearance];
 }
 
+class UpdateMusicTrack extends CharacterEditorEvent {
+  final MusicTrack track;
+  const UpdateMusicTrack(this.track);
+  @override
+  List<Object?> get props => [track];
+}
+
 class SaveCurrentCharacter extends CharacterEditorEvent {
   const SaveCurrentCharacter();
 }

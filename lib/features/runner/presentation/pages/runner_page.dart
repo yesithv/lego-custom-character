@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/services/audio_service.dart';
 import '../../../character_editor/domain/entities/character.dart';
+import '../../../character_editor/domain/entities/music_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
@@ -61,6 +62,9 @@ class _RunnerPageState extends State<RunnerPage> {
     );
     // Pre-load ranking for this world to show personal best in game over
     context.read<RankingBloc>().add(LoadRanking(widget.worldId));
+    // Música de fondo elegida para este personaje (en bucle)
+    AudioService.instance
+        .playMusic(musicInfoFor(widget.character.musicTrack).asset);
   }
 
   void _onRunComplete(int coins) {
@@ -93,6 +97,7 @@ class _RunnerPageState extends State<RunnerPage> {
 
   @override
   void dispose() {
+    AudioService.instance.stopMusic();
     _game.dispose();
     super.dispose();
   }
