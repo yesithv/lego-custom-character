@@ -41,6 +41,10 @@ Color torsoColorFor(TorsoDesign design) => switch (design) {
       TorsoDesign.tanktop => const Color(0xFF8E9499),
       TorsoDesign.commando => const Color(0xFF4E5D3A),
       TorsoDesign.golden => const Color(0xFFD4AF37),
+      TorsoDesign.spiderGwen => const Color(0xFF1C1C1C),
+      TorsoDesign.wonderWoman => const Color(0xFFB71C1C),
+      TorsoDesign.captainMarvel => const Color(0xFF1A237E),
+      TorsoDesign.blackWidow => const Color(0xFF212121),
     };
 
 Color legColorFor(LegDesign design) => switch (design) {
@@ -67,6 +71,8 @@ Color shoeColorFor(ShoeType shoe, Color skin) => switch (shoe) {
       ShoeType.flippers => Colors.blue.shade600,
       ShoeType.witchBoots => Colors.black,
       ShoeType.barefoot => skin,
+      ShoeType.heroBoots => const Color(0xFFC62828),
+      ShoeType.balletTeal => const Color(0xFF1DE9B6),
     };
 
 Color hairColorFor(HairStyle style) => switch (style) {
@@ -81,6 +87,9 @@ Color hairColorFor(HairStyle style) => switch (style) {
       HairStyle.messy => const Color(0xFFB4622D),
       HairStyle.swept => const Color(0xFF7E2A22),
       HairStyle.fringe => const Color(0xFF1C1C1C),
+      HairStyle.longBlonde => const Color(0xFFE6C55A),
+      HairStyle.longBlack => const Color(0xFF141414),
+      HairStyle.wavyBob => const Color(0xFFC85A1B),
     };
 
 Color helmetColorFor(HelmetStyle style) => switch (style) {
@@ -97,6 +106,7 @@ Color helmetColorFor(HelmetStyle style) => switch (style) {
       HelmetStyle.blackPanther => const Color(0xFF1A1A1A),
       HelmetStyle.deadpool => Colors.red.shade800,
       HelmetStyle.wolverine => Colors.amber.shade700,
+      HelmetStyle.ghostSpider => const Color(0xFFF7F7F7),
     };
 
 Color hatColorFor(HatStyle style) => switch (style) {
@@ -116,6 +126,8 @@ Color gloveColorFor(GloveType glove, Color skin) => switch (glove) {
       GloveType.medieval => Colors.grey.shade500,
       GloveType.superhero => Colors.blue.shade800,
       GloveType.claws => Colors.grey.shade900,
+      GloveType.energy => const Color(0xFFFFA726),
+      GloveType.spiderWeb => const Color(0xFFE91E63),
     };
 
 /// Dibuja el patrón del diseño de piernas dentro de [rect] (ya pintado con

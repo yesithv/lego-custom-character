@@ -9,7 +9,7 @@ class MissionCard extends StatelessWidget {
   const MissionCard({super.key, required this.mission, this.compact = false});
 
   String get _icon {
-    if (mission.type == MissionType.collectCoins) return '✦';
+    if (mission.type == MissionType.collectCoins) return '🪙';
     if (mission.type == MissionType.runMeters) return '🏃';
     if (mission.type == MissionType.evadeObstacles) return '⚡';
     if (mission.type == MissionType.surviveSeconds) return '⏱';
@@ -53,7 +53,7 @@ class MissionCard extends StatelessWidget {
                 const Icon(Icons.check_circle, color: Colors.green, size: 16)
               else
                 Text(
-                  '✦ ${mission.rewardCoins}',
+                  '🪙 ${mission.rewardCoins}',
                   style: const TextStyle(
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.w700,

@@ -23,7 +23,7 @@ class CoinBalanceChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('✦', style: TextStyle(color: Color(0xFFFFD700), fontSize: 14)),
+            const Text('🪙', style: TextStyle(fontSize: 14)),
             const SizedBox(width: 4),
             Text(
               '${state.wallet.coins}',

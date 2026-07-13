@@ -265,7 +265,7 @@ class _HudOverlayState extends State<_HudOverlay>
                     icon: '🏃', label: '${g.meters}m', color: Colors.black54),
                 const SizedBox(width: 8),
                 _HudPill(
-                  icon: '✦',
+                  icon: '🪙',
                   label: '${g.coins}',
                   color: const Color(0xFFB8860B).withValues(alpha: 0.85),
                 ),
@@ -684,7 +684,7 @@ class _GameOverOverlay extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _StatBox(label: 'Metros', value: '${game.meters}m'),
-                  _StatBox(label: 'Monedas', value: '✦ ${game.coins}'),
+                  _StatBox(label: 'Monedas', value: '🪙 ${game.coins}'),
                   _StatBox(
                     label: 'Puntos',
                     value: '${game.score}',
@@ -878,7 +878,7 @@ class _VictoryOverlay extends StatelessWidget {
                     border: Border.all(color: const Color(0xFFFFD700)),
                   ),
                   child: Text(
-                    '✦ +${BrixRunGame.victoryCoinBonus} monedas de botín',
+                    '🪙 +${BrixRunGame.victoryCoinBonus} monedas de botín',
                     style: const TextStyle(
                       color: Color(0xFFFFD700),
                       fontWeight: FontWeight.w800,
@@ -892,7 +892,7 @@ class _VictoryOverlay extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _StatBox(label: 'Metros', value: '${game.meters}m'),
-                    _StatBox(label: 'Monedas', value: '✦ ${game.coins}'),
+                    _StatBox(label: 'Monedas', value: '🪙 ${game.coins}'),
                     _StatBox(
                       label: 'Puntos',
                       value: '${game.score}',

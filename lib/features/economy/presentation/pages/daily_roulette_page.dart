@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
@@ -19,13 +21,13 @@ class _Segment {
 }
 
 const _segments = [
-  _Segment('50 ✦', Color(0xFF4CAF50), '✦'),
+  _Segment('50 🪙', Color(0xFF4CAF50), '🪙'),
   _Segment('Parte\ncomún', Color(0xFF9E9E9E), '⚙️'),
-  _Segment('100 ✦', Color(0xFF2196F3), '✦'),
+  _Segment('100 🪙', Color(0xFF2196F3), '🪙'),
   _Segment('Parte\ncomún', Color(0xFF607D8B), '⚙️'),
-  _Segment('200 ✦', Color(0xFFFF9800), '✦'),
+  _Segment('200 🪙', Color(0xFFFF9800), '🪙'),
   _Segment('¡Rara!', Color(0xFF3F51B5), '💎'),
-  _Segment('500 ✦', Color(0xFFF44336), '✦'),
+  _Segment('500 🪙', Color(0xFFF44336), '🪙'),
   _Segment('¡Épico!', Color(0xFF9C27B0), '⚡'),
 ];
 
@@ -101,8 +103,12 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
       ),
     );
 
+    HapticFeedback.mediumImpact();
     _controller.forward(from: 0).then((_) {
-      if (mounted) setState(() => _done = true);
+      if (mounted) {
+        HapticFeedback.heavyImpact();
+        setState(() => _done = true);
+      }
     });
   }
 
@@ -124,7 +130,12 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: const BackButton(color: Colors.white),
+            // Se navega a la ruleta con `go` (reemplaza la pila), así que
+            // Navigator.pop no tiene a dónde volver: usamos go-router al inicio.
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => context.goNamed('home'),
+            ),
             title: const Text(
               '🎡 Ruleta Diaria',
               style: TextStyle(
@@ -157,15 +168,38 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
                         // Pointer triangle
                         const _Pointer(),
                         const SizedBox(height: 4),
-                        // Spinning wheel
+                        // Spinning wheel con halo dorado que palpita al girar
                         AnimatedBuilder(
                           animation: _controller,
-                          builder: (_, __) => Transform.rotate(
-                            angle: _spinning
-                                ? (_rotation.value)
-                                : 0,
-                            child: _RouletteWheel(segments: _segments),
-                          ),
+                          builder: (_, __) {
+                            final spinning = _spinning && !_done;
+                            final glow = _done
+                                ? 26.0
+                                : spinning
+                                    ? 12 +
+                                        sin(_controller.value * pi * 16).abs() *
+                                            20
+                                    : 0.0;
+                            return Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: glow > 0
+                                    ? [
+                                        BoxShadow(
+                                          color: const Color(0xFFFFD700)
+                                              .withValues(alpha: 0.65),
+                                          blurRadius: glow,
+                                          spreadRadius: glow * 0.35,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Transform.rotate(
+                                angle: _spinning ? _rotation.value : 0,
+                                child: _RouletteWheel(segments: _segments),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -174,9 +208,16 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
 
                 const SizedBox(height: 24),
 
-                // Result card
+                // Result card — aparece con un "pop" elástico al terminar
                 if (_done && _pendingReward != null)
-                  _RewardCard(reward: _pendingReward!),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.6, end: 1.0),
+                    duration: const Duration(milliseconds: 550),
+                    curve: Curves.elasticOut,
+                    builder: (_, scale, child) =>
+                        Transform.scale(scale: scale, child: child),
+                    child: _RewardCard(reward: _pendingReward!),
+                  ),
 
                 const SizedBox(height: 16),
 
@@ -199,7 +240,7 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
                       onPressed: _spinning && !_done
                           ? null
                           : _done
-                              ? () => Navigator.of(context).pop()
+                              ? () => context.goNamed('home')
                               : () => context
                                   .read<WalletBloc>()
                                   .add(const ClaimRouletteEvent()),
@@ -418,7 +459,7 @@ class _CoinBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
       ),
       child: Text(
-        '✦  $coins monedas',
+        '🪙  $coins monedas',
         style: const TextStyle(
           color: Color(0xFFFFD700),
           fontWeight: FontWeight.w900,
@@ -454,7 +495,7 @@ class _AlreadyClaimedView extends StatelessWidget {
         ),
         const SizedBox(height: 32),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.goNamed('home'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFFD700),
             foregroundColor: Colors.black87,
