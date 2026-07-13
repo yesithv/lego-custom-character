@@ -19,8 +19,11 @@ class Wallet extends Equatable {
 
   bool get canClaimRoulette {
     if (lastRouletteDate == null) return true;
+    // Comparar por día natural LOCAL. En web, Hive puede devolver la fecha en
+    // UTC; sin `toLocal()` un giro de noche se guarda como el día siguiente y
+    // bloqueaba la ruleta durante todo el día natural siguiente.
     final now = DateTime.now();
-    final l = lastRouletteDate!;
+    final l = lastRouletteDate!.toLocal();
     return now.year != l.year || now.month != l.month || now.day != l.day;
   }
 

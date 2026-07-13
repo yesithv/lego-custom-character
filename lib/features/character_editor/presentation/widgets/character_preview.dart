@@ -114,10 +114,29 @@ class _CharacterPainter extends CustomPainter {
 
   // ── Body blocks ─────────────────────────────────────────────────────────────
 
+  /// El stud (mini-bloque) solo asoma cuando la coronilla está descubierta:
+  /// sin nada en la cabeza o con estilo calvo. El cabello, los cascos y los
+  /// sombreros cubren la parte de arriba, así que ahí no debe sobresalir.
+  bool get _headStudVisible {
+    switch (appearance.headwearType) {
+      case HeadwearType.none:
+        return true;
+      case HeadwearType.hair:
+        return appearance.hairStyle == HairStyle.bald;
+      case HeadwearType.helmet:
+      case HeadwearType.hat:
+        return false;
+    }
+  }
+
   void _drawHeadBlock(Canvas canvas) {
-    // Stud on top of head (drawn first — head rect covers its lower half)
-    final studR = headSize * 0.16;
-    drawPlasticSphere(canvas, Offset(w / 2, headTop - studR * 0.35), studR, skin);
+    // Stud on top of head (drawn first — head rect covers its lower half).
+    // Solo visible si la coronilla está descubierta (ver [_headStudVisible]).
+    if (_headStudVisible) {
+      final studR = headSize * 0.16;
+      drawPlasticSphere(
+          canvas, Offset(w / 2, headTop - studR * 0.35), studR, skin);
+    }
     _drawRoundRect(canvas, Rect.fromLTWH(hx, headTop, headSize, headSize), skin, 8);
     // Extra glossy highlight on the cheek — LEGO heads are the shiniest piece
     canvas.drawOval(
@@ -181,6 +200,28 @@ class _CharacterPainter extends CustomPainter {
           Offset(leftFist.dx + fistR * 0.7, leftFist.dy), line);
       canvas.drawLine(Offset(rightFist.dx - fistR * 0.7, rightFist.dy),
           Offset(rightFist.dx + fistR * 0.7, rightFist.dy), line);
+    } else if (appearance.gloves == GloveType.energy) {
+      // Puños de fotones: halo de energía naranja alrededor de cada puño
+      for (final fist in [leftFist, rightFist]) {
+        canvas.drawCircle(fist, fistR * 1.7,
+            Paint()..color = const Color(0xFFFFC107).withValues(alpha: 0.28));
+        canvas.drawCircle(fist, fistR * 1.25,
+            Paint()..color = const Color(0xFFFFE082).withValues(alpha: 0.45));
+      }
+    } else if (appearance.gloves == GloveType.spiderWeb) {
+      // Telaraña cian sobre los guantes magenta
+      final web = Paint()
+        ..color = const Color(0xFF18FFFF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+      for (final fist in [leftFist, rightFist]) {
+        for (var i = -1; i <= 1; i++) {
+          canvas.drawLine(fist, Offset(fist.dx + i * fistR * 0.8, fist.dy - fistR),
+              web);
+        }
+        canvas.drawArc(Rect.fromCircle(center: fist, radius: fistR * 0.55),
+            3.6, 2.1, false, web);
+      }
     }
   }
 
@@ -350,6 +391,36 @@ class _CharacterPainter extends CustomPainter {
         final toeX = isLeft ? rect.left + rect.width * 0.2 : rect.right - rect.width * 0.2;
         canvas.drawLine(Offset(toeX, rect.top + rect.height * 0.25),
             Offset(toeX, rect.bottom - rect.height * 0.25), toe);
+      case ShoeType.heroBoots:
+        // Bota roja de superheroína con borde blanco y suela oscura
+        _drawRoundRect(canvas, rect, const Color(0xFFC62828), 4);
+        // Pico blanco frontal
+        final tipX = isLeft ? rect.left : rect.right;
+        final chevron = Path()
+          ..moveTo(tipX, rect.top)
+          ..lineTo(tipX, rect.bottom - rect.height * 0.2)
+          ..lineTo(isLeft ? rect.left + rect.width * 0.32 : rect.right - rect.width * 0.32,
+              rect.top)
+          ..close();
+        canvas.drawPath(chevron, Paint()..color = Colors.white);
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.bottom - rect.height * 0.22,
+                rect.width, rect.height * 0.22),
+            Paint()..color = Colors.black87);
+      case ShoeType.balletTeal:
+        // Zapatilla turquesa baja con suela y puntera blancas
+        _drawRoundRect(canvas, rect, const Color(0xFF1DE9B6), 5);
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.bottom - rect.height * 0.28,
+                rect.width, rect.height * 0.28),
+            Paint()..color = Colors.white);
+        final toeX = isLeft ? rect.left : rect.right - rect.width * 0.22;
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(
+                Rect.fromLTWH(toeX, rect.top + rect.height * 0.2,
+                    rect.width * 0.22, rect.height * 0.6),
+                const Radius.circular(3)),
+            Paint()..color = Colors.white);
     }
   }
 
@@ -608,6 +679,111 @@ class _CharacterPainter extends CustomPainter {
         );
         drawStar4(canvas, Offset(cx, torsoTop + torsoH * 0.34), torsoW * 0.09,
             Paint()..color = const Color(0xFFFFE9A8));
+      case TorsoDesign.spiderGwen:
+        // Emblema de araña blanca sobre el pecho negro
+        final white = Paint()..color = Colors.white;
+        final bodyC = Offset(cx, torsoTop + torsoH * 0.45);
+        // Cuerpo (cabeza + abdomen)
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: bodyC, width: torsoW * 0.10, height: torsoH * 0.34),
+            white);
+        canvas.drawCircle(
+            Offset(cx, torsoTop + torsoH * 0.26), torsoW * 0.045, white);
+        // Patas de araña
+        final legP = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6
+          ..strokeCap = StrokeCap.round;
+        for (final s in [-1.0, 1.0]) {
+          for (var i = 0; i < 3; i++) {
+            final y = torsoTop + torsoH * (0.34 + i * 0.13);
+            canvas.drawLine(
+                Offset(cx, y),
+                Offset(cx + s * torsoW * 0.22, y - torsoH * 0.06 + i * torsoH * 0.05),
+                legP);
+          }
+        }
+      case TorsoDesign.wonderWoman:
+        // Águila dorada de alas abiertas sobre el corpiño rojo
+        final gold = Paint()..color = const Color(0xFFFFD54F);
+        final eagle = Path()
+          ..moveTo(cx, torsoTop + torsoH * 0.30)
+          ..quadraticBezierTo(cx - torsoW * 0.24, torsoTop + torsoH * 0.24,
+              cx - torsoW * 0.34, torsoTop + torsoH * 0.42)
+          ..quadraticBezierTo(cx - torsoW * 0.18, torsoTop + torsoH * 0.40,
+              cx, torsoTop + torsoH * 0.52)
+          ..quadraticBezierTo(cx + torsoW * 0.18, torsoTop + torsoH * 0.40,
+              cx + torsoW * 0.34, torsoTop + torsoH * 0.42)
+          ..quadraticBezierTo(cx + torsoW * 0.24, torsoTop + torsoH * 0.24,
+              cx, torsoTop + torsoH * 0.30)
+          ..close();
+        drawShadedPath(canvas, eagle, gold.color);
+        // Cinturón dorado con estrella
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX, torsoTop + torsoH * 0.80, torsoW, torsoH * 0.14),
+            gold);
+        drawStar4(canvas, Offset(cx, torsoTop + torsoH * 0.87), torsoW * 0.07,
+            Paint()..color = Colors.white);
+      case TorsoDesign.captainMarvel:
+        // Cuello y hombros rojos + estrella dorada de 8 puntas
+        final red = Paint()..color = const Color(0xFFD32F2F);
+        canvas.drawPath(
+          Path()
+            ..moveTo(torsoX, torsoTop)
+            ..lineTo(torsoX + torsoW * 0.30, torsoTop)
+            ..lineTo(cx, torsoTop + torsoH * 0.22)
+            ..lineTo(torsoX + torsoW * 0.70, torsoTop)
+            ..lineTo(torsoX + torsoW, torsoTop)
+            ..lineTo(torsoX + torsoW, torsoTop + torsoH * 0.30)
+            ..lineTo(torsoX, torsoTop + torsoH * 0.30)
+            ..close(),
+          red,
+        );
+        // Estrella dorada central
+        final starC = Offset(cx, torsoTop + torsoH * 0.50);
+        drawStar4(canvas, starC, torsoW * 0.16,
+            Paint()..color = const Color(0xFFFFD54F));
+        canvas.save();
+        canvas.translate(starC.dx, starC.dy);
+        canvas.rotate(0.785);
+        drawStar4(canvas, Offset.zero, torsoW * 0.12,
+            Paint()..color = const Color(0xFFFFD54F));
+        canvas.restore();
+        // Cinturón dorado
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX, torsoTop + torsoH * 0.84, torsoW, torsoH * 0.10),
+            Paint()..color = const Color(0xFFC9A227));
+      case TorsoDesign.blackWidow:
+        // Panel gris de armadura con reloj de arena rojo
+        final panel = Paint()..color = const Color(0xFF4A4A4A);
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(
+                Rect.fromCenter(
+                    center: Offset(cx, torsoTop + torsoH * 0.42),
+                    width: torsoW * 0.52,
+                    height: torsoH * 0.60),
+                const Radius.circular(4)),
+            panel);
+        // Cierre central
+        canvas.drawLine(Offset(cx, torsoTop + torsoH * 0.14),
+            Offset(cx, torsoTop + torsoH * 0.72),
+            Paint()
+              ..color = Colors.black.withValues(alpha: 0.5)
+              ..strokeWidth = 1.4);
+        // Reloj de arena rojo (símbolo de la viuda)
+        final red = Paint()..color = const Color(0xFFD50000);
+        final hourglass = Path()
+          ..moveTo(cx - torsoW * 0.08, torsoTop + torsoH * 0.34)
+          ..lineTo(cx + torsoW * 0.08, torsoTop + torsoH * 0.34)
+          ..lineTo(cx, torsoTop + torsoH * 0.46)
+          ..close()
+          ..moveTo(cx - torsoW * 0.08, torsoTop + torsoH * 0.58)
+          ..lineTo(cx + torsoW * 0.08, torsoTop + torsoH * 0.58)
+          ..lineTo(cx, torsoTop + torsoH * 0.46)
+          ..close();
+        canvas.drawPath(hourglass, red);
     }
   }
 
@@ -1200,6 +1376,16 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawRect(
             Rect.fromLTWH(hx - 3, eyeY - hs * 0.05, hs + 6, hs * 0.06),
             Paint()..color = frame.withValues(alpha: 0.6));
+      case 'diadema estrella':
+        // Tiara dorada sobre la frente con estrella roja central
+        const gold = Color(0xFFFFD54F);
+        final band = Rect.fromLTWH(hx + hs * 0.10, headTop + hs * 0.14,
+            hs * 0.80, hs * 0.09);
+        drawPlasticRect(canvas, band, gold, 3, sheen: false);
+        canvas.drawCircle(Offset(hx + hs * 0.5, headTop + hs * 0.185),
+            hs * 0.10, Paint()..color = gold);
+        drawStar4(canvas, Offset(hx + hs * 0.5, headTop + hs * 0.185),
+            hs * 0.075, Paint()..color = const Color(0xFFD50000));
     }
   }
 
@@ -1359,6 +1545,35 @@ class _CharacterPainter extends CustomPainter {
             w * 0.034, Colors.pink.shade300);
         drawStar4(canvas, Offset(fist.dx, fist.dy - h * 0.150), w * 0.055,
             Paint()..color = Colors.white.withValues(alpha: 0.55));
+      case 'lazo dorado':
+        // Lazo de la verdad: aro de cuerda dorada colgando de la mano
+        const gold = Color(0xFFD4A017);
+        final loop = Paint()
+          ..color = gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w * 0.028
+          ..strokeCap = StrokeCap.round;
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(fist.dx + w * 0.02, fist.dy + h * 0.075),
+                width: w * 0.20,
+                height: h * 0.14),
+            loop);
+        // Brillo del aro
+        canvas.drawArc(
+            Rect.fromCenter(
+                center: Offset(fist.dx + w * 0.02, fist.dy + h * 0.075),
+                width: w * 0.20,
+                height: h * 0.14),
+            3.4, 1.2, false,
+            Paint()
+              ..color = const Color(0xFFFFE9A8)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = w * 0.012);
+        // Tramo de cuerda que sube al puño
+        canvas.drawLine(Offset(fist.dx, fist.dy),
+            Offset(fist.dx + w * 0.02, fist.dy + h * 0.01),
+            loop..strokeWidth = w * 0.022);
       case 'globo corazón':
         // Cuerda + globo con forma de corazón
         final heartC = Offset(fist.dx + w * 0.025, fist.dy - h * 0.150);
@@ -1757,8 +1972,33 @@ class _CharacterPainter extends CustomPainter {
                 hs * 0.42),
             color,
             3);
+      case HairStyle.longBlonde:
+      case HairStyle.longBlack:
+      case HairStyle.wavyBob:
+        _drawLongHairFront(canvas, hx, hy, hs, color);
       case HairStyle.bald:
         break;
+    }
+  }
+
+  /// Casquete + mechones que enmarcan la cara para las melenas largas.
+  /// La caída sobre el pecho se dibuja en [_drawLongHairOverlay].
+  void _drawLongHairFront(
+      Canvas canvas, double hx, double hy, double hs, Color color) {
+    // Casquete superior con raya al medio
+    _drawRoundRect(
+        canvas, Rect.fromLTWH(hx - 3, hy - hs * 0.14, hs + 6, hs * 0.34), color, 8);
+    // Mechones laterales que caen por delante de las orejas hasta la mandíbula
+    for (final side in [-1.0, 1.0]) {
+      final anchor = side < 0 ? hx : hx + hs;
+      final lock = Path()
+        ..moveTo(anchor - side * hs * 0.02, hy + hs * 0.04)
+        ..quadraticBezierTo(anchor + side * hs * 0.14, hy + hs * 0.30,
+            anchor - side * hs * 0.02, hy + hs * 0.66)
+        ..quadraticBezierTo(anchor - side * hs * 0.16, hy + hs * 0.34,
+            anchor - side * hs * 0.16, hy + hs * 0.06)
+        ..close();
+      drawShadedPath(canvas, lock, color);
     }
   }
 
@@ -1802,6 +2042,40 @@ class _CharacterPainter extends CustomPainter {
           Rect.fromLTWH(hx + hs * 0.92, hy + hs * 0.30, hs * 0.26, hs * 0.10),
           Colors.pink.shade400,
           3);
+    } else if (style == HairStyle.longBlonde ||
+        style == HairStyle.longBlack ||
+        style == HairStyle.wavyBob) {
+      final color = hairColorFor(style!);
+      // El bob llega al hombro; las melenas largas caen hasta el pecho.
+      final drop = style == HairStyle.wavyBob ? 0.62 : 1.05;
+      for (final side in [-1.0, 1.0]) {
+        final anchor = side < 0 ? hx : hx + hs;
+        final wave = Path()
+          ..moveTo(anchor - side * hs * 0.10, hy + hs * 0.34)
+          ..quadraticBezierTo(
+              anchor + side * hs * 0.30, hy + hs * (0.34 + drop * 0.45),
+              anchor + side * hs * 0.14, hy + hs * (0.34 + drop))
+          ..quadraticBezierTo(
+              anchor + side * hs * 0.02, hy + hs * (0.34 + drop * 1.05),
+              anchor - side * hs * 0.14, hy + hs * (0.34 + drop * 0.92))
+          ..quadraticBezierTo(
+              anchor - side * hs * 0.18, hy + hs * (0.34 + drop * 0.45),
+              anchor - side * hs * 0.14, hy + hs * 0.34)
+          ..close();
+        drawShadedPath(canvas, wave, color);
+        // Mechón de brillo siguiendo la caída
+        canvas.drawPath(
+          Path()
+            ..moveTo(anchor + side * hs * 0.02, hy + hs * 0.44)
+            ..quadraticBezierTo(
+                anchor + side * hs * 0.16, hy + hs * (0.34 + drop * 0.5),
+                anchor + side * hs * 0.06, hy + hs * (0.34 + drop * 0.9)),
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.18)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0,
+        );
+      }
     } else if (style == HairStyle.braids) {
       final color = hairColorFor(HairStyle.braids);
       // Trenzas largas por delante de los hombros, en segmentos
@@ -1895,6 +2169,49 @@ class _CharacterPainter extends CustomPainter {
       }
       return;
     }
+    if (style == HelmetStyle.ghostSpider) {
+      // Capucha blanca de Ghost-Spider con máscara de ojos rosa.
+      const pink = Color(0xFFE91E63);
+      // Capucha: rodea la cabeza y baja por los lados
+      _drawRoundRect(
+          canvas, Rect.fromLTWH(hx - 5, hy - hs * 0.16, hs + 10, hs * 0.98), color, 16);
+      // Faldones de la capucha a los lados de la cara
+      for (final side in [-1.0, 1.0]) {
+        final anchor = side < 0 ? hx - 5 : hx + hs + 5;
+        final flap = Path()
+          ..moveTo(anchor, hy + hs * 0.10)
+          ..quadraticBezierTo(anchor - side * hs * 0.02, hy + hs * 0.70,
+              anchor + side * hs * 0.14, hy + hs * 0.86)
+          ..lineTo(anchor + side * hs * 0.22, hy + hs * 0.50)
+          ..close();
+        drawShadedPath(canvas, flap, color);
+      }
+      // Máscara interior (óvalo blanco) sobre la cara
+      final maskRect = Rect.fromLTWH(hx + hs * 0.08, hy + hs * 0.16, hs * 0.84, hs * 0.66);
+      canvas.drawOval(maskRect, Paint()..color = Colors.white);
+      canvas.drawOval(maskRect, outlinePaintFor(color));
+      // Ojos de araña grandes en forma de gota, contorno rosa
+      for (final s in [-1.0, 1.0]) {
+        final ex = hx + hs * (0.5 + s * 0.20);
+        final eye = Path()
+          ..moveTo(ex - s * hs * 0.02, hy + hs * 0.34)
+          ..quadraticBezierTo(ex + s * hs * 0.20, hy + hs * 0.34,
+              ex + s * hs * 0.20, hy + hs * 0.50)
+          ..quadraticBezierTo(ex + s * hs * 0.20, hy + hs * 0.62,
+              ex + s * hs * 0.02, hy + hs * 0.62)
+          ..quadraticBezierTo(ex - s * hs * 0.10, hy + hs * 0.48,
+              ex - s * hs * 0.02, hy + hs * 0.34)
+          ..close();
+        canvas.drawPath(eye, Paint()..color = Colors.white);
+        canvas.drawPath(
+            eye,
+            Paint()
+              ..color = pink
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.2);
+      }
+      return;
+    }
 
     // Dome — bikers get a lower-profile shell
     final domeH = style == HelmetStyle.biker ? hs * 0.38 : hs * 0.5;
@@ -1956,6 +2273,7 @@ class _CharacterPainter extends CustomPainter {
       case HelmetStyle.blackPanther:
       case HelmetStyle.deadpool:
       case HelmetStyle.wolverine:
+      case HelmetStyle.ghostSpider:
         break;
     }
   }

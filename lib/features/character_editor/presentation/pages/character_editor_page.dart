@@ -159,7 +159,24 @@ class _PreviewSectionState extends State<_PreviewSection> {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       child: Row(
         children: [
-          CharacterPreview(appearance: widget.character.appearance, size: 80),
+          // Tarjeta blanca detrás de la figura: hace que cada pieza resalte
+          // y que se note al instante cada cambio de personalización.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child:
+                CharacterPreview(appearance: widget.character.appearance, size: 84),
+          ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -182,48 +199,10 @@ class _PreviewSectionState extends State<_PreviewSection> {
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 8),
-                _TypeSelector(selected: widget.character.type),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TypeSelector extends StatelessWidget {
-  final CharacterType selected;
-  const _TypeSelector({required this.selected});
-
-  static const _labels = {
-    CharacterType.hero: ('Héroe', Colors.blue),
-    CharacterType.villain: ('Villano', Colors.red),
-    CharacterType.neutral: ('Neutral', Colors.grey),
-    CharacterType.mysterious: ('Misterioso', Colors.purple),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: CharacterType.values.map((type) {
-          final (label, color) = _labels[type]!;
-          final isSelected = type == selected;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ChoiceChip(
-              label: Text(label, style: const TextStyle(fontSize: 12)),
-              selected: isSelected,
-              selectedColor: color.withValues(alpha: 0.3),
-              onSelected: (_) => context
-                  .read<CharacterEditorBloc>()
-                  .add(UpdateCharacterType(type)),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -239,16 +218,27 @@ class _EditorTabs extends StatelessWidget {
       length: 5,
       child: Column(
         children: [
-          const TabBar(
-            isScrollable: true,
-            labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-            tabs: [
-              Tab(text: 'Cabeza'),
-              Tab(text: 'Cabello'),
-              Tab(text: 'Torso'),
-              Tab(text: 'Piernas'),
-              Tab(text: 'Accesorios'),
-            ],
+          // Fondo oscuro para que las pestañas contrasten: antes el texto
+          // blanco/amarillo sobre crema casi no se veía.
+          Container(
+            color: const Color(0xFF2B2B2B),
+            child: const TabBar(
+              isScrollable: true,
+              labelColor: Color(0xFFFFD700),
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Color(0xFFFFD700),
+              indicatorWeight: 3,
+              labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              unselectedLabelStyle:
+                  TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              tabs: [
+                Tab(text: 'Cabeza'),
+                Tab(text: 'Cabello'),
+                Tab(text: 'Torso'),
+                Tab(text: 'Piernas'),
+                Tab(text: 'Accesorios'),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
@@ -615,7 +605,7 @@ class _AccessoriesTab extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('✦ ', style: TextStyle(color: Color(0xFFB8860B), fontSize: 18)),
+                const Text('🪙 ', style: TextStyle(fontSize: 18)),
                 Text(
                   '${entry.coinCost} monedas',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
@@ -624,7 +614,7 @@ class _AccessoriesTab extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Tienes: ✦ $coins',
+              'Tienes: 🪙 $coins',
               style: TextStyle(
                 color: canAfford ? Colors.black54 : Colors.red,
                 fontSize: 13,
@@ -793,10 +783,10 @@ class _OptionChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFFFFD700)
+                  ? const Color(0xFFB8860B)
                   : isLocked
                       ? _rarityColor
-                      : Colors.grey.shade300,
+                      : Colors.grey.shade500,
               width: isLocked ? 1.5 : 2,
             ),
           ),
@@ -810,19 +800,19 @@ class _OptionChip extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 13,
                   color: isSelected
-                      ? Colors.black87
+                      ? Colors.black
                       : isLocked
                           ? Colors.black45
-                          : Colors.black54,
+                          : Colors.black87,
                 ),
               ),
               if (isLocked && coinCost != null) ...[
                 const SizedBox(width: 4),
                 Text(
-                  '✦$coinCost',
+                  '🪙$coinCost',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -904,16 +894,18 @@ class _EnumSelector<T> extends StatelessWidget {
               color: isSelected ? const Color(0xFFFFD700) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? const Color(0xFFFFD700) : Colors.grey.shade300,
+                color: isSelected
+                    ? const Color(0xFFB8860B)
+                    : Colors.grey.shade500,
                 width: 2,
               ),
             ),
             child: Text(
               label(v),
               style: TextStyle(
-                fontWeight: FontWeight.w600,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 13,
-                color: isSelected ? Colors.black87 : Colors.black54,
+                color: isSelected ? Colors.black : Colors.black87,
               ),
             ),
           ),

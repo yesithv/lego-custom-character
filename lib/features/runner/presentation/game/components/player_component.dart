@@ -558,6 +558,26 @@ class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         }
         tips.close();
         canvas.drawPath(tips, Paint()..color = color);
+      case HairStyle.longBlonde:
+      case HairStyle.longBlack:
+      case HairStyle.wavyBob:
+        // Melena que cae por la espalda; el bob llega a los hombros
+        final drop = style == HairStyle.wavyBob ? 0.34 : 0.52;
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.20), color, 8);
+        final sway = sin(_runAnimTimer * 6.0) * w * 0.03;
+        final mane = Path()
+          ..moveTo(w * 0.10, h * 0.14)
+          ..lineTo(w * 0.90, h * 0.14)
+          ..quadraticBezierTo(
+              w * 0.94 + sway, h * (0.14 + drop * 0.6), w * 0.82 + sway,
+              h * (0.14 + drop))
+          ..quadraticBezierTo(
+              w * 0.5 + sway, h * (0.14 + drop * 1.12), w * 0.18 + sway,
+              h * (0.14 + drop))
+          ..quadraticBezierTo(
+              w * 0.06 + sway, h * (0.14 + drop * 0.6), w * 0.10, h * 0.14)
+          ..close();
+        drawShadedPath(canvas, mane, color);
       case HairStyle.bald:
         break;
     }

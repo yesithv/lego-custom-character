@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
@@ -28,6 +31,7 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
   late Animation<double> _shakeAnim;
   late Animation<double> _lidAnim;
   late Animation<double> _glowAnim;
+  late Animation<double> _popAnim;
   late Animation<Offset> _rewardSlide;
 
   bool _opened = false;
@@ -59,6 +63,10 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
     _glowAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _openController, curve: Curves.easeOut),
     );
+    // "Pop" elástico para que el premio salte a la vista al revelarse
+    _popAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _openController, curve: Curves.elasticOut),
+    );
     _rewardSlide = Tween<Offset>(
       begin: const Offset(0, 0.5),
       end: Offset.zero,
@@ -68,7 +76,10 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
 
     // Auto-shake then open
     _shakeController.forward().then((_) {
+      if (!mounted) return;
       context.read<WalletBloc>().add(OpenChestEvent(isVip: widget.isVip));
+      // Golpe háptico en el momento de abrir, para reforzar que ganaste algo
+      HapticFeedback.heavyImpact();
       _openController.forward();
       setState(() => _opened = true);
     });
@@ -121,13 +132,36 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
 
                 const SizedBox(height: 24),
 
-                // Reward reveal
+                // Reward reveal con ráfaga de rayos dorados detrás y "pop"
                 if (_opened && reward != null)
                   SlideTransition(
                     position: _rewardSlide,
                     child: FadeTransition(
                       opacity: _glowAnim,
-                      child: _RewardReveal(reward: reward),
+                      child: ScaleTransition(
+                        scale: _popAnim,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Rayos que se expanden al aparecer el premio
+                            Positioned.fill(
+                              child: AnimatedBuilder(
+                                animation: _openController,
+                                builder: (_, __) => CustomPaint(
+                                  painter: _BurstPainter(
+                                    progress: _glowAnim.value,
+                                    color: widget.isVip
+                                        ? const Color(0xFFFFE082)
+                                        : const Color(0xFFFFD54F),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _RewardReveal(reward: reward),
+                          ],
+                        ),
+                      ),
                     ),
                   )
                 else
@@ -262,6 +296,47 @@ class _ChestGraphic extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ráfaga de rayos dorados que irradian desde el centro del premio.
+class _BurstPainter extends CustomPainter {
+  final double progress; // 0..1
+  final Color color;
+  _BurstPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxR = size.longestSide * 0.9;
+    final r = maxR * progress;
+    // Los rayos se desvanecen conforme se expanden
+    final fade = (1.0 - progress).clamp(0.0, 1.0);
+    final ray = Paint()
+      ..color = color.withValues(alpha: 0.55 * fade)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    const count = 12;
+    for (var i = 0; i < count; i++) {
+      final a = (2 * pi / count) * i + progress * 0.6;
+      final inner = r * 0.45;
+      canvas.drawLine(
+        center + Offset(cos(a) * inner, sin(a) * inner),
+        center + Offset(cos(a) * r, sin(a) * r),
+        ray,
+      );
+    }
+    // Halo suave detrás del premio
+    canvas.drawCircle(
+      center,
+      r * 0.5,
+      Paint()..color = color.withValues(alpha: 0.18 * fade),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BurstPainter old) =>
+      old.progress != progress || old.color != color;
 }
 
 class _RewardReveal extends StatelessWidget {

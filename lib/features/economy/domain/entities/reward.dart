@@ -14,7 +14,7 @@ class CoinsReward extends Reward {
   String get displayLabel => '$amount monedas';
 
   @override
-  String get emoji => '✦';
+  String get emoji => '🪙';
 }
 
 class PartReward extends Reward {

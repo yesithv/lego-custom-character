@@ -292,7 +292,7 @@ class _ScoreRow extends StatelessWidget {
                 ),
               ),
               Text(
-                '${score.meters}m · ✦${score.coins}',
+                '${score.meters}m · 🪙${score.coins}',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
