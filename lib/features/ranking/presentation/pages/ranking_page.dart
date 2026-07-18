@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
+import '../../../character_editor/presentation/bloc/character_editor_event.dart';
+import '../../../runner/presentation/pages/world_selection_page.dart' show worlds, WorldData;
 import '../../domain/entities/score.dart';
 import '../bloc/ranking_bloc.dart';
 import '../bloc/ranking_event.dart';
@@ -23,37 +28,81 @@ class RankingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<RankingBloc>()..add(LoadRanking(worldId)),
-      child: _RankingView(
-        worldName: worldName,
-        worldEmoji: worldEmoji,
-        worldColor: worldColor,
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<RankingBloc>()..add(LoadRanking(worldId))),
+        // Para identificar "Tú": el primer personaje es el corredor activo.
+        BlocProvider(
+          create: (_) => sl<CharacterEditorBloc>()..add(const LoadCharacters()),
+        ),
+      ],
+      child: _RankingView(worldId: worldId),
     );
   }
 }
 
-class _RankingView extends StatelessWidget {
-  final String worldName;
-  final String worldEmoji;
-  final Color worldColor;
+// Periodo del ranking (filtra por fecha de la puntuación).
+enum _Period { semana, mes, global }
 
-  const _RankingView({
-    required this.worldName,
-    required this.worldEmoji,
-    required this.worldColor,
-  });
+String _periodLabel(_Period p) => switch (p) {
+      _Period.semana => 'Semana',
+      _Period.mes => 'Mes',
+      _Period.global => 'Global',
+    };
+
+class _RankingView extends StatefulWidget {
+  final String worldId;
+
+  const _RankingView({required this.worldId});
+
+  @override
+  State<_RankingView> createState() => _RankingViewState();
+}
+
+class _RankingViewState extends State<_RankingView> {
+  _Period _period = _Period.semana;
+  late String _selectedWorldId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedWorldId = widget.worldId;
+  }
+
+  WorldData get _world => worlds.firstWhere(
+        (w) => w.id == _selectedWorldId,
+        orElse: () => worlds.first,
+      );
+
+  void _selectWorld(BuildContext context, String worldId) {
+    if (worldId == _selectedWorldId) return;
+    setState(() => _selectedWorldId = worldId);
+    context.read<RankingBloc>().add(LoadRanking(worldId));
+  }
+
+  List<Score> _applyPeriod(List<Score> scores) {
+    if (_period == _Period.global) return scores;
+    final days = _period == _Period.semana ? 7 : 30;
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return scores.where((s) => s.createdAt.isAfter(cutoff)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Nombre del personaje activo del jugador → fila "Tú".
+    final editorState = context.watch<CharacterEditorBloc>().state;
+    final activeName = editorState.characters.isNotEmpty
+        ? editorState.characters.first.name
+        : null;
+
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0E1A),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [worldColor, worldColor.withValues(alpha: 0.6), Colors.black87],
+            colors: [Color(0xFF121A2E), Color(0xFF0A0E1A)],
           ),
         ),
         child: SafeArea(
@@ -61,34 +110,48 @@ class _RankingView extends StatelessWidget {
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.horizontal, 12, AppSpacing.horizontal, 8),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
+                    _CircleIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () => context.goNamed('home'),
                     ),
-                    Text(
-                      '$worldEmoji  $worldName',
-                      style: const TextStyle(
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Ranking',
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                      ),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      '🏆 Ranking',
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: 22,
                       ),
                     ),
                   ],
                 ),
               ),
 
+              // Banner del mundo + selector de periodo
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.horizontal, 4, AppSpacing.horizontal, 12),
+                child: _WorldBanner(
+                  worldName: _world.name,
+                  worldEmoji: _world.emoji,
+                  worldColor: _world.color,
+                  period: _period,
+                  onPeriodChanged: (p) => setState(() => _period = p),
+                ),
+              ),
+
+              // Chips para cambiar de mundo (evita una pantalla extra)
+              _WorldChips(
+                selectedId: _selectedWorldId,
+                onSelect: (id) => _selectWorld(context, id),
+              ),
+              const SizedBox(height: 12),
+
+              // Lista
               Expanded(
                 child: BlocBuilder<RankingBloc, RankingState>(
                   builder: (context, state) {
@@ -98,50 +161,28 @@ class _RankingView extends StatelessWidget {
                       );
                     }
 
-                    if (state.scores.isEmpty) {
-                      return const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('🏁', style: TextStyle(fontSize: 64)),
-                            SizedBox(height: 16),
-                            Text(
-                              '¡Sé el primero en correr aquí!',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                    final scores = _applyPeriod(state.scores);
+
+                    if (scores.isEmpty) {
+                      return _EmptyState(period: _period);
                     }
 
-                    return Column(
-                      children: [
-                        // Podium (top 3)
-                        if (state.scores.length >= 1)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _Podium(scores: state.scores.take(3).toList()),
-                          ),
-                        const SizedBox(height: 16),
-                        // Ranks 4–10
-                        if (state.scores.length > 3)
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: state.scores.length - 3,
-                              itemBuilder: (context, i) => _ScoreRow(
-                                rank: i + 4,
-                                score: state.scores[i + 3],
-                              ),
-                            ),
-                          )
-                        else
-                          const Spacer(),
-                      ],
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.horizontal, 0, AppSpacing.horizontal, 20),
+                      itemCount: scores.length,
+                      itemBuilder: (context, i) {
+                        final score = scores[i];
+                        final rank = i + 1;
+                        final isYou = activeName != null &&
+                            activeName.isNotEmpty &&
+                            score.characterName == activeName;
+                        return _ScoreRow(
+                          rank: rank,
+                          score: score,
+                          isYou: isYou,
+                        );
+                      },
                     );
                   },
                 ),
@@ -154,151 +195,441 @@ class _RankingView extends StatelessWidget {
   }
 }
 
-class _Podium extends StatelessWidget {
-  final List<Score> scores;
-  const _Podium({required this.scores});
+// ── World banner ─────────────────────────────────────────────────────────────
+
+class _WorldBanner extends StatelessWidget {
+  final String worldName;
+  final String worldEmoji;
+  final Color worldColor;
+  final _Period period;
+  final ValueChanged<_Period> onPeriodChanged;
+
+  const _WorldBanner({
+    required this.worldName,
+    required this.worldEmoji,
+    required this.worldColor,
+    required this.period,
+    required this.onPeriodChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Layout: 2nd (left) — 1st (center, taller) — 3rd (right)
-    final first = scores[0];
-    final second = scores.length > 1 ? scores[1] : null;
-    final third = scores.length > 2 ? scores[2] : null;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(child: second != null ? _PodiumSlot(rank: 2, score: second, height: 90) : const SizedBox()),
-        Expanded(child: _PodiumSlot(rank: 1, score: first, height: 120)),
-        Expanded(child: third != null ? _PodiumSlot(rank: 3, score: third, height: 70) : const SizedBox()),
-      ],
-    );
-  }
-}
-
-class _PodiumSlot extends StatelessWidget {
-  final int rank;
-  final Score score;
-  final double height;
-
-  const _PodiumSlot({required this.rank, required this.score, required this.height});
-
-  static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
-  static const _colors = {
-    1: Color(0xFFFFD700),
-    2: Color(0xFFB0BEC5),
-    3: Color(0xFFBF8970),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _colors[rank]!;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(_medals[rank]!, style: const TextStyle(fontSize: 28)),
-        const SizedBox(height: 4),
-        Text(
-          score.characterName.isEmpty ? '—' : score.characterName,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
+    final lighter = Color.lerp(worldColor, Colors.white, 0.18)!;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [lighter, worldColor],
         ),
-        const SizedBox(height: 2),
-        Text(
-          '${score.score} pts',
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: worldColor.withValues(alpha: 0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.25),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-            border: Border(top: BorderSide(color: color, width: 2)),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            '$rank',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 22,
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icono del mundo
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(worldEmoji, style: const TextStyle(fontSize: 24)),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'MUNDO',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                Text(
+                  worldName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 19,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _PeriodDropdown(period: period, onChanged: onPeriodChanged),
+        ],
+      ),
     );
   }
 }
+
+class _PeriodDropdown extends StatelessWidget {
+  final _Period period;
+  final ValueChanged<_Period> onChanged;
+
+  const _PeriodDropdown({required this.period, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_Period>(
+      onSelected: onChanged,
+      color: const Color(0xFF1A2236),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      itemBuilder: (_) => _Period.values
+          .map((p) => PopupMenuItem<_Period>(
+                value: p,
+                child: Text(
+                  _periodLabel(p),
+                  style: TextStyle(
+                    color: p == period ? const Color(0xFFFFD700) : Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ))
+          .toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _periodLabel(period),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down_rounded,
+                color: Colors.white, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── World chips ──────────────────────────────────────────────────────────────
+
+class _WorldChips extends StatelessWidget {
+  final String selectedId;
+  final ValueChanged<String> onSelect;
+
+  const _WorldChips({required this.selectedId, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.horizontal),
+        itemCount: worlds.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final world = worlds[i];
+          final selected = world.id == selectedId;
+          return _WorldChip(
+            world: world,
+            selected: selected,
+            onTap: () => onSelect(world.id),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _WorldChip extends StatelessWidget {
+  final WorldData world;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _WorldChip({
+    required this.world,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? const Color(0xFFFFD700)
+          : Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? const Color(0xFFC99700) : Colors.white24,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(world.emoji, style: const TextStyle(fontSize: 15)),
+              const SizedBox(width: 6),
+              Text(
+                world.name,
+                style: TextStyle(
+                  color: selected ? const Color(0xFF3D2C00) : Colors.white70,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Score row ────────────────────────────────────────────────────────────────
 
 class _ScoreRow extends StatelessWidget {
   final int rank;
   final Score score;
+  final bool isYou;
 
-  const _ScoreRow({required this.rank, required this.score});
+  const _ScoreRow({
+    required this.rank,
+    required this.score,
+    required this.isYou,
+  });
+
+  static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
+
+  static const _avatarColors = [
+    Color(0xFF9C27B0), // morado
+    Color(0xFF2196F3), // azul
+    Color(0xFF43A047), // verde
+    Color(0xFFFB8C00), // naranja
+    Color(0xFFE53935), // rojo
+    Color(0xFF90A4AE), // gris
+    Color(0xFF26A69A), // teal
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final isChampion = rank == 1;
+    final highlighted = isChampion || isYou;
+    final avatarColor = _avatarColors[(rank - 1) % _avatarColors.length];
+    final name = score.characterName.isEmpty ? 'Corredor' : score.characterName;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: highlighted
+            ? const Color(0xFFFFD700).withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: highlighted
+              ? const Color(0xFFFFD700)
+              : Colors.white.withValues(alpha: 0.08),
+          width: highlighted ? 2 : 1,
+        ),
+        boxShadow: highlighted
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.18),
+                  blurRadius: 12,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
+          // Rango (medalla o número)
           SizedBox(
-            width: 28,
-            child: Text(
-              '$rank',
-              style: const TextStyle(
-                color: Colors.white54,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
+            width: 30,
+            child: _medals.containsKey(rank)
+                ? Text(_medals[rank]!, style: const TextStyle(fontSize: 22))
+                : Text(
+                    '$rank',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
           ),
-          Expanded(
-            child: Text(
-              score.characterName.isEmpty ? '—' : score.characterName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${score.score} pts',
-                style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
+          const SizedBox(width: 10),
+          // Avatar de color
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: avatarColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: avatarColor.withValues(alpha: 0.5),
+                  blurRadius: 6,
                 ),
-              ),
-              Text(
-                '${score.meters}m · 🪙${score.coins}',
-                style: const TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-            ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Nombre (o "Tú (nombre)")
+          Expanded(
+            child: isYou
+                ? RichText(
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Tú ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '($name)',
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 8),
+          // Puntaje
+          Text(
+            _formatNumber(score.score),
+            style: TextStyle(
+              color: isChampion ? const Color(0xFFFFD700) : Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ── Empty state ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  final _Period period;
+  const _EmptyState({required this.period});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.horizontal),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('🏁', style: TextStyle(fontSize: 64)),
+            const SizedBox(height: 16),
+            Text(
+              period == _Period.global
+                  ? '¡Sé el primero en correr aquí!'
+                  : 'Sin marcas en este periodo',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Corre en este mundo para entrar al ranking.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared bits ──────────────────────────────────────────────────────────────
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.10),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+/// Formatea un entero con separador de miles (24580 → "24,580").
+String _formatNumber(int n) {
+  final s = n.abs().toString();
+  final buf = StringBuffer(n < 0 ? '-' : '');
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
 }

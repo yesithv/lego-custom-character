@@ -3,13 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
 import '../../../character_editor/presentation/bloc/character_editor_state.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
-import '../../../ranking/presentation/bloc/ranking_bloc.dart';
-import '../../../ranking/presentation/bloc/ranking_event.dart';
 
 enum WorldStatus { available, locked }
 
@@ -20,6 +19,14 @@ class WorldData {
   final String description;
   final Color color;
   final WorldStatus status;
+  final String trackLength;
+
+  /// Etiquetas de zona/dificultad que se muestran en la tarjeta (solo para
+  /// mundos disponibles). Ej. ['Inicio', 'Caos'].
+  final List<String> tags;
+
+  /// Coste en monedas para desbloquear el mundo (mundos bloqueados).
+  final int unlockCost;
 
   const WorldData({
     required this.id,
@@ -28,10 +35,13 @@ class WorldData {
     required this.description,
     required this.color,
     required this.status,
+    required this.trackLength,
+    this.tags = const [],
+    this.unlockCost = 1000,
   });
 }
 
-const _worlds = [
+const worlds = [
   WorldData(
     id: 'lego_city',
     name: 'Ciudad LEGO',
@@ -39,6 +49,8 @@ const _worlds = [
     description: 'Calles de bloques, semáforos y autos.',
     color: Color(0xFF0055A5),
     status: WorldStatus.available,
+    trackLength: '1200 m',
+    tags: ['Inicio', 'Caos'],
   ),
   WorldData(
     id: 'medieval',
@@ -47,6 +59,8 @@ const _worlds = [
     description: 'Castillo, foso y catapultas.',
     color: Color(0xFF8B4513),
     status: WorldStatus.available,
+    trackLength: '1500 m',
+    tags: ['Núcleo'],
   ),
   WorldData(
     id: 'galaxy',
@@ -55,6 +69,7 @@ const _worlds = [
     description: 'Estación espacial y asteroides.',
     color: Color(0xFF1A0A3B),
     status: WorldStatus.locked,
+    trackLength: '2000 m',
   ),
   WorldData(
     id: 'jungle',
@@ -63,6 +78,7 @@ const _worlds = [
     description: 'Árboles de bloques, ríos y lianas.',
     color: Color(0xFF2D6A4F),
     status: WorldStatus.locked,
+    trackLength: '1800 m',
   ),
   WorldData(
     id: 'dark_city',
@@ -71,6 +87,7 @@ const _worlds = [
     description: 'Halloween, cementerio y niebla.',
     color: Color(0xFF1A1A2E),
     status: WorldStatus.locked,
+    trackLength: '2300 m',
   ),
   WorldData(
     id: 'ocean',
@@ -79,6 +96,7 @@ const _worlds = [
     description: 'Arrecifes de coral y burbujas.',
     color: Color(0xFF006994),
     status: WorldStatus.locked,
+    trackLength: '1600 m',
   ),
   WorldData(
     id: 'tundra',
@@ -87,6 +105,7 @@ const _worlds = [
     description: 'Nieve, témpanos y ventisca.',
     color: Color(0xFF5BA4CF),
     status: WorldStatus.locked,
+    trackLength: '2100 m',
   ),
   WorldData(
     id: 'robot_city',
@@ -95,6 +114,7 @@ const _worlds = [
     description: 'Fábricas, engranajes y pantallas.',
     color: Color(0xFF37474F),
     status: WorldStatus.locked,
+    trackLength: '2500 m',
   ),
 ];
 
@@ -123,70 +143,131 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0E8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD700),
-        leading: BackButton(
-          color: Colors.black87,
-          onPressed: () => context.goNamed('home'),
+      backgroundColor: const Color(0xFF063574),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1466C8), Color(0xFF0A4A9E), Color(0xFF063574)],
+          ),
         ),
-        title: const Text(
-          'Elige tu Mundo',
-          style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
+        child: SafeArea(
+          child: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
+            builder: (context, state) {
+              final characters = state.characters;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.horizontal, 12, AppSpacing.horizontal, 8),
+                    child: Row(
+                      children: [
+                        _CircleIconButton(
+                          icon: Icons.arrow_back_rounded,
+                          onTap: () => context.goNamed('home'),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Elige tu mundo',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  if (characters.isEmpty)
+                    const Expanded(child: _NoCharactersState())
+                  else ...[
+                    // Etiqueta + chips de personaje (imagen + nombre debajo)
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          AppSpacing.horizontal, 4, AppSpacing.horizontal, 8),
+                      child: Text(
+                        'CORREDOR',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    _CharacterSelector(
+                      characters: characters,
+                      selectedIndex:
+                          _selectedCharacter.clamp(0, characters.length - 1),
+                      onSelect: (i) =>
+                          setState(() => _selectedCharacter = i),
+                    ),
+                    const SizedBox(height: 10),
+                    // Lista de mundos
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.horizontal,
+                            4, AppSpacing.horizontal, 20),
+                        itemCount: worlds.length,
+                        itemBuilder: (context, i) => _WorldCard(
+                          world: worlds[i],
+                          character: characters[
+                              _selectedCharacter.clamp(0, characters.length - 1)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
         ),
       ),
-      body: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
-        builder: (context, state) {
-          final characters = state.characters;
+    );
+  }
+}
 
-          if (characters.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('🧱', style: TextStyle(fontSize: 48)),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Necesitas un personaje para jugar',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.goNamed('editor-new'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
-                      foregroundColor: Colors.black87,
-                    ),
-                    child: const Text('Crear personaje'),
-                  ),
-                ],
-              ),
-            );
-          }
+class _NoCharactersState extends StatelessWidget {
+  const _NoCharactersState();
 
-          // Character selector at top
-          final safeIndex =
-              _selectedCharacter.clamp(0, characters.length - 1);
-          return Column(
-            children: [
-              _CharacterSelector(
-                characters: characters,
-                selectedIndex: safeIndex,
-                onSelect: (i) => setState(() => _selectedCharacter = i),
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.horizontal),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('🧱', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 12),
+            const Text(
+              'Necesitas un personaje para jugar',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
               ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _worlds.length,
-                  itemBuilder: (context, i) => _WorldCard(
-                    world: _worlds[i],
-                    character: characters[safeIndex],
-                  ),
-                ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => context.goNamed('editor-new'),
+              icon: const Icon(Icons.add),
+              label: const Text('Crear personaje'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: const Color(0xFF3D2C00),
+                minimumSize: const Size(200, 50),
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -205,62 +286,55 @@ class _CharacterSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFE8E0D0),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        children: [
-          const Text(
-            'Elige tu personaje',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: characters.length,
-              itemBuilder: (context, i) {
-                final c = characters[i];
-                final isSelected = i == selectedIndex;
-                return GestureDetector(
-                  onTap: () => onSelect(i),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFFFD700)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFFFFD700)
-                            : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        CharacterPreview(
-                            appearance: c.appearance, size: 40),
-                        const SizedBox(height: 2),
-                        Text(
-                          c.name.isEmpty ? '?' : c.name,
-                          style: const TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.w600),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+    return SizedBox(
+      height: 112,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.horizontal),
+        itemCount: characters.length,
+        itemBuilder: (context, i) {
+          final c = characters[i];
+          final isSelected = i == selectedIndex;
+          return GestureDetector(
+            onTap: () => onSelect(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 98,
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFFFFD700).withValues(alpha: 0.18)
+                    : Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFFFFD700)
+                      : Colors.white24,
+                  width: isSelected ? 2.5 : 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CharacterPreview(appearance: c.appearance, size: 42),
+                  const SizedBox(height: 2),
+                  Text(
+                    c.name.isEmpty ? '?' : c.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -272,140 +346,165 @@ class _WorldCard extends StatelessWidget {
 
   const _WorldCard({required this.world, required this.character});
 
+  void _startRun(BuildContext context) {
+    context.pushNamed(
+      'pre-run',
+      extra: {
+        'character': character,
+        'worldId': world.id,
+        'worldName': world.name,
+        'worldEmoji': world.emoji,
+        'worldColor': world.color,
+      },
+    );
+  }
+
+  void _showLocked(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            '¡Mundo bloqueado! Gana ${world.unlockCost} monedas para desbloquearlo.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLocked = world.status == WorldStatus.locked;
+    final lighter = Color.lerp(world.color, Colors.white, 0.14)!;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: GestureDetector(
-        onTap: isLocked
-            ? () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        '¡Mundo bloqueado! Gana monedas para desbloquearlo.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                )
-            : () {
-                context.goNamed(
-                  'pre-run',
-                  extra: {
-                    'character': character,
-                    'worldId': world.id,
-                    'worldName': world.name,
-                    'worldEmoji': world.emoji,
-                    'worldColor': world.color,
-                  },
-                );
-              },
+        onTap: isLocked ? () => _showLocked(context) : () => _startRun(context),
         child: Opacity(
-          opacity: isLocked ? 0.6 : 1.0,
+          opacity: isLocked ? 0.7 : 1.0,
           child: Container(
-            height: 100,
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: world.color,
-              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [lighter, world.color],
+              ),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: world.color.withValues(alpha: 0.4),
-                  blurRadius: 8,
+                  color: world.color.withValues(alpha: 0.35),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
-            child: Stack(
+            child: Row(
               children: [
-                Positioned(
-                  right: 16,
-                  top: 0,
-                  bottom: 0,
+                // Icono del mundo
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Center(
                     child: Text(world.emoji,
-                        style: const TextStyle(fontSize: 48)),
+                        style: const TextStyle(fontSize: 28)),
                   ),
                 ),
-                if (!isLocked)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: GestureDetector(
-                      onTap: () {
-                        context.read<RankingBloc>().add(LoadRanking(world.id));
-                        context.goNamed(
-                          'ranking',
-                          pathParameters: {'worldId': world.id},
-                          extra: {
-                            'worldName': world.name,
-                            'worldEmoji': world.emoji,
-                            'worldColor': world.color,
-                          },
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black38,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events_outlined,
-                          color: Color(0xFFFFD700),
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
+                const SizedBox(width: 14),
+                // Info
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            world.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 18,
+                          Flexible(
+                            child: Text(
+                              world.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
                           if (isLocked) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Icon(Icons.lock_rounded,
-                                color: Colors.white70, size: 18),
+                                color: Colors.white, size: 16),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         world.description,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12.5,
                         ),
                       ),
-                      if (!isLocked) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            _ZoneChip('Inicio'),
-                            const SizedBox(width: 4),
-                            _ZoneChip('Núcleo'),
-                            const SizedBox(width: 4),
-                            _ZoneChip('Zona Caos'),
-                          ],
-                        ),
-                      ],
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _DistancePill(text: world.trackLength),
+                          if (!isLocked)
+                            ...world.tags.map((t) => _ZoneChip(t)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 10),
+                // Acción a la derecha: jugar (disponible) o coste (bloqueado)
+                if (isLocked)
+                  _CoinCostPill(cost: world.unlockCost)
+                else
+                  const _PlayBadge(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DistancePill extends StatelessWidget {
+  final String text;
+  const _DistancePill({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.straighten_rounded, color: Colors.white, size: 13),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -418,17 +517,96 @@ class _ZoneChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.black.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _CoinCostPill extends StatelessWidget {
+  final int cost;
+  const _CoinCostPill({required this.cost});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFD700),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🪙', style: TextStyle(fontSize: 14)),
+          const SizedBox(width: 4),
+          Text(
+            '$cost',
+            style: const TextStyle(
+              color: Color(0xFF3D2C00),
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayBadge extends StatelessWidget {
+  const _PlayBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFD700),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFC99700),
+            offset: const Offset(0, 3),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: const Icon(Icons.directions_run_rounded,
+          color: Color(0xFF3D2C00), size: 26),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.10),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
     );

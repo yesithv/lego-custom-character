@@ -79,6 +79,21 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
 
   bool get hasShield => _heroShieldActive || shieldPowerupActive;
 
+  /// Segundos restantes del escudo de power-up (0 si no está activo).
+  double get shieldTimeLeft => shieldPowerupActive ? _shieldTimer : 0;
+
+  /// Segundos restantes del imán (0 si no está activo).
+  double get magnetTimeLeft => magnetActive ? _magnetTimer : 0;
+
+  /// Si el escudo innato del héroe sigue disponible (absorbe un golpe).
+  bool get heroShieldReady => _heroShieldActive;
+
+  /// Progreso del corredor a lo largo de la pista (0–1). La meta es la
+  /// aparición del jefe; durante la pelea/victoria la barra queda llena.
+  double get trackProgress => phase == GamePhase.running
+      ? ((_distanceTraveled / 100) / bossTriggerMeters).clamp(0.0, 1.0)
+      : 1.0;
+
   double _distanceTraveled = 0;
   double _speedTimer = 0;
   double _obstacleTimer = 0;

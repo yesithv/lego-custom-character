@@ -18,6 +18,10 @@ class WalletModel extends HiveObject {
   DateTime? lastPlayDate;
   @HiveField(5)
   int totalCoinsEarned;
+  @HiveField(6)
+  String? lastRouletteRewardLabel;
+  @HiveField(7)
+  String? lastRouletteRewardEmoji;
 
   WalletModel({
     required this.coins,
@@ -26,6 +30,8 @@ class WalletModel extends HiveObject {
     required this.runStreak,
     this.lastPlayDate,
     required this.totalCoinsEarned,
+    this.lastRouletteRewardLabel,
+    this.lastRouletteRewardEmoji,
   });
 
   factory WalletModel.fromEntity(Wallet w) => WalletModel(
@@ -35,6 +41,8 @@ class WalletModel extends HiveObject {
         runStreak: w.runStreak,
         lastPlayDate: w.lastPlayDate,
         totalCoinsEarned: w.totalCoinsEarned,
+        lastRouletteRewardLabel: w.lastRouletteRewardLabel,
+        lastRouletteRewardEmoji: w.lastRouletteRewardEmoji,
       );
 
   Wallet toEntity() => Wallet(
@@ -44,5 +52,7 @@ class WalletModel extends HiveObject {
         runStreak: runStreak,
         lastPlayDate: lastPlayDate,
         totalCoinsEarned: totalCoinsEarned,
+        lastRouletteRewardLabel: lastRouletteRewardLabel,
+        lastRouletteRewardEmoji: lastRouletteRewardEmoji,
       );
 }

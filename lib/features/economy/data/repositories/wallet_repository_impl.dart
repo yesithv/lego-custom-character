@@ -77,13 +77,22 @@ class WalletRepositoryImpl implements WalletRepository {
       if (!parts.contains(prize.partId)) parts.add(prize.partId);
     }
 
+    // Etiqueta corta para la tarjeta "HOY GANASTE": el número si son monedas,
+    // el nombre de la pieza si es un accesorio.
+    final rewardLabel = switch (prize) {
+      CoinsReward(:final amount) => '$amount',
+      PartReward(:final partName) => partName,
+    };
+
     final updated = m.toEntity().copyWith(
           coins: newCoins,
           lastRouletteDate: DateTime.now(),
           unlockedParts: parts,
           totalCoinsEarned: prize is CoinsReward
-              ? m.totalCoinsEarned + (prize as CoinsReward).amount
+              ? m.totalCoinsEarned + prize.amount
               : m.totalCoinsEarned,
+          lastRouletteRewardLabel: rewardLabel,
+          lastRouletteRewardEmoji: prize.emoji,
         );
     await _datasource.saveWallet(WalletModel.fromEntity(updated));
     return (wallet: updated, reward: prize);

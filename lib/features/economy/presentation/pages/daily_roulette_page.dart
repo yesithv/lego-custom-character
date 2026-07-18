@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
+import '../../domain/entities/wallet.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_event.dart';
 import '../bloc/wallet_state.dart';
@@ -21,14 +23,14 @@ class _Segment {
 }
 
 const _segments = [
-  _Segment('50 🪙', Color(0xFF4CAF50), '🪙'),
-  _Segment('Parte\ncomún', Color(0xFF9E9E9E), '⚙️'),
-  _Segment('100 🪙', Color(0xFF2196F3), '🪙'),
-  _Segment('Parte\ncomún', Color(0xFF607D8B), '⚙️'),
-  _Segment('200 🪙', Color(0xFFFF9800), '🪙'),
-  _Segment('¡Rara!', Color(0xFF3F51B5), '💎'),
-  _Segment('500 🪙', Color(0xFFF44336), '🪙'),
-  _Segment('¡Épico!', Color(0xFF9C27B0), '⚡'),
+  _Segment('50', Color(0xFF43A047), '🪙'),
+  _Segment('Parte', Color(0xFF9E9E9E), '⚙️'),
+  _Segment('100', Color(0xFF1E88E5), '🪙'),
+  _Segment('Común', Color(0xFF8D9E63), '⚙️'),
+  _Segment('200', Color(0xFFB07A3B), '🪙'),
+  _Segment('Raro', Color(0xFF3949AB), '💎'),
+  _Segment('500', Color(0xFFE53935), '🪙'),
+  _Segment('¡Épico!', Color(0xFF8E24AA), '⚡'),
 ];
 
 // Map reward type → wheel segment index
@@ -155,7 +157,11 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
               const SizedBox(height: 12),
 
               if (!state.wallet.canClaimRoulette && !_done) ...[
-                const Expanded(child: _AlreadyClaimedView()),
+                const SizedBox(height: 4),
+                const Opacity(opacity: 0.35, child: _Pointer()),
+                const SizedBox(height: 10),
+                const Expanded(child: Center(child: _LockedWheel())),
+                _ClaimedPanel(wallet: state.wallet),
               ] else ...[
                 const SizedBox(height: 24),
 
@@ -219,44 +225,39 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
                     child: _RewardCard(reward: _pendingReward!),
                   ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // Spin / close button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _done
-                            ? Colors.green.shade600
-                            : const Color(0xFFFFD700),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      onPressed: _spinning && !_done
-                          ? null
-                          : _done
-                              ? () => context.goNamed('home')
-                              : () => context
-                                  .read<WalletBloc>()
-                                  .add(const ClaimRouletteEvent()),
-                      child: Text(
-                        _spinning && !_done
-                            ? '¡Girando!'
-                            : _done
-                                ? '¡Genial!'
-                                : '¡GIRAR!',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                          color: Colors.black87,
-                        ),
+                // Indicador de giro disponible
+                if (!_spinning && !_done)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      '✨ 1 giro disponible hoy',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
+
+                // Spin / close button (efecto 3D de bloque)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(40, 0, 40, 20),
+                  child: _SpinButton(
+                    label: _spinning && !_done
+                        ? '¡Girando!'
+                        : _done
+                            ? '¡Genial!'
+                            : '¡GIRAR!',
+                    done: _done,
+                    onTap: _spinning && !_done
+                        ? null
+                        : _done
+                            ? () => context.goNamed('home')
+                            : () => context
+                                .read<WalletBloc>()
+                                .add(const ClaimRouletteEvent()),
                   ),
                 ),
               ],
@@ -277,8 +278,8 @@ class _RouletteWheel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 280,
-      height: 280,
+      width: 290,
+      height: 290,
       child: CustomPaint(
         painter: _WheelPainter(segments: segments),
       ),
@@ -290,73 +291,187 @@ class _WheelPainter extends CustomPainter {
   final List<_Segment> segments;
   _WheelPainter({required this.segments});
 
+  static const double _rimWidth = 16;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
+    final segRadius = radius - _rimWidth;
     final segAngle = (2 * pi) / segments.length;
+    final fullRect = Rect.fromCircle(center: center, radius: radius);
 
+    // ── Aro dorado exterior (metálico) ──
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFE680), Color(0xFFE0A800), Color(0xFFB8860B)],
+        ).createShader(fullRect),
+    );
+    // Borde exterior oscuro para dar profundidad
+    canvas.drawCircle(
+      center,
+      radius - 1,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = const Color(0xFF8A5E00),
+    );
+
+    // ── Segmentos ──
     for (int i = 0; i < segments.length; i++) {
       final startAngle = i * segAngle - pi / 2;
       final seg = segments[i];
+      final segRect = Rect.fromCircle(center: center, radius: segRadius);
 
-      // Sector fill
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        segAngle,
-        true,
-        Paint()..color = seg.color,
-      );
+      canvas.drawArc(segRect, startAngle, segAngle, true,
+          Paint()..color = seg.color);
 
-      // Sector border
+      // Separador entre segmentos
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
+        segRect,
         startAngle,
         segAngle,
         true,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.3)
+          ..color = Colors.white.withValues(alpha: 0.18)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+          ..strokeWidth = 1.5,
       );
+    }
 
-      // Label
+    // Anillo interior que separa segmentos del aro
+    canvas.drawCircle(
+      center,
+      segRadius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = const Color(0xFF9C6B00),
+    );
+
+    // ── Icono + etiqueta de cada segmento ──
+    for (int i = 0; i < segments.length; i++) {
+      final startAngle = i * segAngle - pi / 2;
+      final seg = segments[i];
+
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(startAngle + segAngle / 2);
-      final textR = radius * 0.65;
 
+      // Icono (moneda / pieza) hacia el borde exterior
+      final iconTp = TextPainter(
+        text: TextSpan(text: seg.emoji, style: const TextStyle(fontSize: 17)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      iconTp.paint(
+        canvas,
+        Offset(segRadius * 0.80 - iconTp.width / 2, -iconTp.height / 2),
+      );
+
+      // Etiqueta hacia el centro
       final tp = TextPainter(
         text: TextSpan(
           text: seg.label,
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            fontSize: 15,
+            shadows: [
+              Shadow(color: Colors.black45, blurRadius: 2, offset: Offset(0, 1)),
+            ],
           ),
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout(maxWidth: 70);
-      tp.paint(canvas, Offset(textR - tp.width / 2, -tp.height / 2));
+      tp.paint(canvas, Offset(segRadius * 0.46 - tp.width / 2, -tp.height / 2));
       canvas.restore();
     }
 
-    // Center circle
-    canvas.drawCircle(center, 22,
-        Paint()..color = const Color(0xFF1A0A3B));
+    // ── Centro (hub) ──
+    canvas.drawCircle(center, 26, Paint()..color = const Color(0xFF1A0A3B));
     canvas.drawCircle(
-        center,
-        22,
-        Paint()
-          ..color = const Color(0xFFFFD700)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3);
+      center,
+      26,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFE680), Color(0xFFC99700)],
+        ).createShader(Rect.fromCircle(center: center, radius: 26)),
+    );
+    canvas.drawCircle(center, 7, Paint()..color = const Color(0xFFFFD700));
   }
 
   @override
   bool shouldRepaint(_WheelPainter old) => false;
+}
+
+/// Botón principal de la ruleta con el efecto 3D de bloque de la app.
+class _SpinButton extends StatelessWidget {
+  final String label;
+  final bool done;
+  final VoidCallback? onTap;
+
+  const _SpinButton({
+    required this.label,
+    required this.done,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final base = done ? const Color(0xFF43A047) : const Color(0xFFFFD700);
+    final baseDark = done ? const Color(0xFF2E7D32) : const Color(0xFFC99700);
+    final textColor = done ? Colors.white : const Color(0xFF3D2C00);
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(color: baseDark, offset: const Offset(0, 6), blurRadius: 0),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.30),
+              offset: const Offset(0, 9),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Material(
+          color: base,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onTap,
+            child: SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: Center(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    letterSpacing: 1,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Pointer extends StatelessWidget {
@@ -470,40 +585,216 @@ class _CoinBadge extends StatelessWidget {
   }
 }
 
-class _AlreadyClaimedView extends StatelessWidget {
-  const _AlreadyClaimedView();
+/// Rueda desaturada con candado al centro (estado "ya girada").
+class _LockedWheel extends StatelessWidget {
+  const _LockedWheel();
+
+  // Matriz de saturación reducida (~0.3): los colores quedan apagados
+  // pero se siguen intuyendo, como en el diseño.
+  static const _desaturate = ColorFilter.matrix(<double>[
+    0.449, 0.501, 0.051, 0, 0,
+    0.149, 0.801, 0.051, 0, 0,
+    0.149, 0.501, 0.351, 0, 0,
+    0, 0, 0, 1, 0,
+  ]);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const Opacity(
+          opacity: 0.55,
+          child: ColorFiltered(
+            colorFilter: _desaturate,
+            child: _RouletteWheel(segments: _segments),
+          ),
+        ),
+        // Candado dorado central
+        Container(
+          width: 66,
+          height: 66,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A0A3B),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFFFD700), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: const Icon(Icons.lock_rounded,
+              color: Color(0xFFFFD700), size: 30),
+        ),
+      ],
+    );
+  }
+}
+
+/// Panel inferior cuando ya se giró: título, subtítulo, tarjetas de
+/// "hoy ganaste" + "próximo giro" y botón "Entendido".
+class _ClaimedPanel extends StatelessWidget {
+  final Wallet wallet;
+  const _ClaimedPanel({required this.wallet});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '¡Ya reclamaste tu ruleta hoy!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 21,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Vuelve mañana para girar de nuevo.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _InfoCard(
+                  label: 'HOY GANASTE',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        wallet.lastRouletteRewardEmoji ?? '🪙',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        wallet.lastRouletteRewardLabel ?? '—',
+                        style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: _InfoCard(
+                  label: 'PRÓXIMO GIRO',
+                  child: _Countdown(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _SpinButton(
+            label: 'Entendido',
+            done: false,
+            onTap: () => context.goNamed('home'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final String label;
+  final Widget child;
+  const _InfoCard({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12, width: 1),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Cuenta regresiva hasta la medianoche local (cuando se reinicia la ruleta).
+class _Countdown extends StatefulWidget {
+  const _Countdown();
+
+  @override
+  State<_Countdown> createState() => _CountdownState();
+}
+
+class _CountdownState extends State<_Countdown> {
+  Timer? _timer;
+  late Duration _remaining;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = _timeToMidnight();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _remaining = _timeToMidnight());
+    });
+  }
+
+  Duration _timeToMidnight() {
+    final now = DateTime.now();
+    final nextMidnight = DateTime(now.year, now.month, now.day + 1);
+    final d = nextMidnight.difference(now);
+    return d.isNegative ? Duration.zero : d;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.inHours)}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('🕐', style: TextStyle(fontSize: 64)),
-        const SizedBox(height: 16),
-        const Text(
-          '¡Ya reclamaste tu ruleta hoy!',
-          style: TextStyle(
+        const Icon(Icons.schedule_rounded, color: Colors.white70, size: 16),
+        const SizedBox(width: 6),
+        Text(
+          _fmt(_remaining),
+          style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Vuelve mañana para girar de nuevo.',
-          style: TextStyle(color: Colors.white54, fontSize: 14),
-        ),
-        const SizedBox(height: 32),
-        ElevatedButton(
-          onPressed: () => context.goNamed('home'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700),
-            foregroundColor: Colors.black87,
-            minimumSize: const Size(160, 48),
-          ),
-          child: const Text(
-            'Entendido',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            fontWeight: FontWeight.w900,
+            fontSize: 17,
+            fontFeatures: [FontFeature.tabularFigures()],
           ),
         ),
       ],

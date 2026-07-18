@@ -44,10 +44,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/sprites/character/head/
-    - assets/sprites/character/torso/
-    - assets/sprites/character/legs/
-    - assets/sprites/character/accessories/
-    - assets/sprites/worlds/
     - assets/audio/
     - assets/audio/music/
