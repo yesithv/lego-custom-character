@@ -89,7 +89,10 @@ class _CharacterPainter extends CustomPainter {
     // Head
     _drawHeadBlock(canvas);
     _drawEyes(canvas, hx, headTop, headSize, skin);
+    _drawEyebrows(canvas, hx, headTop, headSize);
     _drawMouth(canvas, hx, headTop, headSize);
+    // Los extras van sobre la cara ya montada, pero debajo del pelo/casco
+    _drawFacialExtra(canvas, hx, headTop, headSize);
     _drawHeadwear(canvas);
     _drawFaceAccessory(canvas);
 
@@ -107,9 +110,12 @@ class _CharacterPainter extends CustomPainter {
     _drawShoes(canvas);
     _drawFeetAccessory(canvas);
 
-    // Held items in front of everything
-    _drawHandAccessory(canvas, appearance.accessories.rightHand, rightFist);
-    _drawHandAccessory(canvas, appearance.accessories.leftHand, leftFist);
+    // Held items in front of everything. Se escalan alrededor del puño para
+    // que ganen presencia sin despegarse de la mano.
+    _scaledAbout(canvas, rightFist, _handAccessoryScale,
+        () => _drawHandAccessory(canvas, appearance.accessories.rightHand, rightFist));
+    _scaledAbout(canvas, leftFist, _handAccessoryScale,
+        () => _drawHandAccessory(canvas, appearance.accessories.leftHand, leftFist));
   }
 
   // ── Body blocks ─────────────────────────────────────────────────────────────
@@ -983,19 +989,51 @@ class _CharacterPainter extends CustomPainter {
     if (id == null) return;
     switch (id) {
       case 'hombreras':
+        // Placa principal + lámina inferior solapada, al estilo de una
+        // hombrera articulada. Anchas y con remaches para que se lean a
+        // tamaño de galería.
         final pad = Colors.grey.shade500;
-        _drawRoundRect(
-            canvas,
-            Rect.fromLTWH(torsoX - armW * 1.1, armTop - h * 0.012,
-                armW * 1.4, h * 0.045),
-            pad,
-            4);
-        _drawRoundRect(
-            canvas,
-            Rect.fromLTWH(torsoX + torsoW - armW * 0.3, armTop - h * 0.012,
-                armW * 1.4, h * 0.045),
-            pad,
-            4);
+        final lame = Colors.grey.shade600;
+        final top = armTop - h * 0.014;
+        final bot = armTop + h * 0.034;
+        for (final side in [-1.0, 1.0]) {
+          // El casquete se apoya sobre el brazo: sobresale un poco por fuera y
+          // monta ligeramente sobre el torso por dentro.
+          final armOuter = side < 0 ? torsoX - armW : torsoX + torsoW + armW;
+          final armInner = side < 0 ? torsoX : torsoX + torsoW;
+          final oX = armOuter + side * armW * 0.20;
+          final iX = armInner - side * armW * 0.25;
+          final left = side < 0 ? oX : iX;
+          final right = side < 0 ? iX : oX;
+
+          // Lámina inferior articulada, asomando bajo el casquete
+          _drawRoundRect(
+              canvas,
+              Rect.fromLTRB(left + (right - left) * 0.07, bot - h * 0.006,
+                  right - (right - left) * 0.07, bot + h * 0.017),
+              lame,
+              3);
+
+          // Casquete abombado: un rectángulo plano se lee como repisa, no
+          // como armadura, así que el canto superior va curvado.
+          final dome = Path()
+            ..moveTo(oX, bot)
+            ..lineTo(oX, top + h * 0.014)
+            ..quadraticBezierTo(
+                (oX + iX) / 2, top - h * 0.010, iX, top + h * 0.014)
+            ..lineTo(iX, bot)
+            ..close();
+          drawShadedPath(canvas, dome, pad);
+
+          // Remaches siguiendo la curva
+          for (final t in [0.32, 0.68]) {
+            drawPlasticSphere(
+                canvas,
+                Offset(oX + (iX - oX) * t, top + h * 0.019),
+                armW * 0.12,
+                Colors.grey.shade300);
+          }
+        }
       case 'loro pirata':
         final shoulder = Offset(torsoX + torsoW + armW * 0.2, armTop - h * 0.015);
         final body = Paint()..color = Colors.green.shade600;
@@ -1098,17 +1136,19 @@ class _CharacterPainter extends CustomPainter {
       case 'corbata':
         final tie = Paint()..color = Colors.red.shade800;
         final knot = Path()
-          ..moveTo(cx - w * 0.03, torsoTop)
-          ..lineTo(cx + w * 0.03, torsoTop)
-          ..lineTo(cx + w * 0.02, torsoTop + h * 0.02)
-          ..lineTo(cx - w * 0.02, torsoTop + h * 0.02)
+          ..moveTo(cx - w * 0.038, torsoTop)
+          ..lineTo(cx + w * 0.038, torsoTop)
+          ..lineTo(cx + w * 0.026, torsoTop + h * 0.023)
+          ..lineTo(cx - w * 0.026, torsoTop + h * 0.023)
           ..close();
+        // La punta llega al 0.95 del torso: más abajo la taparían las caderas,
+        // que se dibujan después.
         final blade = Path()
-          ..moveTo(cx - w * 0.02, torsoTop + h * 0.02)
-          ..lineTo(cx + w * 0.02, torsoTop + h * 0.02)
-          ..lineTo(cx + w * 0.035, torsoTop + torsoH * 0.62)
-          ..lineTo(cx, torsoTop + torsoH * 0.75)
-          ..lineTo(cx - w * 0.035, torsoTop + torsoH * 0.62)
+          ..moveTo(cx - w * 0.026, torsoTop + h * 0.023)
+          ..lineTo(cx + w * 0.026, torsoTop + h * 0.023)
+          ..lineTo(cx + w * 0.048, torsoTop + torsoH * 0.80)
+          ..lineTo(cx, torsoTop + torsoH * 0.95)
+          ..lineTo(cx - w * 0.048, torsoTop + torsoH * 0.80)
           ..close();
         canvas.drawPath(knot, tie);
         canvas.drawPath(blade, tie);
@@ -1487,19 +1527,50 @@ class _CharacterPainter extends CustomPainter {
               ..color = Colors.blueGrey.shade700.withValues(alpha: 0.7)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.0);
+        // Vaceo central: brillo al filo izquierdo y sombra al derecho, para
+        // que la hoja lea como acero biselado y no como una tira plana
         canvas.drawLine(Offset(fist.dx, bladeRect.top),
             Offset(fist.dx, bladeRect.bottom),
             Paint()
               ..color = Colors.white.withValues(alpha: 0.6)
               ..strokeWidth = 0.9);
-        // Golden cross-guard + grip
+        canvas.drawLine(
+            Offset(bladeRect.right - w * 0.005, bladeRect.top + h * 0.006),
+            Offset(bladeRect.right - w * 0.005, bladeRect.bottom),
+            Paint()
+              ..color = Colors.blueGrey.shade800.withValues(alpha: 0.35)
+              ..strokeWidth = 1.2);
+        // Golden cross-guard con remache central
+        const gold = Color(0xFFD4A017);
         drawPlasticRect(
             canvas,
             Rect.fromLTWH(fist.dx - w * 0.045, fist.dy - h * 0.032,
                 w * 0.09, h * 0.014),
-            const Color(0xFFD4A017),
+            gold,
             2,
             sheen: false);
+        canvas.drawCircle(Offset(fist.dx, fist.dy - h * 0.025), w * 0.009,
+            Paint()..color = const Color(0xFFF2C94C));
+        // Empuñadura encordada: bandas oscuras que asoman por encima del puño
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(fist.dx - w * 0.016, fist.dy - h * 0.018,
+                w * 0.032, h * 0.022),
+            const Color(0xFF5D3A1A),
+            2,
+            sheen: false);
+        for (var i = 0; i < 3; i++) {
+          final y = fist.dy - h * 0.0145 + i * h * 0.006;
+          canvas.drawLine(
+              Offset(fist.dx - w * 0.016, y),
+              Offset(fist.dx + w * 0.016, y),
+              Paint()
+                ..color = Colors.black.withValues(alpha: 0.30)
+                ..strokeWidth = 1.0);
+        }
+        // Pomo bajo el puño: cierra la silueta del arma
+        drawPlasticSphere(
+            canvas, Offset(fist.dx, fist.dy + fistR * 0.85), w * 0.019, gold);
       case 'varita':
         canvas.drawRect(
             Rect.fromLTWH(fist.dx - w * 0.008, fist.dy - h * 0.13,
@@ -1600,12 +1671,9 @@ class _CharacterPainter extends CustomPainter {
 
       // Left hand
       case 'bolso':
-        _drawRoundRect(
-            canvas,
-            Rect.fromLTWH(fist.dx - w * 0.055, fist.dy + fistR * 0.6,
-                w * 0.11, h * 0.06),
-            Colors.brown.shade500,
-            4);
+        final bagRect = Rect.fromLTWH(
+            fist.dx - w * 0.055, fist.dy + fistR * 0.6, w * 0.11, h * 0.06);
+        // Asa por detrás del cuerpo, para que el cuerpo la tape al cerrar
         canvas.drawArc(
             Rect.fromLTWH(fist.dx - w * 0.03, fist.dy + fistR * 0.15,
                 w * 0.06, h * 0.035),
@@ -1614,6 +1682,36 @@ class _CharacterPainter extends CustomPainter {
               ..color = Colors.brown.shade700
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2);
+        _drawRoundRect(canvas, bagRect, Colors.brown.shade500, 4);
+        // Solapa superior con canto marcado
+        _drawRoundRect(
+            canvas,
+            Rect.fromLTWH(
+                bagRect.left, bagRect.top, bagRect.width, bagRect.height * 0.42),
+            Colors.brown.shade600,
+            4);
+        canvas.drawLine(
+            Offset(bagRect.left + 1, bagRect.top + bagRect.height * 0.42),
+            Offset(bagRect.right - 1, bagRect.top + bagRect.height * 0.42),
+            Paint()
+              ..color = Colors.brown.shade800.withValues(alpha: 0.6)
+              ..strokeWidth = 1.2);
+        // Hebilla dorada centrada en el borde de la solapa
+        drawPlasticRect(
+            canvas,
+            Rect.fromLTWH(bagRect.center.dx - w * 0.012,
+                bagRect.top + bagRect.height * 0.30, w * 0.024, h * 0.014),
+            const Color(0xFFD4A017),
+            1.5,
+            sheen: false);
+        // Pespunte lateral: dos líneas finas que dan volumen al fuelle
+        final stitch = Paint()
+          ..color = Colors.brown.shade800.withValues(alpha: 0.45)
+          ..strokeWidth = 1.0;
+        for (final sx in [bagRect.left + w * 0.014, bagRect.right - w * 0.014]) {
+          canvas.drawLine(Offset(sx, bagRect.top + bagRect.height * 0.5),
+              Offset(sx, bagRect.bottom - 2), stitch);
+        }
       case 'linterna':
         canvas.drawRRect(
             RRect.fromRectAndRadius(
@@ -1630,17 +1728,19 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawPath(
             beam, Paint()..color = Colors.yellow.withValues(alpha: 0.55));
       case 'escudo':
+        // El semiancho no puede pasar de ~0.096w: el puño izquierdo está a
+        // 0.13w del borde y encima se le aplica [_handAccessoryScale].
         final shield = Path()
-          ..moveTo(fist.dx - w * 0.07, fist.dy - h * 0.06)
-          ..lineTo(fist.dx + w * 0.07, fist.dy - h * 0.06)
-          ..lineTo(fist.dx + w * 0.06, fist.dy + h * 0.02)
-          ..lineTo(fist.dx, fist.dy + h * 0.055)
-          ..lineTo(fist.dx - w * 0.06, fist.dy + h * 0.02)
+          ..moveTo(fist.dx - w * 0.0855, fist.dy - h * 0.073)
+          ..lineTo(fist.dx + w * 0.0855, fist.dy - h * 0.073)
+          ..lineTo(fist.dx + w * 0.073, fist.dy + h * 0.024)
+          ..lineTo(fist.dx, fist.dy + h * 0.067)
+          ..lineTo(fist.dx - w * 0.073, fist.dy + h * 0.024)
           ..close();
         canvas.drawPath(
             shield,
             metalPaint(Rect.fromCenter(
-                center: fist, width: w * 0.14, height: h * 0.12)));
+                center: fist, width: w * 0.171, height: h * 0.146)));
         canvas.drawPath(
             shield,
             Paint()
@@ -1648,8 +1748,8 @@ class _CharacterPainter extends CustomPainter {
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.6);
         // Heraldic center boss
-        drawPlasticSphere(canvas, Offset(fist.dx, fist.dy - h * 0.005),
-            w * 0.022, const Color(0xFFD4A017));
+        drawPlasticSphere(canvas, Offset(fist.dx, fist.dy - h * 0.006),
+            w * 0.027, const Color(0xFFD4A017));
       case 'libro':
         _drawRoundRect(
             canvas,
@@ -2424,11 +2524,27 @@ class _CharacterPainter extends CustomPainter {
       pupil(Offset(eyeLX, eyeY), eyeR * 1.5);
       pupil(Offset(eyeRX, eyeY), eyeR * 1.5);
     } else if (appearance.eyes == EyeStyle.angry) {
+      // El enfado vive en el párpado, no en las cejas: estas son un eje
+      // independiente (ver [_drawEyebrows]). El párpado superior cae hacia el
+      // centro de la cara y produce la mirada fulminante.
       pupil(Offset(eyeLX, eyeY), eyeR);
       pupil(Offset(eyeRX, eyeY), eyeR);
-      // Angry V-shaped brows
-      canvas.drawLine(Offset(eyeLX - eyeR, eyeY - eyeR * 1.8), Offset(eyeLX + eyeR, eyeY - eyeR * 2.8), strokePaint);
-      canvas.drawLine(Offset(eyeRX - eyeR, eyeY - eyeR * 2.8), Offset(eyeRX + eyeR, eyeY - eyeR * 1.8), strokePaint);
+      final top = eyeY - eyeR * 1.6;
+      for (final (x, dir) in [(eyeLX, 1.0), (eyeRX, -1.0)]) {
+        final innerX = x + eyeR * 1.5 * dir;
+        final outerX = x - eyeR * 1.5 * dir;
+        canvas.drawPath(
+          Path()
+            ..moveTo(outerX, top)
+            ..lineTo(innerX, top)
+            ..lineTo(innerX, eyeY + eyeR * 0.15)
+            ..lineTo(outerX, eyeY - eyeR * 0.75)
+            ..close(),
+          Paint()..color = skinColor,
+        );
+        canvas.drawLine(Offset(outerX, eyeY - eyeR * 0.75),
+            Offset(innerX, eyeY + eyeR * 0.15), strokePaint);
+      }
     } else if (appearance.eyes == EyeStyle.sleepy) {
       canvas.drawCircle(Offset(eyeLX, eyeY), eyeR, blackPaint);
       canvas.drawCircle(Offset(eyeRX, eyeY), eyeR, blackPaint);
@@ -2447,7 +2563,8 @@ class _CharacterPainter extends CustomPainter {
         ..quadraticBezierTo(eyeRX, eyeY - eyeR * 0.8, eyeRX + eyeR, eyeY);
       canvas.drawPath(winkPath, strokePaint);
     } else if (appearance.eyes == EyeStyle.determined) {
-      // Mirada de esfuerzo: ojos entrecerrados con cejas rectas inclinadas
+      // Mirada de esfuerzo: ojos entrecerrados. Las cejas las pone
+      // [_drawEyebrows] según el estilo elegido.
       for (final x in [eyeLX, eyeRX]) {
         canvas.drawCircle(Offset(x, eyeY), eyeR * 0.92, blackPaint);
         // Párpado inferior que sube (esfuerzo)
@@ -2458,11 +2575,6 @@ class _CharacterPainter extends CustomPainter {
         canvas.drawCircle(Offset(x - eyeR * 0.25, eyeY - eyeR * 0.30),
             eyeR * 0.24, Paint()..color = Colors.white.withValues(alpha: 0.85));
       }
-      // Cejas rectas hacia el centro
-      canvas.drawLine(Offset(eyeLX - eyeR * 1.1, eyeY - eyeR * 2.2),
-          Offset(eyeLX + eyeR * 1.0, eyeY - eyeR * 1.5), strokePaint);
-      canvas.drawLine(Offset(eyeRX - eyeR * 1.0, eyeY - eyeR * 1.5),
-          Offset(eyeRX + eyeR * 1.1, eyeY - eyeR * 2.2), strokePaint);
     } else if (appearance.eyes == EyeStyle.crying) {
       pupil(Offset(eyeLX, eyeY), eyeR);
       pupil(Offset(eyeRX, eyeY), eyeR);
@@ -2554,7 +2666,187 @@ class _CharacterPainter extends CustomPainter {
     }
   }
 
+  /// Las cejas siguen el color del cabello cuando este se ve; con casco,
+  /// sombrero o cabeza rapada caen a un gris oscuro neutro.
+  Color get _browColor {
+    final hair = appearance.hairStyle;
+    if (appearance.headwearType == HeadwearType.hair &&
+        hair != null &&
+        hair != HairStyle.bald) {
+      return hairColorFor(hair);
+    }
+    return Colors.black87;
+  }
+
+  /// Cejas independientes de la expresión. Comparte la geometría de
+  /// [_drawEyes]: cada estilo se define por cuánto suben o bajan el extremo
+  /// interior y el exterior respecto a la línea base.
+  void _drawEyebrows(Canvas canvas, double hx, double hy, double hs) {
+    if (appearance.eyebrows == EyebrowStyle.absent) return;
+
+    final eyeR = hs * 0.1;
+    final eyeLX = hx + hs * 0.3;
+    final eyeRX = hx + hs * 0.7;
+    final eyeY = hy + hs * 0.45;
+    // Las cejas viven en la banda estrecha entre el nacimiento del pelo
+    // (los casquetes bajan hasta hy + hs*0.23) y el borde superior de la
+    // pupila (eyeY - eyeR). Por eso la base va baja y las desviaciones de
+    // cada estilo son pequeñas: si crecen, el pelo se las come.
+    final browY = eyeY - eyeR * 1.35;
+    final halfW = eyeR * 1.1;
+
+    final paint = Paint()
+      ..color = _browColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round;
+
+    final (double inner, double outer) = switch (appearance.eyebrows) {
+      EyebrowStyle.angry => (eyeR * 0.45, -eyeR * 0.30),
+      EyebrowStyle.friendly => (-eyeR * 0.35, eyeR * 0.30),
+      EyebrowStyle.normal || EyebrowStyle.arched => (0.0, 0.0),
+      EyebrowStyle.absent => (0.0, 0.0),
+    };
+
+    // dir apunta hacia el centro de la cara: +1 para el ojo izquierdo, -1 para
+    // el derecho, de modo que "interior" signifique lo mismo en ambos lados.
+    for (final (x, dir) in [(eyeLX, 1.0), (eyeRX, -1.0)]) {
+      final outerP = Offset(x - halfW * dir, browY + outer);
+      final innerP = Offset(x + halfW * dir, browY + inner);
+      if (appearance.eyebrows == EyebrowStyle.arched) {
+        canvas.drawPath(
+          Path()
+            ..moveTo(outerP.dx, outerP.dy)
+            ..quadraticBezierTo(x, browY - eyeR * 0.45, innerP.dx, innerP.dy),
+          paint,
+        );
+      } else {
+        canvas.drawLine(outerP, innerP, paint);
+      }
+    }
+  }
+
+  /// Detalles de cara que se superponen a ojos y boca (pecas, rubor, cicatriz,
+  /// tatuaje, pintura de guerra, monóculo).
+  void _drawFacialExtra(Canvas canvas, double hx, double hy, double hs) {
+    final extra = appearance.facialExtra;
+    if (extra == FacialExtra.none) return;
+
+    final eyeR = hs * 0.1;
+    final eyeLX = hx + hs * 0.3;
+    final eyeRX = hx + hs * 0.7;
+    final eyeY = hy + hs * 0.45;
+    // Los pómulos quedan entre los ojos y la boca, hacia los lados de la cara
+    final cheekY = eyeY + eyeR * 1.9;
+
+    if (extra == FacialExtra.freckles) {
+      final dot = Paint()..color = const Color(0xFF8D5524).withValues(alpha: 0.5);
+      for (final (cx, dir) in [(eyeLX, -1.0), (eyeRX, 1.0)]) {
+        for (final (ox, oy) in [(0.15, -0.25), (0.75, 0.1), (0.3, 0.55)]) {
+          canvas.drawCircle(
+              Offset(cx + eyeR * ox * dir, cheekY + eyeR * oy), eyeR * 0.15, dot);
+        }
+      }
+    } else if (extra == FacialExtra.blush) {
+      final blush = Paint()..color = Colors.pink.shade300.withValues(alpha: 0.45);
+      for (final (cx, dir) in [(eyeLX, -1.0), (eyeRX, 1.0)]) {
+        canvas.drawOval(
+          Rect.fromCenter(
+              center: Offset(cx + eyeR * 0.45 * dir, cheekY),
+              width: eyeR * 1.9,
+              height: eyeR * 1.15),
+          blush,
+        );
+      }
+    } else if (extra == FacialExtra.scar) {
+      final scar = Paint()
+        ..color = const Color(0xFF9E4B3C)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      // Corte diagonal sobre el ojo izquierdo, con dos puntos de sutura
+      final top = Offset(eyeLX - eyeR * 0.2, eyeY - eyeR * 2.6);
+      final bottom = Offset(eyeLX + eyeR * 0.5, eyeY + eyeR * 1.9);
+      canvas.drawLine(top, bottom, scar);
+      for (final t in [0.32, 0.62]) {
+        final p = Offset.lerp(top, bottom, t)!;
+        canvas.drawLine(Offset(p.dx - eyeR * 0.35, p.dy - eyeR * 0.1),
+            Offset(p.dx + eyeR * 0.35, p.dy + eyeR * 0.1), scar);
+      }
+    } else if (extra == FacialExtra.tribalTattoo) {
+      final ink = Paint()
+        ..color = const Color(0xFF1B3A5C)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..strokeCap = StrokeCap.round;
+      // Tres trazos angulares en la mejilla derecha, decrecientes hacia fuera
+      for (final (i, len) in [(0, 1.5), (1, 1.1), (2, 0.7)]) {
+        final x = eyeRX + eyeR * (0.6 + i * 0.45);
+        canvas.drawPath(
+          Path()
+            ..moveTo(x, cheekY - eyeR * len * 0.5)
+            ..lineTo(x + eyeR * 0.3, cheekY)
+            ..lineTo(x, cheekY + eyeR * len * 0.5),
+          ink,
+        );
+      }
+    } else if (extra == FacialExtra.warPaint) {
+      // Bandas bajo los ojos, estilo deportista — no tapan las pupilas
+      final band = Paint()..color = const Color(0xFF1C1C1C).withValues(alpha: 0.85);
+      for (final cx in [eyeLX, eyeRX]) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+                center: Offset(cx, eyeY + eyeR * 1.6),
+                width: eyeR * 2.4,
+                height: eyeR * 0.8),
+            Radius.circular(eyeR * 0.25),
+          ),
+          band,
+        );
+      }
+    } else if (extra == FacialExtra.monocle) {
+      final gold = Paint()
+        ..color = const Color(0xFFD4AF37)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2;
+      final c = Offset(eyeRX, eyeY);
+      final r = eyeR * 1.9;
+      canvas.drawCircle(c, r, Paint()..color = Colors.white.withValues(alpha: 0.18));
+      canvas.drawCircle(c, r, gold);
+      // Cadenita colgando hacia el borde de la cara
+      canvas.drawPath(
+        Path()
+          ..moveTo(c.dx + r * 0.7, c.dy + r * 0.7)
+          ..quadraticBezierTo(c.dx + r * 1.5, c.dy + r * 1.6, c.dx + r * 1.1,
+              c.dy + r * 2.4),
+        Paint()
+          ..color = const Color(0xFFD4AF37)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
+      );
+    }
+  }
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  /// Cuánto se agrandan los objetos sostenidos en la mano. Se aplica como
+  /// transformación sobre el puño, así que la geometría interna de cada
+  /// accesorio no cambia y los trazos escalan con la pieza.
+  static const double _handAccessoryScale = 1.35;
+
+  /// Ejecuta [draw] escalado [factor] veces alrededor de [anchor]; el punto de
+  /// anclaje queda fijo, de modo que el accesorio crece "desde" la mano y no
+  /// se despega de ella.
+  void _scaledAbout(
+      Canvas canvas, Offset anchor, double factor, VoidCallback draw) {
+    canvas.save();
+    canvas.translate(anchor.dx, anchor.dy);
+    canvas.scale(factor);
+    canvas.translate(-anchor.dx, -anchor.dy);
+    draw();
+    canvas.restore();
+  }
 
   void _drawRoundRect(Canvas canvas, Rect rect, Color color, double radius) {
     drawPlasticRect(canvas, rect, color, radius);

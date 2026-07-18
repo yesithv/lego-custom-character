@@ -97,3 +97,19 @@ const worldConfigs = <String, WorldColors>{
 
 WorldColors colorsFor(String worldId) =>
     worldConfigs[worldId] ?? worldConfigs['lego_city']!;
+
+/// Longitud de la pista de cada mundo, en metros. Es la distancia que hay que
+/// recorrer antes de que aparezca el jefe, y también lo que se anuncia en la
+/// tarjeta del mundo: única fuente de verdad para ambos.
+const worldTrackMeters = <String, int>{
+  'lego_city': 1200,
+  'medieval': 1500,
+  'galaxy': 2000,
+  'jungle': 1800,
+  'dark_city': 2300,
+  'ocean': 1600,
+  'tundra': 2100,
+  'robot_city': 2500,
+};
+
+int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 1200;

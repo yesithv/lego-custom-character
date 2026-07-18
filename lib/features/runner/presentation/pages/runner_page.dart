@@ -56,6 +56,11 @@ class _RunnerPageState extends State<RunnerPage> {
   bool _showChest = false;
   bool _isPaused = false;
 
+  /// Si ya se abrió el cofre de esta partida. Evita reclamarlo dos veces
+  /// (el cofre otorga la recompensa al mostrarse) y, en la victoria, cambia
+  /// el botón "Reclamar cofre" por las acciones de navegación.
+  bool _chestClaimed = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,8 +101,11 @@ class _RunnerPageState extends State<RunnerPage> {
       coins: _game.coins,
       createdAt: DateTime.now(),
     )));
+    // En derrota el cofre se abre automáticamente; en victoria se reclama
+    // con el botón "Reclamar cofre" de la pantalla de victoria.
+    final isVictory = _game.phase == GamePhase.victory;
     setState(() {
-      _showChest = true;
+      _showChest = !isVictory;
       _isPaused = false;
     });
   }
@@ -169,6 +177,7 @@ class _RunnerPageState extends State<RunnerPage> {
                         onRestart: () {
                           setState(() {
                             _showChest = false;
+                            _chestClaimed = false;
                             _isPaused = false;
                           });
                           game.restart();
@@ -185,9 +194,17 @@ class _RunnerPageState extends State<RunnerPage> {
                         worldName: widget.worldName,
                         worldEmoji: widget.worldEmoji,
                         worldColor: widget.worldColor,
+                        chestClaimed: _chestClaimed,
+                        // Guarda: el cofre entrega la recompensa al mostrarse,
+                        // así que nunca debe abrirse dos veces.
+                        onClaimChest: () {
+                          if (_chestClaimed || _showChest) return;
+                          setState(() => _showChest = true);
+                        },
                         onRestart: () {
                           setState(() {
                             _showChest = false;
+                            _chestClaimed = false;
                             _isPaused = false;
                           });
                           game.restart();
@@ -211,7 +228,10 @@ class _RunnerPageState extends State<RunnerPage> {
             BlocBuilder<WalletBloc, WalletState>(
               builder: (context, state) => ChestOpeningWidget(
                 isVip: state.wallet.earnVipChest,
-                onDismiss: () => setState(() => _showChest = false),
+                onDismiss: () => setState(() {
+                  _showChest = false;
+                  _chestClaimed = true;
+                }),
               ),
             ),
         ],
@@ -258,28 +278,28 @@ class _HudOverlayState extends State<_HudOverlay>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Barra vertical de progreso en la pista (borde derecho)
+          // Barra vertical de progreso en la pista (lado derecho)
           Positioned(
-            right: 8,
-            top: 118,
-            bottom: 118,
+            right: 22,
+            top: 155,
+            bottom: 155,
             child: IgnorePointer(
               child: _TrackProgressBar(progress: g.trackProgress),
             ),
           ),
 
-          // Dock inferior de power-ups
+          // Dock de power-ups (lado izquierdo, algo por debajo del centro)
           Align(
-            alignment: Alignment.bottomCenter,
+            alignment: const Alignment(-1.0, 0.3),
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(left: 12),
               child: IgnorePointer(child: _PowerupDock(game: g)),
             ),
           ),
 
           // HUD superior
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -300,20 +320,25 @@ class _HudOverlayState extends State<_HudOverlay>
                       onTap: widget.onTogglePause,
                     ),
                     const Spacer(),
+                    // Bajadas respecto a los botones de mando para despejar
+                    // la parte alta de la pantalla.
                     IgnorePointer(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _CoinCombo(
-                            coins: g.coins,
-                            streak: g.obstacleStreak,
-                          ),
-                          const SizedBox(height: 2),
-                          _MultiplierRing(
-                            streak: g.obstacleStreak,
-                            mult: g.multiplier,
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _CoinCombo(
+                              coins: g.coins,
+                              streak: g.obstacleStreak,
+                            ),
+                            const SizedBox(height: 2),
+                            _MultiplierRing(
+                              streak: g.obstacleStreak,
+                              mult: g.multiplier,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const Spacer(),
@@ -740,13 +765,13 @@ class _PowerupDock extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF152238).withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white12, width: 1),
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _PowerSlot(
@@ -755,14 +780,14 @@ class _PowerupDock extends StatelessWidget {
             active: g.hasShield,
             label: shieldLabel,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(height: 12),
           _PowerSlot(
             emoji: '🧲',
             color: const Color(0xFFFF6B35),
             active: g.magnetActive,
             label: g.magnetActive ? '${g.magnetTimeLeft.ceil()}s' : '—',
           ),
-          const SizedBox(width: 10),
+          const SizedBox(height: 12),
           _PowerSlot(
             emoji: '⚡',
             color: const Color(0xFFB266FF),
@@ -1002,7 +1027,7 @@ class _GameOverOverlay extends StatelessWidget {
                     Expanded(
                       child: _StatBox(
                         icon: '📏',
-                        value: '${game.meters}',
+                        value: _fmtNum(game.meters),
                         label: 'metros',
                       ),
                     ),
@@ -1010,7 +1035,7 @@ class _GameOverOverlay extends StatelessWidget {
                     Expanded(
                       child: _StatBox(
                         icon: '🪙',
-                        value: '${game.coins}',
+                        value: _fmtNum(game.coins),
                         label: 'monedas',
                       ),
                     ),
@@ -1018,7 +1043,7 @@ class _GameOverOverlay extends StatelessWidget {
                     Expanded(
                       child: _StatBox(
                         icon: '⭐',
-                        value: '${game.score}',
+                        value: _fmtNum(game.score),
                         label: 'puntos',
                       ),
                     ),
@@ -1132,6 +1157,8 @@ class _VictoryOverlay extends StatelessWidget {
   final String worldName;
   final String worldEmoji;
   final Color worldColor;
+  final bool chestClaimed;
+  final VoidCallback onClaimChest;
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
@@ -1142,203 +1169,235 @@ class _VictoryOverlay extends StatelessWidget {
     required this.worldName,
     required this.worldEmoji,
     required this.worldColor,
+    required this.chestClaimed,
+    required this.onClaimChest,
     required this.onRestart,
     required this.onExit,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cfg = game.bossConfig;
     return Container(
-      color: Colors.black.withValues(alpha: 0.78),
-      child: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E2E),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFFFD700), width: 2),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('🏆', style: TextStyle(fontSize: 44)),
-                const SizedBox(height: 4),
-                Text(
-                  '¡$worldName superado!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${cfg.emoji} Derrotaste a ${cfg.name}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB8860B).withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFFD700)),
-                  ),
-                  child: Text(
-                    '🪙 +${BrixRunGame.victoryCoinBonus} monedas de botín',
-                    style: const TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Row(
+      // Ocupa toda la pantalla con el color del mundo (no es una tarjeta).
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(worldColor, Colors.white, 0.10)!,
+            worldColor,
+            Color.lerp(worldColor, Colors.black, 0.55)!,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 26),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: _StatBox(
-                        icon: '📏',
-                        value: '${game.meters}',
-                        label: 'metros',
+                    const SizedBox(height: 24),
+                    const Text('🏆', style: TextStyle(fontSize: 52)),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '¡VICTORIA!',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 34,
+                        letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatBox(
-                        icon: '🪙',
-                        value: '${game.coins}',
-                        label: 'monedas',
+                    const SizedBox(height: 4),
+                    Text(
+                      '$worldEmoji  $worldName completada',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatBox(
-                        icon: '⭐',
-                        value: '${game.score}',
-                        label: 'puntos',
-                      ),
+                    const SizedBox(height: 22),
+
+                    // Estadísticas de la carrera
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatBox(
+                            icon: '🪙',
+                            value: _fmtNum(game.coins),
+                            label: 'monedas',
+                            valueColor: const Color(0xFFFFD700),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatBox(
+                            icon: '📏',
+                            value: _fmtNum(game.meters),
+                            label: 'metros',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatBox(
+                            icon: '⭐',
+                            value: _fmtNum(game.score),
+                            label: 'puntos',
+                          ),
+                        ),
+                      ],
                     ),
+
+                    if (completedMissions.isNotEmpty) ...[
+                      const SizedBox(height: 22),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '🎯  Misiones completadas',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...completedMissions
+                          .map((m) => _CompletedMissionCard(mission: m)),
+                    ],
+                    const SizedBox(height: 24),
                   ],
                 ),
+              ),
+            ),
 
-                // Personal best from ranking
-                BlocBuilder<RankingBloc, RankingState>(
-                  builder: (context, rankingState) {
-                    if (rankingState.scores.isEmpty ||
-                        rankingState.worldId != worldId) {
-                      return const SizedBox.shrink();
-                    }
-                    final pb = rankingState.scores.first.score;
-                    final isNew = game.score >= pb;
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: isNew
-                          ? const Text(
-                              '🎉 ¡Nuevo récord!',
-                              style: TextStyle(
-                                color: Color(0xFFFFD700),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            )
-                          : Text(
-                              'Récord: $pb pts',
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 12),
+            // Acciones: primero reclamar el cofre; después, navegación.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(26, 6, 26, 18),
+              child: chestClaimed
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _GoldActionButton(
+                          icon: Icons.replay_rounded,
+                          label: 'Jugar de nuevo',
+                          onTap: onRestart,
+                        ),
+                        const SizedBox(height: 12),
+                        _DarkActionButton(
+                          icon: Icons.map_rounded,
+                          label: 'Elegir mundo',
+                          onTap: onExit,
+                        ),
+                        const SizedBox(height: 4),
+                        TextButton(
+                          onPressed: () => context.goNamed(
+                            'ranking',
+                            pathParameters: {'worldId': worldId},
+                            extra: {
+                              'worldName': worldName,
+                              'worldEmoji': worldEmoji,
+                              'worldColor': worldColor,
+                            },
+                          ),
+                          child: const Text(
+                            '🏆  Ver ranking',
+                            style: TextStyle(
+                              color: Color(0xFFFFD700),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
                             ),
-                    );
-                  },
-                ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : _GoldActionButton(
+                      icon: Icons.card_giftcard_rounded,
+                      label: 'Reclamar cofre',
+                      onTap: onClaimChest,
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-                if (completedMissions.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '🎯 Misiones completadas',
-                      style: TextStyle(
-                        color: Colors.green.shade300,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  ...completedMissions
-                      .map((m) => MissionCard(mission: m, compact: true)),
-                ],
-                const SizedBox(height: 20),
+/// Tarjeta verde de misión completada: check, nombre + descripción y premio.
+class _CompletedMissionCard extends StatelessWidget {
+  final Mission mission;
+  const _CompletedMissionCard({required this.mission});
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
-                      foregroundColor: Colors.black87,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: onRestart,
-                    icon: const Icon(Icons.replay_rounded),
-                    label: const Text(
-                      'Jugar de nuevo',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                    ),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF43A047).withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF43A047), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: const BoxDecoration(
+              color: Color(0xFF43A047),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_rounded, color: Colors.white, size: 19),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mission.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: const BorderSide(color: Colors.white30),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: onExit,
-                    icon: const Icon(Icons.map_outlined, size: 18),
-                    label: const Text('Elegir mundo'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () => context.goNamed(
-                    'ranking',
-                    pathParameters: {'worldId': worldId},
-                    extra: {
-                      'worldName': worldName,
-                      'worldEmoji': worldEmoji,
-                      'worldColor': worldColor,
-                    },
-                  ),
-                  icon: const Icon(Icons.emoji_events_outlined,
-                      size: 16, color: Color(0xFFFFD700)),
-                  label: const Text(
-                    'Ver ranking',
-                    style: TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontWeight: FontWeight.w700,
-                    ),
+                Text(
+                  mission.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '+${mission.rewardCoins}',
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text('🪙', style: TextStyle(fontSize: 13)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1349,11 +1408,13 @@ class _StatBox extends StatelessWidget {
   final String icon;
   final String value;
   final String label;
+  final Color valueColor;
 
   const _StatBox({
     required this.icon,
     required this.value,
     required this.label,
+    this.valueColor = Colors.white,
   });
 
   @override
@@ -1361,20 +1422,23 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12, width: 1),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
       child: Column(
         children: [
           Text(icon, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: valueColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
             ),
           ),
           const SizedBox(height: 2),
@@ -1386,6 +1450,17 @@ class _StatBox extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Formatea un entero con separador de miles (8540 → "8,540").
+String _fmtNum(int n) {
+  final s = n.abs().toString();
+  final buf = StringBuffer(n < 0 ? '-' : '');
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
 }
 
 /// Botón dorado principal con efecto 3D de bloque.

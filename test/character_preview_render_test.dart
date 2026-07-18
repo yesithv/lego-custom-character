@@ -69,6 +69,30 @@ void main() {
     });
   });
 
+  testWidgets('cada estilo de cejas se ve distinto', (tester) async {
+    await expectAllDistinct(tester, 'eyebrows', {
+      for (final v in EyebrowStyle.values)
+        v.name: CharacterAppearance(eyebrows: v),
+    });
+  });
+
+  testWidgets('las cejas son independientes de la expresión de los ojos',
+      (tester) async {
+    // Regresión: antes las cejas de enfado estaban embebidas en _drawEyes, así
+    // que cambiar el estilo de cejas sobre unos ojos enfadados no hacía nada.
+    await expectAllDistinct(tester, 'eyes+eyebrows', {
+      for (final v in EyebrowStyle.values)
+        v.name: CharacterAppearance(eyes: EyeStyle.angry, eyebrows: v),
+    });
+  });
+
+  testWidgets('cada extra facial se ve distinto', (tester) async {
+    await expectAllDistinct(tester, 'facialExtra', {
+      for (final v in FacialExtra.values)
+        v.name: CharacterAppearance(facialExtra: v),
+    });
+  });
+
   testWidgets('cada estilo de boca se ve distinto', (tester) async {
     await expectAllDistinct(tester, 'mouth', {
       for (final v in MouthStyle.values) v.name: CharacterAppearance(mouth: v),

@@ -402,9 +402,20 @@ class _SkinColorTab extends StatelessWidget {
           _EnumSelector<EyeStyle>(
             values: EyeStyle.values,
             selected: appearance.eyes,
-            label: (e) => e.name,
+            label: _eyeLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(eyes: e)),
+                ),
+          ),
+          const SizedBox(height: 16),
+          const Text('Cejas', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          _EnumSelector<EyebrowStyle>(
+            values: EyebrowStyle.values,
+            selected: appearance.eyebrows,
+            label: _eyebrowLabel,
+            onSelect: (e) => context.read<CharacterEditorBloc>().add(
+                  UpdateAppearance(appearance.copyWith(eyebrows: e)),
                 ),
           ),
           const SizedBox(height: 16),
@@ -413,7 +424,7 @@ class _SkinColorTab extends StatelessWidget {
           _EnumSelector<MouthStyle>(
             values: MouthStyle.values,
             selected: appearance.mouth,
-            label: (e) => e.name,
+            label: _mouthLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(mouth: e)),
                 ),
@@ -434,6 +445,37 @@ class _SkinColorTab extends StatelessWidget {
       ),
     );
   }
+
+  static String _eyeLabel(EyeStyle e) => switch (e) {
+        EyeStyle.happy => 'Feliz',
+        EyeStyle.angry => 'Enfadado',
+        EyeStyle.surprised => 'Sorpresa',
+        EyeStyle.sleepy => 'Dormido',
+        EyeStyle.wink => 'Guiño',
+        EyeStyle.laser => 'Láser',
+        EyeStyle.robot => 'Robot',
+        EyeStyle.crying => 'Llorando',
+        EyeStyle.starry => 'Estrellas',
+        EyeStyle.determined => 'Decidido',
+      };
+
+  static String _eyebrowLabel(EyebrowStyle e) => switch (e) {
+        EyebrowStyle.normal => 'Normales',
+        EyebrowStyle.arched => 'Arqueadas',
+        EyebrowStyle.angry => 'Enfadadas',
+        EyebrowStyle.friendly => 'Amables',
+        EyebrowStyle.absent => 'Sin cejas',
+      };
+
+  static String _mouthLabel(MouthStyle e) => switch (e) {
+        MouthStyle.smile => 'Sonrisa',
+        MouthStyle.frown => 'Enfado',
+        MouthStyle.teeth => 'Dientes',
+        MouthStyle.fangs => 'Colmillos',
+        MouthStyle.mustache => 'Bigote',
+        MouthStyle.tongueOut => 'Lengua fuera',
+        MouthStyle.silent => 'Seria',
+      };
 
   static String _facialExtraLabel(FacialExtra e) => switch (e) {
         FacialExtra.none => 'Ninguno',
@@ -482,7 +524,7 @@ class _HairTab extends StatelessWidget {
             _EnumSelector<HairStyle>(
               values: HairStyle.values,
               selected: appearance.hairStyle,
-              label: (e) => e.name,
+              label: _hairLabel,
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(hairStyle: e)),
                   ),
@@ -496,7 +538,7 @@ class _HairTab extends StatelessWidget {
             _EnumSelector<HelmetStyle>(
               values: HelmetStyle.values,
               selected: appearance.helmetStyle,
-              label: (e) => e.name,
+              label: _helmetLabel,
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(helmetStyle: e)),
                   ),
@@ -510,7 +552,7 @@ class _HairTab extends StatelessWidget {
             _EnumSelector<HatStyle>(
               values: HatStyle.values,
               selected: appearance.hatStyle,
-              label: (e) => e.name,
+              label: _hatLabel,
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(hatStyle: e)),
                   ),
@@ -520,6 +562,51 @@ class _HairTab extends StatelessWidget {
       ),
     );
   }
+
+  static String _hairLabel(HairStyle e) => switch (e) {
+        HairStyle.straight => 'Liso',
+        HairStyle.curly => 'Rizado',
+        HairStyle.afro => 'Afro',
+        HairStyle.mohawk => 'Mohicano',
+        HairStyle.ponytail => 'Coleta',
+        HairStyle.braids => 'Trenzas',
+        HairStyle.shaved => 'Rapado',
+        HairStyle.bald => 'Calvo',
+        HairStyle.messy => 'Despeinado',
+        HairStyle.swept => 'Peinado atrás',
+        HairStyle.fringe => 'Flequillo',
+        HairStyle.longBlonde => 'Largo rubio',
+        HairStyle.longBlack => 'Largo negro',
+        HairStyle.wavyBob => 'Melena ondulada',
+      };
+
+  static String _helmetLabel(HelmetStyle e) => switch (e) {
+        HelmetStyle.medieval => 'Medieval',
+        HelmetStyle.space => 'Espacial',
+        HelmetStyle.roman => 'Romano',
+        HelmetStyle.viking => 'Vikingo',
+        HelmetStyle.firefighter => 'Bombero',
+        HelmetStyle.biker => 'Motero',
+        HelmetStyle.astronaut => 'Astronauta',
+        HelmetStyle.ninjaHood => 'Capucha ninja',
+        HelmetStyle.ironMan => 'Hombre de hierro',
+        HelmetStyle.spiderMan => 'Arácnido',
+        HelmetStyle.blackPanther => 'Pantera',
+        HelmetStyle.deadpool => 'Mercenario',
+        HelmetStyle.wolverine => 'Lobezno',
+        HelmetStyle.ghostSpider => 'Arácnida fantasma',
+      };
+
+  static String _hatLabel(HatStyle e) => switch (e) {
+        HatStyle.wizard => 'Mago',
+        HatStyle.cowboy => 'Vaquero',
+        HatStyle.cap => 'Gorra',
+        HatStyle.crown => 'Corona',
+        HatStyle.tiara => 'Tiara',
+        HatStyle.topHat => 'Chistera',
+        HatStyle.pirate => 'Pirata',
+        HatStyle.conical => 'Cónico',
+      };
 }
 
 // ── Tab: Torso ──────────────────────────────────────────────────────────────
@@ -541,7 +628,7 @@ class _TorsoTab extends StatelessWidget {
           _EnumSelector<TorsoDesign>(
             values: TorsoDesign.values,
             selected: appearance.torso,
-            label: (e) => e.name,
+            label: _torsoLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(torso: e)),
                 ),
@@ -565,7 +652,7 @@ class _TorsoTab extends StatelessWidget {
           _EnumSelector<GloveType>(
             values: GloveType.values,
             selected: appearance.gloves,
-            label: (e) => e.name,
+            label: _gloveLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(gloves: e)),
                 ),
@@ -574,6 +661,45 @@ class _TorsoTab extends StatelessWidget {
       ),
     );
   }
+
+  static String _torsoLabel(TorsoDesign e) => switch (e) {
+        TorsoDesign.plain => 'Liso',
+        TorsoDesign.police => 'Policía',
+        TorsoDesign.firefighter => 'Bombero',
+        TorsoDesign.astronaut => 'Astronauta',
+        TorsoDesign.doctor => 'Médico',
+        TorsoDesign.chef => 'Chef',
+        TorsoDesign.military => 'Militar',
+        TorsoDesign.ninja => 'Ninja',
+        TorsoDesign.pirate => 'Pirata',
+        TorsoDesign.superhero => 'Superhéroe',
+        TorsoDesign.casual => 'Casual',
+        TorsoDesign.medieval => 'Medieval',
+        TorsoDesign.futuristic => 'Futurista',
+        TorsoDesign.samurai => 'Samurái',
+        TorsoDesign.dinosaur => 'Dinosaurio',
+        TorsoDesign.robot => 'Robot',
+        TorsoDesign.monster => 'Monstruo',
+        TorsoDesign.alien => 'Alienígena',
+        TorsoDesign.tactical => 'Táctico',
+        TorsoDesign.tanktop => 'Camiseta',
+        TorsoDesign.commando => 'Comando',
+        TorsoDesign.golden => 'Dorado',
+        TorsoDesign.spiderGwen => 'Arácnida',
+        TorsoDesign.wonderWoman => 'Amazona',
+        TorsoDesign.captainMarvel => 'Capitana',
+        TorsoDesign.blackWidow => 'Viuda negra',
+      };
+
+  static String _gloveLabel(GloveType e) => switch (e) {
+        GloveType.none => 'Ninguno',
+        GloveType.boxing => 'Boxeo',
+        GloveType.medieval => 'Medieval',
+        GloveType.superhero => 'Superhéroe',
+        GloveType.claws => 'Garras',
+        GloveType.energy => 'Energía',
+        GloveType.spiderWeb => 'Telaraña',
+      };
 }
 
 // ── Tab: Legs ───────────────────────────────────────────────────────────────
@@ -595,7 +721,7 @@ class _LegsTab extends StatelessWidget {
           _EnumSelector<LegDesign>(
             values: LegDesign.values,
             selected: appearance.legDesign,
-            label: (e) => e.name,
+            label: _legDesignLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(legDesign: e)),
                 ),
@@ -606,7 +732,7 @@ class _LegsTab extends StatelessWidget {
           _EnumSelector<LegType>(
             values: LegType.values,
             selected: appearance.legType,
-            label: (e) => e.name,
+            label: _legTypeLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(legType: e)),
                 ),
@@ -617,7 +743,7 @@ class _LegsTab extends StatelessWidget {
           _EnumSelector<ShoeType>(
             values: ShoeType.values,
             selected: appearance.shoes,
-            label: (e) => e.name,
+            label: _shoeLabel,
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(shoes: e)),
                 ),
@@ -626,6 +752,41 @@ class _LegsTab extends StatelessWidget {
       ),
     );
   }
+
+  static String _legDesignLabel(LegDesign e) => switch (e) {
+        LegDesign.plain => 'Liso',
+        LegDesign.camouflage => 'Camuflaje',
+        LegDesign.stripes => 'Rayas',
+        LegDesign.checkered => 'Cuadros',
+        LegDesign.flames => 'Llamas',
+        LegDesign.stars => 'Estrellas',
+        LegDesign.armor => 'Armadura',
+        LegDesign.desertCamo => 'Camuflaje desierto',
+        LegDesign.mechanic => 'Mecánico',
+        LegDesign.urbanCamo => 'Camuflaje urbano',
+        LegDesign.golden => 'Dorado',
+      };
+
+  static String _legTypeLabel(LegType e) => switch (e) {
+        LegType.pants => 'Pantalón',
+        LegType.shorts => 'Pantalón corto',
+        LegType.skirt => 'Falda',
+        LegType.legArmor => 'Grebas',
+        LegType.spacesuit => 'Traje espacial',
+      };
+
+  static String _shoeLabel(ShoeType e) => switch (e) {
+        ShoeType.sneakers => 'Zapatillas',
+        ShoeType.military => 'Botas militares',
+        ShoeType.cowboy => 'Botas vaqueras',
+        ShoeType.sandals => 'Sandalias',
+        ShoeType.skates => 'Patines',
+        ShoeType.flippers => 'Aletas',
+        ShoeType.witchBoots => 'Botas de bruja',
+        ShoeType.barefoot => 'Descalzo',
+        ShoeType.heroBoots => 'Botas de héroe',
+        ShoeType.balletTeal => 'Zapatillas de ballet',
+      };
 }
 
 // ── Tab: Accessories ────────────────────────────────────────────────────────
