@@ -8,6 +8,12 @@ class Wallet extends Equatable {
   final DateTime? lastPlayDate;
   final int totalCoinsEarned;
 
+  /// Última recompensa reclamada en la ruleta (para mostrar "HOY GANASTE"
+  /// cuando ya se giró). `label` es el texto corto (p. ej. "50" o "Jetpack")
+  /// y `emoji` el icono (🪙, 💎, …). Nulos si nunca se ha girado.
+  final String? lastRouletteRewardLabel;
+  final String? lastRouletteRewardEmoji;
+
   const Wallet({
     this.coins = 0,
     this.lastRouletteDate,
@@ -15,6 +21,8 @@ class Wallet extends Equatable {
     this.runStreak = 0,
     this.lastPlayDate,
     this.totalCoinsEarned = 0,
+    this.lastRouletteRewardLabel,
+    this.lastRouletteRewardEmoji,
   });
 
   bool get canClaimRoulette {
@@ -36,6 +44,8 @@ class Wallet extends Equatable {
     int? runStreak,
     DateTime? lastPlayDate,
     int? totalCoinsEarned,
+    String? lastRouletteRewardLabel,
+    String? lastRouletteRewardEmoji,
   }) =>
       Wallet(
         coins: coins ?? this.coins,
@@ -44,6 +54,10 @@ class Wallet extends Equatable {
         runStreak: runStreak ?? this.runStreak,
         lastPlayDate: lastPlayDate ?? this.lastPlayDate,
         totalCoinsEarned: totalCoinsEarned ?? this.totalCoinsEarned,
+        lastRouletteRewardLabel:
+            lastRouletteRewardLabel ?? this.lastRouletteRewardLabel,
+        lastRouletteRewardEmoji:
+            lastRouletteRewardEmoji ?? this.lastRouletteRewardEmoji,
       );
 
   @override
@@ -54,5 +68,7 @@ class Wallet extends Equatable {
         runStreak,
         lastPlayDate,
         totalCoinsEarned,
+        lastRouletteRewardLabel,
+        lastRouletteRewardEmoji,
       ];
 }

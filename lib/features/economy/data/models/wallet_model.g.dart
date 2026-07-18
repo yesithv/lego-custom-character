@@ -19,13 +19,15 @@ class WalletModelAdapter extends TypeAdapter<WalletModel> {
       runStreak: fields[3] as int,
       lastPlayDate: fields[4] as DateTime?,
       totalCoinsEarned: fields[5] as int,
+      lastRouletteRewardLabel: fields[6] as String?,
+      lastRouletteRewardEmoji: fields[7] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, WalletModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.coins)
       ..writeByte(1)
@@ -37,7 +39,11 @@ class WalletModelAdapter extends TypeAdapter<WalletModel> {
       ..writeByte(4)
       ..write(obj.lastPlayDate)
       ..writeByte(5)
-      ..write(obj.totalCoinsEarned);
+      ..write(obj.totalCoinsEarned)
+      ..writeByte(6)
+      ..write(obj.lastRouletteRewardLabel)
+      ..writeByte(7)
+      ..write(obj.lastRouletteRewardEmoji);
   }
 
   @override

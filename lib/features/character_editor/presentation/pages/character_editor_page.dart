@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
@@ -69,11 +70,12 @@ class _EditorView extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F0E8),
+        backgroundColor: const Color(0xFF0E1424),
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFFD700),
+          backgroundColor: const Color(0xFF1466C8),
+          elevation: 0,
           leading: BackButton(
-            color: Colors.black87,
+            color: Colors.white,
             onPressed: () => context.goNamed('gallery'),
           ),
           title: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
@@ -84,23 +86,38 @@ class _EditorView extends StatelessWidget {
                   : state.currentCharacter!.name,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
-                color: Colors.black87,
+                color: Colors.white,
               ),
             ),
           ),
           actions: [
             BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
-              builder: (context, state) => IconButton(
-                icon: state.status == EditorStatus.saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_rounded, color: Colors.black87),
-                onPressed: () => context
-                    .read<CharacterEditorBloc>()
-                    .add(const SaveCurrentCharacter()),
+              builder: (context, state) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Material(
+                  color: const Color(0xFFFFD700),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => context
+                        .read<CharacterEditorBloc>()
+                        .add(const SaveCurrentCharacter()),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: state.status == EditorStatus.saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black87,
+                              ),
+                            )
+                          : const Icon(Icons.save_rounded,
+                              color: Colors.black87, size: 22),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -155,54 +172,110 @@ class _PreviewSectionState extends State<_PreviewSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFE8E0D0),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1466C8), Color(0xFF0A3D80)],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.horizontal,
+        16,
+        AppSpacing.horizontal,
+        24,
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Tarjeta blanca detrás de la figura: hace que cada pieza resalte
+          // Tarjeta translúcida detrás de la figura: hace que cada pieza resalte
           // y que se note al instante cada cambio de personalización.
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white24, width: 1.5),
             ),
             child:
                 CharacterPreview(appearance: widget.character.appearance, size: 84),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                const Text(
+                  'NOMBRE',
+                  style: TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 TextField(
                   controller: _nameController,
                   onChanged: (v) =>
                       context.read<CharacterEditorBloc>().add(UpdateName(v)),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Nombre del personaje',
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     filled: true,
                     fillColor: Colors.white,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                   style: const TextStyle(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     fontSize: 16,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 10),
+                _WalletPill(),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Píldora con el saldo de monedas del jugador (borde dorado).
+class _WalletPill extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, state) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFF063574).withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🪙', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 6),
+            Text(
+              '${state.wallet.coins}',
+              style: const TextStyle(
+                color: Color(0xFFFFD700),
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -218,12 +291,12 @@ class _EditorTabs extends StatelessWidget {
       length: 5,
       child: Column(
         children: [
-          // Fondo oscuro para que las pestañas contrasten: antes el texto
-          // blanco/amarillo sobre crema casi no se veía.
+          // Fondo oscuro para que las pestañas contrasten con el tema.
           Container(
-            color: const Color(0xFF2B2B2B),
+            color: const Color(0xFF121A2C),
             child: const TabBar(
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
               labelColor: Color(0xFFFFD700),
               unselectedLabelColor: Colors.white70,
               indicatorColor: Color(0xFFFFD700),
@@ -241,14 +314,20 @@ class _EditorTabs extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: TabBarView(
-              children: [
-                _SkinColorTab(appearance: appearance),
-                _HairTab(appearance: appearance),
-                _TorsoTab(appearance: appearance),
-                _LegsTab(appearance: appearance),
-                _AccessoriesTab(appearance: appearance),
-              ],
+            child: Container(
+              color: const Color(0xFF0E1424),
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(color: Colors.white),
+                child: TabBarView(
+                  children: [
+                    _SkinColorTab(appearance: appearance),
+                    _HairTab(appearance: appearance),
+                    _TorsoTab(appearance: appearance),
+                    _LegsTab(appearance: appearance),
+                    _AccessoriesTab(appearance: appearance),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -278,7 +357,7 @@ class _SkinColorTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.scrollContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -300,12 +379,15 @@ class _SkinColorTab extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
-                    border: isSelected
-                        ? Border.all(color: Colors.black, width: 3)
-                        : null,
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFFFD700)
+                          : Colors.white24,
+                      width: isSelected ? 3 : 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 4,
                       )
                     ],
@@ -336,10 +418,32 @@ class _SkinColorTab extends StatelessWidget {
                   UpdateAppearance(appearance.copyWith(mouth: e)),
                 ),
           ),
+          const SizedBox(height: 20),
+          const Text('Extras faciales',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          _EnumSelector<FacialExtra>(
+            values: FacialExtra.values,
+            selected: appearance.facialExtra,
+            label: _facialExtraLabel,
+            onSelect: (e) => context.read<CharacterEditorBloc>().add(
+                  UpdateAppearance(appearance.copyWith(facialExtra: e)),
+                ),
+          ),
         ],
       ),
     );
   }
+
+  static String _facialExtraLabel(FacialExtra e) => switch (e) {
+        FacialExtra.none => 'Ninguno',
+        FacialExtra.freckles => 'Pecas',
+        FacialExtra.blush => 'Rubor',
+        FacialExtra.scar => 'Cicatriz',
+        FacialExtra.tribalTattoo => 'Tatuaje',
+        FacialExtra.warPaint => 'Pintura',
+        FacialExtra.monocle => 'Monóculo',
+      };
 }
 
 // ── Tab: Hair ───────────────────────────────────────────────────────────────
@@ -351,7 +455,7 @@ class _HairTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.scrollContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -427,7 +531,7 @@ class _TorsoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.scrollContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -481,7 +585,7 @@ class _LegsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.scrollContent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -547,7 +651,7 @@ class _AccessoriesTab extends StatelessWidget {
       builder: (context, walletState) {
         final unlocked = walletState.wallet.unlockedParts.toSet();
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.scrollContent,
           children: _slotMeta.map((meta) {
             final (label, field) = meta;
             final entries = catalogForSlot(field);
@@ -778,15 +882,15 @@ class _OptionChip extends StatelessWidget {
             color: isSelected
                 ? const Color(0xFFFFD700)
                 : isLocked
-                    ? Colors.grey.shade100
-                    : Colors.white,
+                    ? const Color(0xFF141B2E)
+                    : const Color(0xFF1B2438),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
                   ? const Color(0xFFB8860B)
                   : isLocked
                       ? _rarityColor
-                      : Colors.grey.shade500,
+                      : const Color(0xFF2E3A52),
               width: isLocked ? 1.5 : 2,
             ),
           ),
@@ -805,8 +909,8 @@ class _OptionChip extends StatelessWidget {
                   color: isSelected
                       ? Colors.black
                       : isLocked
-                          ? Colors.black45
-                          : Colors.black87,
+                          ? Colors.white38
+                          : Colors.white70,
                 ),
               ),
               if (isLocked && coinCost != null) ...[
@@ -891,13 +995,14 @@ class _EnumSelector<T> extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFFFD700) : Colors.white,
+              color:
+                  isSelected ? const Color(0xFFFFD700) : const Color(0xFF1B2438),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFFB8860B)
-                    : Colors.grey.shade500,
-                width: 2,
+                    : const Color(0xFF2E3A52),
+                width: isSelected ? 2 : 1.5,
               ),
             ),
             child: Text(
@@ -905,7 +1010,7 @@ class _EnumSelector<T> extends StatelessWidget {
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 13,
-                color: isSelected ? Colors.black : Colors.black87,
+                color: isSelected ? Colors.black : Colors.white70,
               ),
             ),
           ),

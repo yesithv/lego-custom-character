@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -250,64 +252,88 @@ class _HudOverlayState extends State<_HudOverlay>
   @override
   Widget build(BuildContext context) {
     final g = widget.game;
-    final mult = g.multiplier;
     final muted = AudioService.instance.muted;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Barra vertical de progreso en la pista (borde derecho)
+          Positioned(
+            right: 8,
+            top: 118,
+            bottom: 118,
+            child: IgnorePointer(
+              child: _TrackProgressBar(progress: g.trackProgress),
+            ),
+          ),
+
+          // Dock inferior de power-ups
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: IgnorePointer(child: _PowerupDock(game: g)),
+            ),
+          ),
+
+          // HUD superior
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _HudPill(
-                    icon: '🏃', label: '${g.meters}m', color: Colors.black54),
-                const SizedBox(width: 8),
-                _HudPill(
-                  icon: '🪙',
-                  label: '${g.coins}',
-                  color: const Color(0xFFB8860B).withValues(alpha: 0.85),
-                ),
-                if (g.hasShield) ...[
-                  const SizedBox(width: 8),
-                  _PowerupPill(
-                      icon: '🛡', color: const Color(0xFF00AAFF)),
-                ],
-                if (g.magnetActive) ...[
-                  const SizedBox(width: 8),
-                  _PowerupPill(
-                      icon: '🧲', color: const Color(0xFFFF6B35)),
-                ],
-                const Spacer(),
-                if (mult > 1.0) ...[
-                  _MultiplierBadge(mult: mult),
-                  const SizedBox(width: 8),
-                ],
-                // Mute button
-                GestureDetector(
-                  onTap: () => AudioService.instance.toggleMute(),
-                  child: _IconChip(
-                    icon: muted
-                        ? Icons.volume_off_rounded
-                        : Icons.volume_up_rounded,
+                // Fila 0: distancia centrada
+                Center(
+                  child: IgnorePointer(
+                    child: _DistancePill(meters: g.meters),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Pause button
-                GestureDetector(
-                  onTap: widget.onTogglePause,
-                  child: const _IconChip(icon: Icons.pause_rounded),
+                const SizedBox(height: 8),
+
+                // Fila 1: pausa | monedas + combo + multiplicador | música
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SquareChip(
+                      icon: Icons.pause_rounded,
+                      onTap: widget.onTogglePause,
+                    ),
+                    const Spacer(),
+                    IgnorePointer(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _CoinCombo(
+                            coins: g.coins,
+                            streak: g.obstacleStreak,
+                          ),
+                          const SizedBox(height: 2),
+                          _MultiplierRing(
+                            streak: g.obstacleStreak,
+                            mult: g.multiplier,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    _SquareChip(
+                      icon: muted
+                          ? Icons.music_off_rounded
+                          : Icons.music_note_rounded,
+                      onTap: () => AudioService.instance.toggleMute(),
+                    ),
+                  ],
                 ),
+
+                if (g.phase != GamePhase.running) ...[
+                  const SizedBox(height: 6),
+                  IgnorePointer(child: _BossBar(game: g)),
+                ],
               ],
             ),
-            const SizedBox(height: 4),
-            if (g.phase == GamePhase.running)
-              _ZoneBadge(zone: g.currentZone)
-            else
-              _BossBar(game: g),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -405,32 +431,32 @@ class _BossBar extends StatelessWidget {
   }
 }
 
-class _HudPill extends StatelessWidget {
-  final String icon;
-  final String label;
-  final Color color;
-  const _HudPill(
-      {required this.icon, required this.label, required this.color});
+/// Píldora de distancia recorrida (arriba, centrada).
+class _DistancePill extends StatelessWidget {
+  final int meters;
+  const _DistancePill({required this.meters});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       decoration: BoxDecoration(
-        color: color,
+        color: const Color(0xFF152238).withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 4),
+          const Text('🏁', style: TextStyle(fontSize: 13)),
+          const SizedBox(width: 6),
           Text(
-            label,
+            '$meters m',
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               fontSize: 14,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -439,67 +465,366 @@ class _HudPill extends StatelessWidget {
   }
 }
 
-class _PowerupPill extends StatelessWidget {
-  final String icon;
-  final Color color;
-  const _PowerupPill({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(icon, style: const TextStyle(fontSize: 13)),
-    );
-  }
-}
-
-class _IconChip extends StatelessWidget {
+/// Botón cuadrado redondeado del HUD (pausa, silenciar música).
+class _SquareChip extends StatelessWidget {
   final IconData icon;
-  const _IconChip({required this.icon});
+  final VoidCallback onTap;
+  const _SquareChip({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.black38,
-        borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF152238).withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: Colors.white24, width: 1),
+        ),
+        child: Icon(icon, color: Colors.white, size: 21),
       ),
-      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 }
 
-class _MultiplierBadge extends StatelessWidget {
-  final double mult;
-  const _MultiplierBadge({required this.mult});
+/// Contador de monedas (píldora dorada) con badge verde de combo debajo.
+class _CoinCombo extends StatelessWidget {
+  final int coins;
+  final int streak;
+  const _CoinCombo({required this.coins, required this.streak});
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFE24D), Color(0xFFFFC400)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _miniCoin(),
+              const SizedBox(width: 7),
+              Text(
+                '$coins',
+                style: const TextStyle(
+                  color: Color(0xFF3D2C00),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (streak > 0)
+          Transform.translate(
+            offset: const Offset(0, -5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF43A047),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Text(
+                '+$streak combo!',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _miniCoin() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade700,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withValues(alpha: 0.5),
-            blurRadius: 8,
-          )
-        ],
-      ),
-      child: Text(
-        'x${mult.toStringAsFixed(0)} 🔥',
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: 15,
+      width: 20,
+      height: 20,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          center: Alignment(-0.3, -0.3),
+          colors: [Color(0xFFFFF0A0), Color(0xFFFFB300), Color(0xFFD98E00)],
         ),
       ),
+      child: Center(
+        child: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFF9C6B00).withValues(alpha: 0.7),
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Multiplicador con anillo de progreso hacia el siguiente nivel de combo.
+class _MultiplierRing extends StatelessWidget {
+  final int streak;
+  final double mult;
+  const _MultiplierRing({required this.streak, required this.mult});
+
+  /// Progreso del anillo hacia el próximo multiplicador:
+  /// x2 a 10 esquives, x3 a 25, x5 a 50 (lleno al máximo).
+  double get _ringProgress {
+    if (streak >= 50) return 1.0;
+    if (streak >= 25) return (streak - 25) / 25;
+    if (streak >= 10) return (streak - 10) / 15;
+    return streak / 10;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(44, 44),
+            painter: _RingPainter(progress: _ringProgress),
+          ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF152238).withValues(alpha: 0.82),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                'x${mult.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  color: Color(0xFFFF9800),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress;
+  _RingPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 2;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..color = Colors.white24,
+    );
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -pi / 2,
+        2 * pi * progress.clamp(0.0, 1.0),
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4
+          ..strokeCap = StrokeCap.round
+          ..color = const Color(0xFFFF9800),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+}
+
+/// Barra vertical (borde derecho) con el avance del corredor en la pista.
+/// Se llena de abajo hacia arriba; la meta 🏁 es la aparición del jefe.
+class _TrackProgressBar extends StatelessWidget {
+  final double progress;
+  const _TrackProgressBar({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Text('🏁', style: TextStyle(fontSize: 14)),
+        const SizedBox(height: 4),
+        Expanded(
+          child: Container(
+            width: 13,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.30),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white24, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: progress.clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [Color(0xFFFFC400), Color(0xFFFFE24D)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dock inferior con el estado de los power-ups: escudo, imán y embestida.
+class _PowerupDock extends StatelessWidget {
+  final BrixRunGame game;
+  const _PowerupDock({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final g = game;
+    final inBossFight = g.phase == GamePhase.bossFight;
+
+    // Etiqueta del escudo: segundos del power-up, "x1" si es el escudo
+    // innato del héroe, o inactivo.
+    final String shieldLabel;
+    if (g.shieldPowerupActive) {
+      shieldLabel = '${g.shieldTimeLeft.ceil()}s';
+    } else if (g.heroShieldReady) {
+      shieldLabel = 'x1';
+    } else {
+      shieldLabel = '—';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF152238).withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white12, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PowerSlot(
+            emoji: '🛡️',
+            color: const Color(0xFF2E9BFF),
+            active: g.hasShield,
+            label: shieldLabel,
+          ),
+          const SizedBox(width: 10),
+          _PowerSlot(
+            emoji: '🧲',
+            color: const Color(0xFFFF6B35),
+            active: g.magnetActive,
+            label: g.magnetActive ? '${g.magnetTimeLeft.ceil()}s' : '—',
+          ),
+          const SizedBox(width: 10),
+          _PowerSlot(
+            emoji: '⚡',
+            color: const Color(0xFFB266FF),
+            active: inBossFight && g.dashCharge > 0,
+            label: inBossFight ? '${(g.dashCharge * 100).round()}%' : '—',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PowerSlot extends StatelessWidget {
+  final String emoji;
+  final Color color;
+  final bool active;
+  final String label;
+
+  const _PowerSlot({
+    required this.emoji,
+    required this.color,
+    required this.active,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: active ? color : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(13),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Opacity(
+              opacity: active ? 1.0 : 0.35,
+              child: Text(emoji, style: const TextStyle(fontSize: 19)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : Colors.white38,
+            fontWeight: FontWeight.w800,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -510,33 +835,23 @@ class _ZoneBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label;
-    final Color color;
-    if (zone == RunnerZone.inicio) {
-      label = 'Inicio';
-      color = Colors.green.shade700;
-    } else if (zone == RunnerZone.nucleo) {
-      label = 'Núcleo ⚡';
-      color = Colors.orange.shade700;
-    } else {
-      label = '¡ZONA CAOS! 💥';
-      color = Colors.red.shade700;
-    }
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
-          ),
+    final (label, color) = switch (zone) {
+      RunnerZone.inicio => ('Zona Inicio', const Color(0xFF43A047)),
+      RunnerZone.nucleo => ('Zona Núcleo', const Color(0xFFF57C00)),
+      RunnerZone.caos => ('Zona Caos', const Color(0xFFE53935)),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
         ),
       ),
     );
@@ -654,155 +969,153 @@ class _GameOverOverlay extends StatelessWidget {
     return Container(
       color: Colors.black.withValues(alpha: 0.78),
       child: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E2E),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFFFD700), width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '¡Sigue creando!',
-                style: TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '¡Casi llegas al podio!',
-                style: TextStyle(color: Colors.white60, fontSize: 13),
-              ),
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _StatBox(label: 'Metros', value: '${game.meters}m'),
-                  _StatBox(label: 'Monedas', value: '🪙 ${game.coins}'),
-                  _StatBox(
-                    label: 'Puntos',
-                    value: '${game.score}',
-                    highlight: true,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-              _ZoneBadge(zone: game.currentZone),
-
-              // Personal best from ranking
-              BlocBuilder<RankingBloc, RankingState>(
-                builder: (context, rankingState) {
-                  if (rankingState.scores.isEmpty ||
-                      rankingState.worldId != worldId) {
-                    return const SizedBox.shrink();
-                  }
-                  final pb = rankingState.scores.first.score;
-                  final isNew = game.score >= pb;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: isNew
-                        ? const Text(
-                            '🎉 ¡Nuevo récord!',
-                            style: TextStyle(
-                              color: Color(0xFFFFD700),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          )
-                        : Text(
-                            'Récord: $pb pts',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 12),
-                          ),
-                  );
-                },
-              ),
-
-              if (completedMissions.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '🎯 Misiones completadas',
-                    style: TextStyle(
-                      color: Colors.green.shade300,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                ...completedMissions
-                    .map((m) => MissionCard(mission: m, compact: true)),
-              ],
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFD700),
-                    foregroundColor: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: onRestart,
-                  icon: const Icon(Icons.replay_rounded),
-                  label: const Text(
-                    'Jugar de nuevo',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: const BorderSide(color: Colors.white30),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: onExit,
-                  icon: const Icon(Icons.map_outlined, size: 18),
-                  label: const Text('Elegir mundo'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: () => context.goNamed(
-                  'ranking',
-                  pathParameters: {'worldId': worldId},
-                  extra: {
-                    'worldName': worldName,
-                    'worldEmoji': worldEmoji,
-                    'worldColor': worldColor,
-                  },
-                ),
-                icon: const Icon(Icons.emoji_events_outlined,
-                    size: 16, color: Color(0xFFFFD700)),
-                label: const Text(
-                  'Ver ranking',
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.fromLTRB(22, 26, 22, 18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF152238),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '¡Sigue creando!',
                   style: TextStyle(
                     color: Color(0xFFFFD700),
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                const Text(
+                  '¡Casi llegas al podio!',
+                  style: TextStyle(color: Colors.white60, fontSize: 14),
+                ),
+                const SizedBox(height: 20),
+
+                // Estadísticas de la carrera
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatBox(
+                        icon: '📏',
+                        value: '${game.meters}',
+                        label: 'metros',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        icon: '🪙',
+                        value: '${game.coins}',
+                        label: 'monedas',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        icon: '⭐',
+                        value: '${game.score}',
+                        label: 'puntos',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Zona alcanzada + récord personal
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _ZoneBadge(zone: game.currentZone),
+                    BlocBuilder<RankingBloc, RankingState>(
+                      builder: (context, rankingState) {
+                        if (rankingState.scores.isEmpty ||
+                            rankingState.worldId != worldId) {
+                          return const SizedBox.shrink();
+                        }
+                        final pb = rankingState.scores.first.score;
+                        final isNew = game.score >= pb;
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: isNew
+                              ? const Text(
+                                  '🎉 ¡Nuevo récord!',
+                                  style: TextStyle(
+                                    color: Color(0xFFFFD700),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                  ),
+                                )
+                              : Text(
+                                  '🥇 Récord: $pb pts',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                if (completedMissions.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '🎯 Misiones completadas',
+                      style: TextStyle(
+                        color: Colors.green.shade300,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ...completedMissions
+                      .map((m) => MissionCard(mission: m, compact: true)),
+                ],
+                const SizedBox(height: 22),
+
+                _GoldActionButton(
+                  icon: Icons.replay_rounded,
+                  label: 'Jugar de nuevo',
+                  onTap: onRestart,
+                ),
+                const SizedBox(height: 14),
+                _DarkActionButton(
+                  icon: Icons.map_rounded,
+                  label: 'Elegir mundo',
+                  onTap: onExit,
+                ),
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: () => context.goNamed(
+                    'ranking',
+                    pathParameters: {'worldId': worldId},
+                    extra: {
+                      'worldName': worldName,
+                      'worldEmoji': worldEmoji,
+                      'worldColor': worldColor,
+                    },
+                  ),
+                  child: const Text(
+                    '🏆  Ver ranking',
+                    style: TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -889,14 +1202,29 @@ class _VictoryOverlay extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _StatBox(label: 'Metros', value: '${game.meters}m'),
-                    _StatBox(label: 'Monedas', value: '🪙 ${game.coins}'),
-                    _StatBox(
-                      label: 'Puntos',
-                      value: '${game.score}',
-                      highlight: true,
+                    Expanded(
+                      child: _StatBox(
+                        icon: '📏',
+                        value: '${game.meters}',
+                        label: 'metros',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        icon: '🪙',
+                        value: '${game.coins}',
+                        label: 'monedas',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        icon: '⭐',
+                        value: '${game.score}',
+                        label: 'puntos',
+                      ),
                     ),
                   ],
                 ),
@@ -1016,34 +1344,159 @@ class _VictoryOverlay extends StatelessWidget {
   }
 }
 
+/// Caja de estadística del resumen: icono arriba, valor grande y etiqueta.
 class _StatBox extends StatelessWidget {
-  final String label;
+  final String icon;
   final String value;
-  final bool highlight;
+  final String label;
 
   const _StatBox({
-    required this.label,
+    required this.icon,
     required this.value,
-    this.highlight = false,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: highlight ? const Color(0xFFFFD700) : Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: highlight ? 22 : 17,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12, width: 1),
+      ),
+      child: Column(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón dorado principal con efecto 3D de bloque.
+class _GoldActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _GoldActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFE24D), Color(0xFFFFCE1F)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFC99700),
+            offset: const Offset(0, 5),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.30),
+            offset: const Offset(0, 8),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: const Color(0xFF3D2C00), size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF3D2C00),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
+      ),
+    );
+  }
+}
+
+/// Botón secundario oscuro con borde sutil.
+class _DarkActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DarkActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white24, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }

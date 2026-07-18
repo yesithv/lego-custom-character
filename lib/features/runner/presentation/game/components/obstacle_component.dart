@@ -75,23 +75,54 @@ class ObstacleComponent extends PositionComponent
     }
   }
 
-  // Pseudo-3D LEGO brick, decorated per world
+  // ─────────────────────────────────────────────────────────────────
+  //  BLOCK RENDERING (Mini objects / themes per world)
+  // ─────────────────────────────────────────────────────────────────
   void _renderBlock(Canvas canvas, Color color) {
     final w = size.x;
     final h = size.y;
-    final topH = h * 0.14;
-    final sideW = w * 0.13;
+    final world = game.worldId;
+
+    if (world == 'lego_city') {
+      _renderLegoBuilding(canvas, w, h, color);
+      return;
+    } else if (world == 'medieval') {
+      _renderCastleTower(canvas, w, h, color);
+      return;
+    } else if (world == 'jungle') {
+      _renderFallenLog(canvas, w, h, color);
+      return;
+    } else if (world == 'dark_city') {
+      _renderTombstone(canvas, w, h, color);
+      return;
+    } else if (world == 'ocean') {
+      _renderCoralRock(canvas, w, h, color);
+      return;
+    } else if (world == 'tundra') {
+      _renderIceBlock(canvas, w, h, color);
+      return;
+    } else if (world == 'robot_city') {
+      _renderPcbBlock(canvas, w, h, color);
+      return;
+    } else if (world == 'galaxy') {
+      _renderAsteroid(canvas, w, h, color);
+      return;
+    }
+
+    // Fallback block
+    _renderDefaultBlock(canvas, w, h, color);
+  }
+
+  // 1. LEGO Building (lego_city)
+  void _renderLegoBuilding(Canvas canvas, double w, double h, Color color) {
     final lighter = _lighten(color, 0.15);
-    final darker = _darken(color, 0.30);
+    final darker = _darken(color, 0.25);
+    final topH = h * 0.12;
+    final sideW = w * 0.12;
 
-    // Front face
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, topH, w - sideW, h - topH), Radius.circular(4)),
-      Paint()..color = color,
-    );
-
-    // Top face
+    // Main building body
+    canvas.drawRect(Rect.fromLTWH(0, topH, w - sideW, h - topH), Paint()..color = color);
+    // Roof top
     final top = Path()
       ..moveTo(0, topH)
       ..lineTo(w - sideW, topH)
@@ -99,8 +130,7 @@ class ObstacleComponent extends PositionComponent
       ..lineTo(sideW, 0)
       ..close();
     canvas.drawPath(top, Paint()..color = lighter);
-
-    // Right side face
+    // Side
     final side = Path()
       ..moveTo(w - sideW, topH)
       ..lineTo(w, 0)
@@ -109,115 +139,354 @@ class ObstacleComponent extends PositionComponent
       ..close();
     canvas.drawPath(side, Paint()..color = darker);
 
-    // LEGO studs on top
-    final studCount = max(1, (w / 20).floor());
-    final studW = (w - sideW) / studCount;
-    for (int i = 0; i < studCount; i++) {
-      final cx = i * studW + studW / 2;
-      canvas.drawCircle(Offset(cx + sideW * 0.5, topH - 4 * (h / _blockH)),
-          5.0 * (w / _blockW), Paint()..color = lighter);
-      canvas.drawCircle(
-        Offset(cx + sideW * 0.5, topH - 4 * (h / _blockH)),
-        5.0 * (w / _blockW),
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.28)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2,
-      );
+    // Windows (yellow glowing grids)
+    final winPaint = Paint()..color = const Color(0xFFFFEB3B);
+    final winW = (w - sideW) * 0.22;
+    final winH = (h - topH) * 0.18;
+    for (int row = 0; row < 3; row++) {
+      for (int col = 0; col < 2; col++) {
+        final wx = (w - sideW) * 0.15 + col * (winW + (w - sideW) * 0.15);
+        final wy = topH + (h - topH) * 0.12 + row * (winH + (h - topH) * 0.12);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(Rect.fromLTWH(wx, wy, winW, winH), Radius.circular(2)),
+          winPaint,
+        );
+      }
     }
 
-    _decorateBlock(canvas, w, h, topH, sideW, color);
+    // Antenna on roof
+    final antPaint = Paint()
+      ..color = Colors.black87
+      ..strokeWidth = 2.0;
+    canvas.drawLine(Offset((w - sideW) / 2, topH), Offset((w - sideW) / 2, -h * 0.15), antPaint);
+    canvas.drawCircle(Offset((w - sideW) / 2, -h * 0.15), 4.0, Paint()..color = Colors.red);
+  }
 
-    // Outline
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, topH, w - sideW, h - topH), Radius.circular(4)),
+  // 2. Castle Tower (medieval)
+  void _renderCastleTower(Canvas canvas, double w, double h, Color color) {
+    final darker = _darken(color, 0.25);
+    final lighter = _lighten(color, 0.15);
+    final faceW = w * 0.88;
+
+    // Draw main stone tower base
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.20, faceW, h * 0.80), Paint()..color = color);
+    
+    // Draw tower side depth
+    final side = Path()
+      ..moveTo(faceW, h * 0.20)
+      ..lineTo(w, h * 0.10)
+      ..lineTo(w, h * 0.90)
+      ..lineTo(faceW, h)
+      ..close();
+    canvas.drawPath(side, Paint()..color = darker);
+
+    // Draw crenellations (castle battlements) on top
+    final battlementPaint = Paint()..color = color;
+    final mWidth = faceW / 5;
+    for (int i = 0; i < 5; i++) {
+      if (i.isEven) {
+        canvas.drawRect(
+          Rect.fromLTWH(i * mWidth, 0, mWidth, h * 0.22),
+          battlementPaint,
+        );
+      }
+    }
+    // Draw top stone platform line
+    canvas.drawLine(
+      Offset(0, h * 0.20),
+      Offset(faceW, h * 0.20),
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.22)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..color = lighter
+        ..strokeWidth = 2.0,
+    );
+
+    // Archway door
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(faceW * 0.30, h * 0.55, faceW * 0.40, h * 0.45),
+        topLeft: const Radius.circular(10),
+        topRight: const Radius.circular(10),
+      ),
+      Paint()..color = darker,
+    );
+
+    // Stone cracks
+    final crack = Paint()
+      ..color = Colors.black.withValues(alpha: 0.35)
+      ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(faceW * 0.15, h * 0.40), Offset(faceW * 0.25, h * 0.48), crack);
+    canvas.drawLine(Offset(faceW * 0.80, h * 0.60), Offset(faceW * 0.70, h * 0.72), crack);
+  }
+
+  // 3. Fallen Log (jungle)
+  void _renderFallenLog(Canvas canvas, double w, double h, Color color) {
+    final darkBrown = _darken(color, 0.25);
+    final lightBrown = _lighten(color, 0.15);
+
+    // Main horizontal log shape
+    final logRect = Rect.fromLTWH(0, h * 0.15, w * 0.85, h * 0.70);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(logRect, Radius.circular(h * 0.15)),
+      Paint()..color = color,
+    );
+
+    // End wood rings (on the right)
+    final ringCenter = Offset(w * 0.85, h * 0.50);
+    canvas.drawOval(
+      Rect.fromCenter(center: ringCenter, width: w * 0.15, height: h * 0.60),
+      Paint()..color = darkBrown,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: ringCenter, width: w * 0.09, height: h * 0.36),
+      Paint()..color = lightBrown,
+    );
+
+    // Bark texture lines
+    final barkPaint = Paint()
+      ..color = darkBrown
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(w * 0.15, h * 0.35), Offset(w * 0.60, h * 0.35), barkPaint);
+    canvas.drawLine(Offset(w * 0.25, h * 0.65), Offset(w * 0.70, h * 0.65), barkPaint);
+
+    // Growing moss patch on top of the log
+    final mossPaint = Paint()..color = Colors.green.shade700;
+    canvas.drawOval(
+      Rect.fromLTWH(w * 0.10, h * 0.08, w * 0.40, h * 0.18),
+      mossPaint,
     );
   }
 
-  // World-specific texture on the block's front face
-  void _decorateBlock(
-      Canvas canvas, double w, double h, double topH, double sideW, Color color) {
-    final faceW = w - sideW;
-    switch (game.worldId) {
-      case 'medieval':
-        // Stone cracks
-        final crack = Paint()
-          ..color = Colors.black.withValues(alpha: 0.30)
-          ..strokeWidth = 1.3
-          ..style = PaintingStyle.stroke;
-        final p1 = Path()
-          ..moveTo(faceW * 0.30, topH + h * 0.15)
-          ..lineTo(faceW * 0.45, topH + h * 0.38)
-          ..lineTo(faceW * 0.32, topH + h * 0.58);
-        final p2 = Path()
-          ..moveTo(faceW * 0.72, topH + h * 0.30)
-          ..lineTo(faceW * 0.60, topH + h * 0.52);
-        canvas.drawPath(p1, crack);
-        canvas.drawPath(p2, crack);
-      case 'galaxy':
-        // Meteor craters
-        final crater = Paint()..color = Colors.black.withValues(alpha: 0.25);
-        canvas.drawCircle(
-            Offset(faceW * 0.30, topH + h * 0.28), w * 0.10, crater);
-        canvas.drawCircle(
-            Offset(faceW * 0.68, topH + h * 0.55), w * 0.07, crater);
-        canvas.drawCircle(
-            Offset(faceW * 0.45, topH + h * 0.72), w * 0.05, crater);
-      case 'jungle':
-        // Moss patches on the upper edge
-        final moss = Paint()
-          ..color = Colors.green.shade900.withValues(alpha: 0.55);
-        canvas.drawOval(
-            Rect.fromLTWH(faceW * 0.05, topH, faceW * 0.45, h * 0.14), moss);
-        canvas.drawOval(
-            Rect.fromLTWH(faceW * 0.55, topH, faceW * 0.38, h * 0.10), moss);
-      case 'tundra':
-        // Ice shine streaks
-        final shine = Paint()
-          ..color = Colors.white.withValues(alpha: 0.55)
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(faceW * 0.25, topH + h * 0.20),
-            Offset(faceW * 0.55, topH + h * 0.60), shine);
-        canvas.drawLine(Offset(faceW * 0.45, topH + h * 0.15),
-            Offset(faceW * 0.70, topH + h * 0.45), shine);
-      case 'ocean':
-        // Coral pores
-        final pore = Paint()..color = _lighten(color, 0.22);
-        canvas.drawCircle(Offset(faceW * 0.28, topH + h * 0.32), w * 0.05, pore);
-        canvas.drawCircle(Offset(faceW * 0.62, topH + h * 0.48), w * 0.06, pore);
-        canvas.drawCircle(Offset(faceW * 0.40, topH + h * 0.66), w * 0.04, pore);
-      case 'robot_city':
-        // Rivets and a neon stripe
-        final rivet = Paint()..color = Colors.black.withValues(alpha: 0.45);
-        for (final dx in [0.12, 0.88]) {
-          for (final dy in [0.22, 0.78]) {
-            canvas.drawCircle(
-                Offset(faceW * dx, topH + (h - topH) * dy), w * 0.035, rivet);
-          }
-        }
-        canvas.drawRect(
-          Rect.fromLTWH(0, topH + (h - topH) * 0.46, faceW, h * 0.06),
-          Paint()..color = const Color(0xFF00FF41).withValues(alpha: 0.75),
-        );
-      case 'dark_city':
-        // Hazard corner marks
-        final mark = Paint()..color = const Color(0xFFE94560).withValues(alpha: 0.85);
-        canvas.drawRect(Rect.fromLTWH(0, topH, faceW * 0.18, h * 0.06), mark);
-        canvas.drawRect(
-            Rect.fromLTWH(faceW * 0.82, h - h * 0.06, faceW * 0.18, h * 0.06),
-            mark);
-      default:
-        break;
-    }
+  // 4. Tombstone (dark_city)
+  void _renderTombstone(Canvas canvas, double w, double h, Color color) {
+    final darker = _darken(color, 0.25);
+    final faceW = w * 0.88;
+
+    // Rounded top arch for tombstone
+    final path = Path()
+      ..moveTo(0, h)
+      ..lineTo(0, h * 0.35)
+      ..arcToPoint(Offset(faceW, h * 0.35), radius: Radius.circular(faceW / 2))
+      ..lineTo(faceW, h)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+
+    // Side depth
+    final sidePath = Path()
+      ..moveTo(faceW, h * 0.35)
+      ..arcToPoint(Offset(w, h * 0.30), radius: Radius.circular(faceW / 2))
+      ..lineTo(w, h * 0.90)
+      ..lineTo(faceW, h)
+      ..lineTo(faceW, h * 0.35)
+      ..close();
+    canvas.drawPath(sidePath, Paint()..color = darker);
+
+    // Cross engraving
+    final engrave = Paint()
+      ..color = Colors.black.withValues(alpha: 0.50)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(faceW * 0.50, h * 0.38), Offset(faceW * 0.50, h * 0.78), engrave);
+    canvas.drawLine(Offset(faceW * 0.32, h * 0.50), Offset(faceW * 0.68, h * 0.50), engrave);
+
+    // RIP Text
+    const textStyle = TextStyle(
+      color: Colors.black45,
+      fontSize: 10,
+      fontWeight: FontWeight.w900,
+    );
+    final textPainter = TextPainter(
+      text: const TextSpan(text: 'R I P', style: textStyle),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      Offset((faceW - textPainter.width) / 2, h * 0.82 - textPainter.height),
+    );
   }
 
-  // Barrier: wide horizontal bar with pseudo-3D depth, themed per world
+  // 5. Coral Rock (ocean)
+  void _renderCoralRock(Canvas canvas, double w, double h, Color color) {
+    final lighter = _lighten(color, 0.20);
+    final darker = _darken(color, 0.25);
+
+    // Organic wavy shape
+    final path = Path()
+      ..moveTo(0, h)
+      ..quadraticBezierTo(w * 0.10, h * 0.30, w * 0.35, h * 0.20)
+      ..quadraticBezierTo(w * 0.55, 0, w * 0.70, h * 0.35)
+      ..quadraticBezierTo(w * 0.95, h * 0.45, w * 0.90, h)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+
+    // Shading
+    final shade = Path()
+      ..moveTo(w * 0.70, h * 0.35)
+      ..quadraticBezierTo(w * 0.95, h * 0.45, w * 0.90, h)
+      ..lineTo(w * 0.68, h)
+      ..quadraticBezierTo(w * 0.75, h * 0.55, w * 0.60, h * 0.42)
+      ..close();
+    canvas.drawPath(shade, Paint()..color = darker);
+
+    // Coral pores (circles)
+    final porePaint = Paint()..color = lighter;
+    canvas.drawCircle(Offset(w * 0.30, h * 0.45), w * 0.08, porePaint);
+    canvas.drawCircle(Offset(w * 0.62, h * 0.55), w * 0.06, porePaint);
+    canvas.drawCircle(Offset(w * 0.48, h * 0.75), w * 0.09, porePaint);
+
+    // Tiny pink anemone tentacle on top
+    final tentaclePaint = Paint()
+      ..color = const Color(0xFFFF4081)
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(w * 0.35, h * 0.20), Offset(w * 0.30, h * 0.08), tentaclePaint);
+    canvas.drawLine(Offset(w * 0.40, h * 0.18), Offset(w * 0.45, h * 0.06), tentaclePaint);
+  }
+
+  // 6. Ice Block (tundra)
+  void _renderIceBlock(Canvas canvas, double w, double h, Color color) {
+    final lighter = _lighten(color, 0.25);
+    final darker = _darken(color, 0.25);
+    final faceW = w * 0.88;
+
+    // Semi-translucent body
+    final iceRect = Rect.fromLTWH(0, h * 0.12, faceW, h * 0.88);
+    canvas.drawRect(
+      iceRect,
+      Paint()
+        ..color = color.withValues(alpha: 0.75)
+        ..style = PaintingStyle.fill,
+    );
+
+    // Ice shine top and side
+    final top = Path()
+      ..moveTo(0, h * 0.12)
+      ..lineTo(faceW, h * 0.12)
+      ..lineTo(w, 0)
+      ..lineTo(w * 0.12, 0)
+      ..close();
+    canvas.drawPath(top, Paint()..color = lighter);
+
+    final side = Path()
+      ..moveTo(faceW, h * 0.12)
+      ..lineTo(w, 0)
+      ..lineTo(w, h * 0.88)
+      ..lineTo(faceW, h)
+      ..close();
+    canvas.drawPath(side, Paint()..color = darker);
+
+    // Inner frozen star/shatter lines
+    final crackPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(faceW * 0.25, h * 0.35), Offset(faceW * 0.75, h * 0.75), crackPaint);
+    canvas.drawLine(Offset(faceW * 0.70, h * 0.30), Offset(faceW * 0.30, h * 0.80), crackPaint);
+  }
+
+  // 7. PCB block (robot_city)
+  void _renderPcbBlock(Canvas canvas, double w, double h, Color color) {
+    final darker = _darken(color, 0.25);
+    final faceW = w * 0.88;
+
+    // Green/dark grey metal plate
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.12, faceW, h * 0.88), Paint()..color = color);
+
+    // Edge
+    final side = Path()
+      ..moveTo(faceW, h * 0.12)
+      ..lineTo(w, 0)
+      ..lineTo(w, h - h * 0.12)
+      ..lineTo(faceW, h)
+      ..close();
+    canvas.drawPath(side, Paint()..color = darker);
+
+    // Circuit board lines (neon green)
+    final pcbPaint = Paint()
+      ..color = const Color(0xFF00FF41)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    final path = Path()
+      ..moveTo(faceW * 0.20, h * 0.80)
+      ..lineTo(faceW * 0.20, h * 0.50)
+      ..lineTo(faceW * 0.50, h * 0.35)
+      ..lineTo(faceW * 0.80, h * 0.35);
+    canvas.drawPath(path, pcbPaint);
+
+    // Nodes (soldering circles)
+    final nodePaint = Paint()..color = Colors.white;
+    canvas.drawCircle(Offset(faceW * 0.20, h * 0.80), 3, nodePaint);
+    canvas.drawCircle(Offset(faceW * 0.80, h * 0.35), 3, nodePaint);
+  }
+
+  // 8. Asteroid (galaxy)
+  void _renderAsteroid(Canvas canvas, double w, double h, Color color) {
+    final darker = _darken(color, 0.25);
+    final lighter = _lighten(color, 0.15);
+
+    // Jagged hexagonal shape
+    final path = Path()
+      ..moveTo(w * 0.25, 0)
+      ..lineTo(w * 0.75, 0)
+      ..lineTo(w, h * 0.35)
+      ..lineTo(w * 0.85, h)
+      ..lineTo(w * 0.15, h)
+      ..lineTo(0, h * 0.45)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+
+    // Crater highlights
+    final crater = Paint()..color = darker;
+    canvas.drawCircle(Offset(w * 0.35, h * 0.35), w * 0.12, crater);
+    canvas.drawCircle(Offset(w * 0.35, h * 0.35), w * 0.05, Paint()..color = const Color(0xFF00FFFF)); // cyan center
+
+    canvas.drawCircle(Offset(w * 0.65, h * 0.65), w * 0.10, crater);
+    canvas.drawCircle(Offset(w * 0.65, h * 0.65), w * 0.04, Paint()..color = const Color(0xFF00FFFF));
+
+    // Outer rock facets
+    final facetPaint = Paint()
+      ..color = lighter.withValues(alpha: 0.40)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(w * 0.25, 0), Offset(w * 0.35, h * 0.35), facetPaint);
+    canvas.drawLine(Offset(0, h * 0.45), Offset(w * 0.35, h * 0.35), facetPaint);
+  }
+
+  // Fallback / default block
+  void _renderDefaultBlock(Canvas canvas, double w, double h, Color color) {
+    final topH = h * 0.14;
+    final sideW = w * 0.13;
+    final lighter = _lighten(color, 0.15);
+    final darker = _darken(color, 0.30);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, topH, w - sideW, h - topH), Radius.circular(4)),
+      Paint()..color = color,
+    );
+
+    final top = Path()
+      ..moveTo(0, topH)
+      ..lineTo(w - sideW, topH)
+      ..lineTo(w, 0)
+      ..lineTo(sideW, 0)
+      ..close();
+    canvas.drawPath(top, Paint()..color = lighter);
+
+    final side = Path()
+      ..moveTo(w - sideW, topH)
+      ..lineTo(w, 0)
+      ..lineTo(w, h - topH)
+      ..lineTo(w - sideW, h)
+      ..close();
+    canvas.drawPath(side, Paint()..color = darker);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  BARRIER RENDERING (Traffic lights, portcullis, lianas, etc.)
+  // ─────────────────────────────────────────────────────────────────
   void _renderBarrier(Canvas canvas, Color color) {
     final w = size.x;
     final h = size.y;
@@ -228,108 +497,205 @@ class ObstacleComponent extends PositionComponent
 
     // Support poles (left and right)
     final poleColor = isLaser ? Colors.blueGrey.shade800 : Colors.grey.shade700;
-    canvas.drawRect(
-        Rect.fromLTWH(w * 0.04, h, w * 0.07, h * 0.28),
-        Paint()..color = poleColor);
-    canvas.drawRect(
-        Rect.fromLTWH(w * 0.82, h, w * 0.07, h * 0.28),
-        Paint()..color = poleColor);
+    canvas.drawRect(Rect.fromLTWH(w * 0.04, h, w * 0.07, h * 0.28), Paint()..color = poleColor);
+    canvas.drawRect(Rect.fromLTWH(w * 0.82, h, w * 0.07, h * 0.28), Paint()..color = poleColor);
 
     if (isLaser) {
       _renderLaserBar(canvas, w, h, color);
       return;
     }
 
-    // Front face
+    if (world == 'lego_city') {
+      _renderTrafficLightBarrier(canvas, w, h, color);
+      return;
+    } else if (world == 'medieval') {
+      _renderPortcullis(canvas, w, h, color);
+      return;
+    } else if (world == 'jungle') {
+      _renderLianaBarrier(canvas, w, h, color);
+      return;
+    } else if (world == 'dark_city') {
+      _renderRustyChainBarrier(canvas, w, h, color);
+      return;
+    } else if (world == 'ocean') {
+      _renderKelpBarrier(canvas, w, h, color);
+      return;
+    } else if (world == 'tundra') {
+      _renderSnowyBarrier(canvas, w, h, color);
+      return;
+    }
+
+    // Default bar
+    _renderDefaultBar(canvas, w, h, color, topH, sideW);
+  }
+
+  // 1. LEGO Traffic Light Barrier (lego_city)
+  void _renderTrafficLightBarrier(Canvas canvas, double w, double h, Color color) {
+    final topH = h * 0.18;
+    final sideW = w * 0.06;
+    // Draw yellow/black striped warning bar
+    _renderDefaultBar(canvas, w, h, color, topH, sideW);
+
+    // Render traffic light box in the center
+    final boxW = w * 0.16;
+    final boxH = h * 0.90;
+    final boxX = (w - sideW - boxW) / 2;
+    final boxY = topH - boxH * 0.10;
+
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, topH, w - sideW, h - topH),
-          Radius.circular(5)),
-      Paint()..color = color,
+      RRect.fromRectAndRadius(Rect.fromLTWH(boxX, boxY, boxW, boxH), Radius.circular(3)),
+      Paint()..color = Colors.black87,
     );
 
-    // Top face
-    final top = Path()
-      ..moveTo(0, topH)
-      ..lineTo(w - sideW, topH)
-      ..lineTo(w, 0)
-      ..lineTo(sideW, 0)
-      ..close();
-    canvas.drawPath(top, Paint()..color = _lighten(color, 0.12));
+    // Lights: Red, Yellow, Green
+    final lightR = boxW * 0.26;
+    final pulse = 0.5 + 0.5 * sin(game.elapsedSeconds * 6);
 
-    // Right side
-    final side = Path()
-      ..moveTo(w - sideW, topH)
-      ..lineTo(w, 0)
-      ..lineTo(w, h)
-      ..lineTo(w - sideW, h)
-      ..close();
-    canvas.drawPath(side, Paint()..color = _darken(color, 0.28));
+    // Red light (active/blinking)
+    canvas.drawCircle(
+      Offset(boxX + boxW / 2, boxY + boxH * 0.22),
+      lightR,
+      Paint()..color = Colors.red.withValues(alpha: 0.3 + 0.7 * pulse),
+    );
+    // Yellow light (faint)
+    canvas.drawCircle(
+      Offset(boxX + boxW / 2, boxY + boxH * 0.50),
+      lightR,
+      Paint()..color = Colors.amber.withValues(alpha: 0.2),
+    );
+    // Green light (faint)
+    canvas.drawCircle(
+      Offset(boxX + boxW / 2, boxY + boxH * 0.78),
+      lightR,
+      Paint()..color = Colors.green.withValues(alpha: 0.2),
+    );
+  }
 
-    switch (world) {
-      case 'medieval':
-      case 'jungle':
-        // Wooden log: grain lines and end ring
-        final grain = Paint()
-          ..color = Colors.black.withValues(alpha: 0.22)
-          ..strokeWidth = 1.2
-          ..style = PaintingStyle.stroke;
-        for (int i = 1; i <= 2; i++) {
-          final gy = topH + (h - topH) * i / 3;
-          canvas.drawLine(Offset(w * 0.04, gy), Offset(w - sideW, gy), grain);
-        }
-        canvas.drawCircle(Offset(w * 0.06, topH + (h - topH) / 2),
-            (h - topH) * 0.30, Paint()..color = _lighten(color, 0.18));
-        if (world == 'jungle') {
-          // Hanging leaves
-          final leaf = Paint()..color = Colors.green.shade700;
-          for (final dx in [0.22, 0.52, 0.76]) {
-            canvas.drawOval(
-                Rect.fromLTWH(w * dx, h - 2, w * 0.09, h * 0.24), leaf);
-          }
-        }
-      case 'tundra':
-        // Hanging icicles
-        final ice = Paint()..color = Colors.white.withValues(alpha: 0.85);
-        for (final dx in [0.15, 0.38, 0.60, 0.80]) {
-          final icicle = Path()
-            ..moveTo(w * dx, h - 1)
-            ..lineTo(w * dx + w * 0.035, h - 1)
-            ..lineTo(w * dx + w * 0.017, h + h * 0.30)
-            ..close();
-          canvas.drawPath(icicle, ice);
-        }
-        canvas.drawRect(
-          Rect.fromLTWH(0, topH, w - sideW, (h - topH) * 0.25),
-          Paint()..color = Colors.white.withValues(alpha: 0.40),
-        );
-      case 'ocean':
-        // Seaweed wraps and bubbles
-        final wrapPaint = Paint()..color = _darken(color, 0.15);
-        for (final dx in [0.25, 0.60]) {
-          canvas.drawRect(
-              Rect.fromLTWH(w * dx, topH, w * 0.07, h - topH), wrapPaint);
-        }
-        final bubble = Paint()
-          ..color = Colors.white.withValues(alpha: 0.45)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2;
-        canvas.drawCircle(Offset(w * 0.45, topH - 6), 3.5, bubble);
-        canvas.drawCircle(Offset(w * 0.52, topH - 12), 2.2, bubble);
-      default:
-        // Warning stripes (lego_city, dark_city, fallback)
-        final stripeH = (h - topH) / 5;
-        for (int i = 0; i < 3; i++) {
-          if (i.isEven) continue;
-          canvas.drawRect(
-            Rect.fromLTWH(0, topH + i * stripeH, w - sideW, stripeH),
-            Paint()..color = Colors.black.withValues(alpha: 0.18),
-          );
-        }
+  // 2. Portcullis (medieval)
+  void _renderPortcullis(Canvas canvas, double w, double h, Color color) {
+    // Draw iron horizontal bar
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h * 0.25), Paint()..color = color);
+
+    // Vertical metal iron spikes going down
+    final metalPaint = Paint()
+      ..color = color
+      ..strokeWidth = 3.0;
+    final tipPaint = Paint()..color = _darken(color, 0.20);
+
+    const count = 7;
+    for (int i = 0; i < count; i++) {
+      final dx = w * 0.08 + i * (w * 0.84 / (count - 1));
+      // Draw vertical rod
+      canvas.drawLine(Offset(dx, h * 0.20), Offset(dx, h * 0.88), metalPaint);
+
+      // Draw spiked tips at bottom of rods
+      final tip = Path()
+        ..moveTo(dx - 3, h * 0.88)
+        ..lineTo(dx + 3, h * 0.88)
+        ..lineTo(dx, h)
+        ..close();
+      canvas.drawPath(tip, tipPaint);
     }
   }
 
-  // Glowing energy beam between two emitter poles (galaxy / robot_city)
+  // 3. Liana Barrier (jungle)
+  void _renderLianaBarrier(Canvas canvas, double w, double h, Color color) {
+    // Wavy green vine going across
+    final vinePaint = Paint()
+      ..color = Colors.green.shade800
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke;
+    
+    final vine = Path()
+      ..moveTo(0, h * 0.30)
+      ..quadraticBezierTo(w * 0.25, h * 0.65, w * 0.50, h * 0.35)
+      ..quadraticBezierTo(w * 0.75, h * 0.10, w, h * 0.40);
+    canvas.drawPath(vine, vinePaint);
+
+    // Hanging leaves
+    final leafPaint = Paint()..color = Colors.green.shade600;
+    for (int i = 1; i <= 4; i++) {
+      final dx = w * 0.20 * i;
+      final dy = h * 0.45;
+      canvas.drawOval(Rect.fromLTWH(dx - 6, dy, 12, 16), leafPaint);
+    }
+  }
+
+  // 4. Rusty iron chains (dark_city)
+  void _renderRustyChainBarrier(Canvas canvas, double w, double h, Color color) {
+    final chainPaint = Paint()
+      ..color = color
+      ..strokeWidth = 3.5
+      ..style = PaintingStyle.stroke;
+
+    // Draw hanging chain paths
+    final path = Path()
+      ..moveTo(0, h * 0.30)
+      ..quadraticBezierTo(w * 0.50, h * 0.90, w, h * 0.30);
+    canvas.drawPath(path, chainPaint);
+
+    // Draw chain links
+    final linkPaint = Paint()
+      ..color = _lighten(color, 0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    for (int i = 0; i < 8; i++) {
+      final t = i / 7.0;
+      final cx = w * t;
+      final cy = h * 0.30 + (h * 0.60) * (4 * (t - 0.5) * (t - 0.5)); // parabola
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(cx, cy), width: 10, height: 6),
+        linkPaint,
+      );
+    }
+  }
+
+  // 5. Giant Kelp Algae (ocean)
+  void _renderKelpBarrier(Canvas canvas, double w, double h, Color color) {
+    final kelpPaint = Paint()..color = color;
+    
+    // Multiple wavy vertical kelp stems
+    for (int i = 0; i < 4; i++) {
+      final base = w * 0.18 + i * (w * 0.64 / 3);
+      final offset = sin(game.elapsedSeconds * 4 + i) * 6;
+      final path = Path()
+        ..moveTo(base + offset, 0)
+        ..quadraticBezierTo(base - 10 + offset, h * 0.50, base + offset, h)
+        ..lineTo(base + w * 0.08 + offset, h)
+        ..quadraticBezierTo(base + w * 0.08 - 10 + offset, h * 0.50, base + w * 0.08 + offset, 0)
+        ..close();
+      canvas.drawPath(path, kelpPaint);
+    }
+  }
+
+  // 6. Snowy Barrier (tundra)
+  void _renderSnowyBarrier(Canvas canvas, double w, double h, Color color) {
+    final topH = h * 0.18;
+    final sideW = w * 0.06;
+
+    // Draw base ice bar
+    _renderDefaultBar(canvas, w, h, color, topH, sideW);
+
+    // Draw white fluffy snow pile on top of the bar
+    final snowPaint = Paint()..color = Colors.white;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, topH - 4, w - sideW, h * 0.22), const Radius.circular(5)),
+      snowPaint,
+    );
+
+    // Hanging icicles
+    final icePaint = Paint()..color = Colors.white.withValues(alpha: 0.85);
+    for (final dx in [0.20, 0.45, 0.70]) {
+      final icicle = Path()
+        ..moveTo(w * dx, topH + h * 0.18)
+        ..lineTo(w * dx + 5, topH + h * 0.18)
+        ..lineTo(w * dx + 2.5, topH + h * 0.45)
+        ..close();
+      canvas.drawPath(icicle, icePaint);
+    }
+  }
+
+  // Emitter energy beams (galaxy / robot_city)
   void _renderLaserBar(Canvas canvas, double w, double h, Color color) {
     final beamY = h * 0.42;
     final beamH = h * 0.24;
@@ -362,7 +728,34 @@ class ObstacleComponent extends PositionComponent
     canvas.drawCircle(Offset(w * 0.925, beamY + beamH / 2), beamH * 0.85, node);
   }
 
-  // Spike: themed pointed obstacle per world
+  void _renderDefaultBar(Canvas canvas, double w, double h, Color color, double topH, double sideW) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, topH, w - sideW, h - topH),
+          Radius.circular(5)),
+      Paint()..color = color,
+    );
+
+    final top = Path()
+      ..moveTo(0, topH)
+      ..lineTo(w - sideW, topH)
+      ..lineTo(w, 0)
+      ..lineTo(sideW, 0)
+      ..close();
+    canvas.drawPath(top, Paint()..color = _lighten(color, 0.12));
+
+    final side = Path()
+      ..moveTo(w - sideW, topH)
+      ..lineTo(w, 0)
+      ..lineTo(w, h)
+      ..lineTo(w - sideW, h)
+      ..close();
+    canvas.drawPath(side, Paint()..color = _darken(color, 0.28));
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  SPIKE RENDERING (Cones, spears, crystals, etc.)
+  // ─────────────────────────────────────────────────────────────────
   void _renderSpike(Canvas canvas, Color color) {
     final w = size.x;
     final h = size.y;
@@ -372,8 +765,185 @@ class ObstacleComponent extends PositionComponent
     if (world == 'lego_city') {
       _renderCone(canvas, w, h, color);
       return;
+    } else if (world == 'medieval') {
+      _renderSpearBarricade(canvas, w, h, color);
+      return;
+    } else if (world == 'galaxy') {
+      _renderSpaceCrystal(canvas, w, h, color);
+      return;
+    } else if (world == 'jungle') {
+      _renderBambooSpikes(canvas, w, h, color);
+      return;
+    } else if (world == 'dark_city') {
+      _renderObsidianSpike(canvas, w, h, color);
+      return;
+    } else if (world == 'ocean') {
+      _renderSeaUrchin(canvas, w, h, color);
+      return;
+    } else if (world == 'tundra') {
+      _renderIceSpike(canvas, w, h, color);
+      return;
+    } else if (world == 'robot_city') {
+      _renderMechanicalDrill(canvas, w, h, color);
+      return;
     }
 
+    // Default spike shape
+    _renderDefaultSpike(canvas, w, h, color, half);
+  }
+
+  // 1. Medieval Spears (medieval)
+  void _renderSpearBarricade(Canvas canvas, double w, double h, Color color) {
+    final spearPaint = Paint()
+      ..color = color
+      ..strokeWidth = 4.0;
+    final tipPaint = Paint()..color = Colors.grey.shade400;
+
+    // Draw three cross spikes
+    for (int i = 0; i < 3; i++) {
+      final dx = w * 0.20 + i * (w * 0.60 / 2);
+      // Main shaft
+      canvas.drawLine(Offset(dx, h), Offset(dx, h * 0.25), spearPaint);
+
+      // Spear head
+      final head = Path()
+        ..moveTo(dx - 5, h * 0.25)
+        ..lineTo(dx + 5, h * 0.25)
+        ..lineTo(dx, 0)
+        ..close();
+      canvas.drawPath(head, tipPaint);
+    }
+  }
+
+  // 2. Space Crystal (galaxy)
+  void _renderSpaceCrystal(Canvas canvas, double w, double h, Color color) {
+    final half = w / 2;
+    // Glowing diamond shape crystal
+    final body = Path()
+      ..moveTo(half, 0)
+      ..lineTo(w * 0.15, h * 0.50)
+      ..lineTo(half, h)
+      ..lineTo(w * 0.85, h * 0.50)
+      ..close();
+    
+    // Pulse aura glow
+    final pulse = 0.6 + 0.4 * sin(game.elapsedSeconds * 7);
+    canvas.drawPath(
+      body,
+      Paint()
+        ..color = color.withValues(alpha: 0.3 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    canvas.drawPath(body, Paint()..color = color);
+
+    // Highlight facets
+    final shine = Paint()
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(half, 0), Offset(half, h), shine);
+    canvas.drawLine(Offset(w * 0.15, h * 0.50), Offset(w * 0.85, h * 0.50), shine);
+  }
+
+  // 3. Bamboo Spikes (jungle)
+  void _renderBambooSpikes(Canvas canvas, double w, double h, Color color) {
+    final bambooPaint = Paint()..color = color;
+    final shadowPaint = Paint()..color = _darken(color, 0.20);
+
+    for (int i = 0; i < 3; i++) {
+      final dx = w * 0.18 + i * (w * 0.55 / 2);
+      final bh = h * (0.65 + 0.35 * (i % 2)); // varying heights
+      final rect = Rect.fromLTWH(dx - 5, h - bh, 10, bh);
+      
+      // Stem
+      canvas.drawRect(rect, bambooPaint);
+
+      // Bamboo segment horizontal lines
+      canvas.drawLine(Offset(dx - 5, h - bh * 0.33), Offset(dx + 5, h - bh * 0.33), shadowPaint);
+      canvas.drawLine(Offset(dx - 5, h - bh * 0.66), Offset(dx + 5, h - bh * 0.66), shadowPaint);
+
+      // Sharp diagonal cut on top
+      final tip = Path()
+        ..moveTo(dx - 5, h - bh)
+        ..lineTo(dx + 5, h - bh)
+        ..lineTo(dx - 5, h - bh + 10)
+        ..close();
+      canvas.drawPath(tip, shadowPaint);
+    }
+  }
+
+  // 4. Obsidian Spike (dark_city)
+  void _renderObsidianSpike(Canvas canvas, double w, double h, Color color) {
+    final half = w / 2;
+    // Jagged volcano-like spike
+    final body = Path()
+      ..moveTo(half, 0)
+      ..lineTo(w * 0.20, h * 0.40)
+      ..lineTo(0, h)
+      ..lineTo(w, h)
+      ..lineTo(w * 0.80, h * 0.40)
+      ..close();
+    canvas.drawPath(body, Paint()..color = color);
+
+    // Glowing tip
+    final glowPaint = Paint()
+      ..color = const Color(0xFFE94560)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(Offset(half, h * 0.10), 6, glowPaint);
+  }
+
+  // 5. Sea Urchin (ocean)
+  void _renderSeaUrchin(Canvas canvas, double w, double h, Color color) {
+    final half = w / 2;
+    final cy = h * 0.60;
+    final r = w * 0.28;
+
+    // Center dark body
+    canvas.drawCircle(Offset(half, cy), r, Paint()..color = color);
+
+    // Spike lines radiating from center
+    final spinePaint = Paint()
+      ..color = _lighten(color, 0.20)
+      ..strokeWidth = 2.0;
+
+    const count = 10;
+    for (int i = 0; i < count; i++) {
+      final a = (2 * pi / count) * i + game.elapsedSeconds;
+      canvas.drawLine(
+        Offset(half + cos(a) * r, cy + sin(a) * r),
+        Offset(half + cos(a) * r * 1.7, cy + sin(a) * r * 1.7),
+        spinePaint,
+      );
+    }
+  }
+
+  // 6. Ice Spike (tundra)
+  void _renderIceSpike(Canvas canvas, double w, double h, Color color) {
+    final half = w / 2;
+    // Pointy ice spike
+    final body = Path()
+      ..moveTo(half, 0)
+      ..lineTo(w * 0.10, h)
+      ..lineTo(w * 0.90, h)
+      ..close();
+    canvas.drawPath(body, Paint()..color = color.withValues(alpha: 0.80));
+
+    // Shine highlights
+    final shine = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2.0;
+    canvas.drawLine(Offset(half, 0), Offset(w * 0.35, h), shine);
+  }
+
+  // 7. Mechanical Drill (robot_city)
+  void _renderMechanicalDrill(Canvas canvas, double w, double h, Color color) {
+    final half = w / 2;
+    
+    // Rotating thread effect based on game elapsed time
+    final spiralOffset = (game.elapsedSeconds * 40) % h;
+
+    // Draw main drill cone
     final body = Path()
       ..moveTo(half, 0)
       ..lineTo(0, h)
@@ -381,105 +951,18 @@ class ObstacleComponent extends PositionComponent
       ..close();
     canvas.drawPath(body, Paint()..color = color);
 
-    // Left face highlight
-    final highlight = Path()
-      ..moveTo(half, 0)
-      ..lineTo(0, h)
-      ..lineTo(half * 0.55, h)
-      ..close();
-    canvas.drawPath(highlight,
-        Paint()..color = _lighten(color, 0.14).withValues(alpha: 0.45));
-
-    // Right face (darker)
-    final darkFace = Path()
-      ..moveTo(half, 0)
-      ..lineTo(w, h)
-      ..lineTo(half * 1.45, h)
-      ..close();
-    canvas.drawPath(darkFace,
-        Paint()..color = Colors.black.withValues(alpha: 0.22));
-
-    switch (world) {
-      case 'galaxy':
-        // Crystal facet lines + strong glow
-        final facet = Paint()
-          ..color = Colors.white.withValues(alpha: 0.50)
-          ..strokeWidth = 1.2
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(half, 0), Offset(half * 0.55, h), facet);
-        canvas.drawLine(Offset(half, 0), Offset(half * 1.45, h), facet);
-        canvas.drawCircle(Offset(half, 3), max(3.0, 7.0 * (w / _spikeW)),
-            Paint()..color = const Color(0xFF00FFFF).withValues(alpha: 0.40));
-      case 'jungle':
-        // Carnivorous plant: red tip + leaves at the base
-        final tip = Path()
-          ..moveTo(half, 0)
-          ..lineTo(half - w * 0.14, h * 0.28)
-          ..lineTo(half + w * 0.14, h * 0.28)
-          ..close();
-        canvas.drawPath(tip, Paint()..color = Colors.red.shade700);
-        final leaf = Paint()..color = Colors.green.shade800;
-        canvas.drawOval(
-            Rect.fromLTWH(-w * 0.06, h - h * 0.16, w * 0.36, h * 0.16), leaf);
-        canvas.drawOval(
-            Rect.fromLTWH(w * 0.70, h - h * 0.16, w * 0.36, h * 0.16), leaf);
-      case 'tundra':
-        // Icicle shine
-        final shine = Paint()
-          ..color = Colors.white.withValues(alpha: 0.75)
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(
-            Offset(half * 0.85, h * 0.18), Offset(half * 0.62, h * 0.72), shine);
-      case 'ocean':
-        // Sea urchin: thin spines out the sides
-        final spine = Paint()
-          ..color = _darken(color, 0.10)
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
-        for (final t in [0.35, 0.55, 0.75]) {
-          final sy = h * t;
-          final sx = half * (1 - t) * 0.9;
-          canvas.drawLine(Offset(half - sx, sy),
-              Offset(half - sx - w * 0.16, sy - h * 0.06), spine);
-          canvas.drawLine(Offset(half + sx, sy),
-              Offset(half + sx + w * 0.16, sy - h * 0.06), spine);
-        }
-      case 'medieval':
-        // Stone cracks
-        final crack = Paint()
-          ..color = Colors.black.withValues(alpha: 0.30)
-          ..strokeWidth = 1.2
-          ..style = PaintingStyle.stroke;
-        final p = Path()
-          ..moveTo(half * 0.9, h * 0.35)
-          ..lineTo(half * 1.1, h * 0.55)
-          ..lineTo(half * 0.95, h * 0.75);
-        canvas.drawPath(p, crack);
-      case 'robot_city':
-        // Blinking antenna tip
-        final blink = (sin(game.elapsedSeconds * 6) + 1) / 2;
-        canvas.drawCircle(Offset(half, 3), max(2.5, 5.0 * (w / _spikeW)),
-            Paint()
-              ..color = const Color(0xFF00FF41)
-                  .withValues(alpha: 0.35 + 0.60 * blink));
-      case 'dark_city':
-        canvas.drawCircle(Offset(half, 3), max(2.0, 4.5 * (w / _spikeW)),
-            Paint()
-              ..color = const Color(0xFFE94560).withValues(alpha: 0.60));
-      default:
-        canvas.drawCircle(Offset(half, 3), max(2.0, 4.5 * (w / _spikeW)),
-            Paint()..color = Colors.white.withValues(alpha: 0.45));
+    // Draw metallic screw thread diagonals
+    final threadPaint = Paint()
+      ..color = _lighten(color, 0.18)
+      ..strokeWidth = 2.0;
+    
+    canvas.save();
+    canvas.clipPath(body);
+    for (int i = 0; i < 4; i++) {
+      final ty = (spiralOffset + i * (h / 3)) % h;
+      canvas.drawLine(Offset(0, ty), Offset(w, ty - 12), threadPaint);
     }
-
-    // Outline
-    canvas.drawPath(
-      body,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.28)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    canvas.restore();
   }
 
   // Traffic cone for lego_city
@@ -526,6 +1009,39 @@ class ObstacleComponent extends PositionComponent
         ..color = Colors.black.withValues(alpha: 0.25)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4,
+    );
+  }
+
+  void _renderDefaultSpike(Canvas canvas, double w, double h, Color color, double half) {
+    final body = Path()
+      ..moveTo(half, 0)
+      ..lineTo(0, h)
+      ..lineTo(w, h)
+      ..close();
+    canvas.drawPath(body, Paint()..color = color);
+
+    final highlight = Path()
+      ..moveTo(half, 0)
+      ..lineTo(0, h)
+      ..lineTo(half * 0.55, h)
+      ..close();
+    canvas.drawPath(highlight,
+        Paint()..color = _lighten(color, 0.14).withValues(alpha: 0.45));
+
+    final darkFace = Path()
+      ..moveTo(half, 0)
+      ..lineTo(w, h)
+      ..lineTo(half * 1.45, h)
+      ..close();
+    canvas.drawPath(darkFace,
+        Paint()..color = Colors.black.withValues(alpha: 0.22));
+
+    canvas.drawPath(
+      body,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.28)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
     );
   }
 

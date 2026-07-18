@@ -3,11 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/audio_service.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
+import '../../../missions/domain/entities/mission.dart';
 import '../../../missions/presentation/bloc/mission_bloc.dart';
 import '../../../missions/presentation/bloc/mission_state.dart';
-import '../../../missions/presentation/widgets/mission_card.dart';
 import '../../domain/entities/world_music.dart';
 
 class PreRunPage extends StatefulWidget {
@@ -87,6 +88,7 @@ class _PreRunPageState extends State<PreRunPage> {
 
   @override
   Widget build(BuildContext context) {
+    final base = widget.worldColor;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -94,124 +96,103 @@ class _PreRunPageState extends State<PreRunPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              widget.worldColor,
-              widget.worldColor.withValues(alpha: 0.7),
-              Colors.black87
+              Color.lerp(base, Colors.white, 0.12)!,
+              base,
+              Color.lerp(base, Colors.black, 0.5)!,
             ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Top bar (fixed)
+              // Top bar (fijo)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.horizontal, 10, AppSpacing.horizontal, 6),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                    _CircleIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.goNamed('worlds');
+                        }
+                      },
                     ),
-                    Text(
-                      '${widget.worldEmoji}  ${widget.worldName}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
+                    const SizedBox(width: 12),
+                    Text(widget.worldEmoji, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.worldName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Scrollable content
+              // Contenido desplazable
               Expanded(
                 child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.horizontal),
                   child: Column(
                     children: [
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
-                      // Character preview
-                      CharacterPreview(
-                          appearance: widget.character.appearance, size: 120),
+                      // Personaje con halo
+                      _CharacterHero(character: widget.character),
                       const SizedBox(height: 8),
                       Text(
                         widget.character.name,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
-                          fontSize: 24,
+                          fontSize: 26,
+                          shadows: [
+                            Shadow(
+                                color: Colors.black38,
+                                blurRadius: 6,
+                                offset: Offset(0, 2)),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       _CharacterTypeBadge(type: widget.character.type),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
-                      // Missions panel
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: BlocBuilder<MissionBloc, MissionState>(
-                          builder: (context, state) => Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '🎯  Misiones activas',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                if (state.status == MissionStatus.loading)
-                                  const Center(
-                                    child: SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white54,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ...state.missions.map((m) =>
-                                      MissionCard(mission: m, compact: true)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Misiones activas (en paralelo, compacto)
+                      const _MissionsBanner(),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                      // Music panel
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: _MusicPanel(
-                          tracks: _tracks,
-                          enabled: _musicEnabled,
-                          selectedIndex: _selectedTrack,
-                          previewingIndex: _previewing,
-                          onToggleEnabled: (v) {
-                            if (!v && _previewing != null) {
-                              AudioService.instance.stopMusic();
-                            }
-                            setState(() {
-                              _musicEnabled = v;
-                              if (!v) _previewing = null;
-                            });
-                          },
-                          onSelect: (i) => setState(() => _selectedTrack = i),
-                          onPreview: _togglePreview,
-                        ),
+                      // Música del mundo
+                      _MusicPanel(
+                        tracks: _tracks,
+                        enabled: _musicEnabled,
+                        selectedIndex: _selectedTrack,
+                        previewingIndex: _previewing,
+                        onToggleEnabled: (v) {
+                          if (!v && _previewing != null) {
+                            AudioService.instance.stopMusic();
+                          }
+                          setState(() {
+                            _musicEnabled = v;
+                            if (!v) _previewing = null;
+                          });
+                        },
+                        onSelect: (i) => setState(() => _selectedTrack = i),
+                        onPreview: _togglePreview,
                       ),
 
                       const SizedBox(height: 16),
@@ -220,35 +201,197 @@ class _PreRunPageState extends State<PreRunPage> {
                 ),
               ),
 
-              // Run button (always visible at bottom)
+              // Botón correr (siempre visible)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 64,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
-                      foregroundColor: Colors.black87,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    onPressed: _startRun,
-                    child: const Text(
-                      '¡CORRER!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 22,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ),
-                ),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.horizontal, 6, AppSpacing.horizontal, 16),
+                child: _RunButton(onTap: _startRun),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Character hero (con halo) ────────────────────────────────────────────────
+
+class _CharacterHero extends StatelessWidget {
+  final Character character;
+  const _CharacterHero({required this.character});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 200,
+      height: 200,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 175,
+            height: 175,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [Color(0x4DFFD700), Color(0x00FFD700)],
+              ),
+            ),
+          ),
+          CharacterPreview(appearance: character.appearance, size: 120),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Missions banner (paralelo) ───────────────────────────────────────────────
+
+class _MissionsBanner extends StatelessWidget {
+  const _MissionsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white12, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '🎯  Misiones activas',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 12),
+          BlocBuilder<MissionBloc, MissionState>(
+            builder: (context, state) {
+              if (state.status == MissionStatus.loading) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white54),
+                    ),
+                  ),
+                );
+              }
+              if (state.missions.isEmpty) {
+                return const Text(
+                  'Sin misiones activas por ahora.',
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                );
+              }
+              // Cada misión en paralelo (columnas) para reducir la altura.
+              final missions = state.missions;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (int i = 0; i < missions.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 10),
+                    Expanded(child: _MissionMini(mission: missions[i])),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MissionMini extends StatelessWidget {
+  final Mission mission;
+  const _MissionMini({required this.mission});
+
+  static String _emoji(MissionType type) => switch (type) {
+        MissionType.collectCoins => '🪙',
+        MissionType.runMeters => '🏃',
+        MissionType.evadeObstacles => '⚡',
+        MissionType.surviveSeconds => '⏱',
+        MissionType.useJump => '🦘',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final done = mission.isCompleted;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: done
+            ? Colors.green.withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: done ? Colors.green.shade400 : Colors.white12,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_emoji(mission.type), style: const TextStyle(fontSize: 17)),
+              if (done)
+                const Icon(Icons.check_circle, color: Colors.green, size: 16)
+              else
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🪙', style: TextStyle(fontSize: 11)),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${mission.rewardCoins}',
+                      style: const TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            mission.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: done ? Colors.green.shade300 : Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: mission.progressRatio,
+              minHeight: 5,
+              backgroundColor: Colors.white12,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                done ? Colors.green : const Color(0xFFFFD700),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -278,11 +421,13 @@ class _MusicPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.black.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white12, width: 1),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -300,18 +445,13 @@ class _MusicPanel extends StatelessWidget {
               ),
               Switch(
                 value: enabled,
-                activeColor: const Color(0xFFFFD700),
+                activeThumbColor: const Color(0xFFFFD700),
                 onChanged: onToggleEnabled,
               ),
             ],
           ),
           if (enabled) ...[
-            const SizedBox(height: 4),
-            const Text(
-              'Elige la pista que sonará mientras corres. Toca ▶ para escucharla.',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             ...List.generate(tracks.length, (i) {
               final track = tracks[i];
               final isSelected = i == selectedIndex;
@@ -325,8 +465,8 @@ class _MusicPanel extends StatelessWidget {
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFFFFD700).withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.06),
+                          ? const Color(0xFFFFD700).withValues(alpha: 0.16)
+                          : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isSelected
@@ -354,6 +494,8 @@ class _MusicPanel extends StatelessWidget {
                               ),
                               Text(
                                 track.description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white60,
                                   fontSize: 12,
@@ -362,31 +504,13 @@ class _MusicPanel extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 4),
-                            child: Icon(Icons.check_circle,
-                                color: Color(0xFFFFD700), size: 20),
-                          ),
-                        GestureDetector(
+                        const SizedBox(width: 8),
+                        // Control derecho: reproducir/detener; el elegido
+                        // muestra un check dorado cuando no se está escuchando.
+                        _TrackControl(
+                          isSelected: isSelected,
+                          isPlaying: isPlaying,
                           onTap: () => onPreview(i),
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: isPlaying
-                                  ? const Color(0xFFFFD700)
-                                  : Colors.white24,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isPlaying
-                                  ? Icons.stop_rounded
-                                  : Icons.play_arrow_rounded,
-                              color:
-                                  isPlaying ? Colors.black87 : Colors.white,
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -395,13 +519,145 @@ class _MusicPanel extends StatelessWidget {
               );
             }),
           ] else ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             const Text(
               'Correrás en silencio. Activa el interruptor para elegir una pista.',
               style: TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _TrackControl extends StatelessWidget {
+  final bool isSelected;
+  final bool isPlaying;
+  final VoidCallback onTap;
+
+  const _TrackControl({
+    required this.isSelected,
+    required this.isPlaying,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final Color bg;
+    final Color fg;
+    if (isPlaying) {
+      icon = Icons.stop_rounded;
+      bg = const Color(0xFFFFD700);
+      fg = const Color(0xFF3D2C00);
+    } else if (isSelected) {
+      icon = Icons.check_rounded;
+      bg = const Color(0xFFFFD700);
+      fg = const Color(0xFF3D2C00);
+    } else {
+      icon = Icons.play_arrow_rounded;
+      bg = Colors.white24;
+      fg = Colors.white;
+    }
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: Icon(icon, color: fg, size: 22),
+      ),
+    );
+  }
+}
+
+// ── Run button (efecto 3D) ───────────────────────────────────────────────────
+
+class _RunButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _RunButton({required this.onTap});
+
+  @override
+  State<_RunButton> createState() => _RunButtonState();
+}
+
+class _RunButtonState extends State<_RunButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final drop = _pressed ? 3.0 : 7.0;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 70),
+        width: double.infinity,
+        height: 64,
+        transform: Matrix4.translationValues(0, _pressed ? 4 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFE24D), Color(0xFFFFCE1F)],
+          ),
+          boxShadow: [
+            BoxShadow(
+                color: const Color(0xFFC99700),
+                offset: Offset(0, drop),
+                blurRadius: 0),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.28),
+              offset: Offset(0, drop + 3),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🏁', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 10),
+            Text(
+              '¡CORRER!',
+              style: TextStyle(
+                color: Color(0xFF3D2C00),
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared bits ──────────────────────────────────────────────────────────────
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.12),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
     );
   }
@@ -422,16 +678,16 @@ class _CharacterTypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = _labels[type]!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.3),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color, width: 1.5),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: color,
+          color: Colors.white,
           fontWeight: FontWeight.w700,
           fontSize: 13,
         ),

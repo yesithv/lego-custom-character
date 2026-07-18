@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../../domain/entities/preset_characters.dart';
 import '../widgets/character_preview.dart';
 
@@ -33,7 +34,8 @@ class PresetGalleryPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.horizontal, 8, AppSpacing.horizontal, 4),
             child: Text(
               'Elige un personaje para cargarlo con toda su configuración. '
               'Luego podrás cambiar lo que quieras antes de guardarlo.',
@@ -60,7 +62,8 @@ class _CollectionSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.horizontal, 16, AppSpacing.horizontal, 8),
           child: Text(
             collection,
             style: const TextStyle(
@@ -73,7 +76,7 @@ class _CollectionSection extends StatelessWidget {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: AppSpacing.horizontalOnly,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             childAspectRatio: 0.62,
