@@ -11,6 +11,7 @@ import '../../../character_editor/presentation/bloc/character_editor_state.dart'
 import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
+import '../widgets/roulette_button.dart';
 import '../../../runner/presentation/pages/world_selection_page.dart';
 
 /// Pantalla principal enfocada en la carrera: el CTA dominante es "¡JUGAR!",
@@ -72,7 +73,13 @@ class _HomeView extends StatelessWidget {
                       children: [
                         _HomeCoinBadge(),
                         const Spacer(),
-                        _RouletteButton(),
+                        BlocBuilder<WalletBloc, WalletState>(
+                          builder: (context, walletState) => RouletteButton(
+                            available:
+                                walletState.wallet.canClaimRoulette,
+                            onTap: () => context.goNamed('roulette'),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -379,61 +386,6 @@ class _HomeCoinBadge extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _RouletteButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<WalletBloc, WalletState>(
-      builder: (context, walletState) => Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF042A5C).withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => context.goNamed('roulette'),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.casino_rounded,
-                    color: Color(0xFF0A4A9E),
-                    size: 26,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (walletState.wallet.canClaimRoulette)
-            Positioned(
-              top: -4,
-              right: -4,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

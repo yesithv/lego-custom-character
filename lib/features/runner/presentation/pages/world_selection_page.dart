@@ -9,6 +9,7 @@ import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
 import '../../../character_editor/presentation/bloc/character_editor_state.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
+import '../../domain/entities/world_config.dart';
 
 enum WorldStatus { available, locked }
 
@@ -19,7 +20,6 @@ class WorldData {
   final String description;
   final Color color;
   final WorldStatus status;
-  final String trackLength;
 
   /// Etiquetas de zona/dificultad que se muestran en la tarjeta (solo para
   /// mundos disponibles). Ej. ['Inicio', 'Caos'].
@@ -35,10 +35,17 @@ class WorldData {
     required this.description,
     required this.color,
     required this.status,
-    required this.trackLength,
     this.tags = const [],
     this.unlockCost = 1000,
   });
+
+  /// Longitud de la pista en metros. Vive en el dominio ([trackMetersFor])
+  /// porque es exactamente la distancia a la que aparece el jefe: así lo que
+  /// anuncia la tarjeta y lo que ocurre en la carrera no pueden desincronizarse.
+  int get trackMeters => trackMetersFor(id);
+
+  /// Texto para mostrar en la tarjeta, p. ej. "1200 m".
+  String get trackLabel => '$trackMeters m';
 }
 
 const worlds = [
@@ -49,7 +56,6 @@ const worlds = [
     description: 'Calles de bloques, semáforos y autos.',
     color: Color(0xFF0055A5),
     status: WorldStatus.available,
-    trackLength: '1200 m',
     tags: ['Inicio', 'Caos'],
   ),
   WorldData(
@@ -59,7 +65,6 @@ const worlds = [
     description: 'Castillo, foso y catapultas.',
     color: Color(0xFF8B4513),
     status: WorldStatus.available,
-    trackLength: '1500 m',
     tags: ['Núcleo'],
   ),
   WorldData(
@@ -69,7 +74,6 @@ const worlds = [
     description: 'Estación espacial y asteroides.',
     color: Color(0xFF1A0A3B),
     status: WorldStatus.locked,
-    trackLength: '2000 m',
   ),
   WorldData(
     id: 'jungle',
@@ -78,7 +82,6 @@ const worlds = [
     description: 'Árboles de bloques, ríos y lianas.',
     color: Color(0xFF2D6A4F),
     status: WorldStatus.locked,
-    trackLength: '1800 m',
   ),
   WorldData(
     id: 'dark_city',
@@ -87,7 +90,6 @@ const worlds = [
     description: 'Halloween, cementerio y niebla.',
     color: Color(0xFF1A1A2E),
     status: WorldStatus.locked,
-    trackLength: '2300 m',
   ),
   WorldData(
     id: 'ocean',
@@ -96,7 +98,6 @@ const worlds = [
     description: 'Arrecifes de coral y burbujas.',
     color: Color(0xFF006994),
     status: WorldStatus.locked,
-    trackLength: '1600 m',
   ),
   WorldData(
     id: 'tundra',
@@ -105,7 +106,6 @@ const worlds = [
     description: 'Nieve, témpanos y ventisca.',
     color: Color(0xFF5BA4CF),
     status: WorldStatus.locked,
-    trackLength: '2100 m',
   ),
   WorldData(
     id: 'robot_city',
@@ -114,7 +114,6 @@ const worlds = [
     description: 'Fábricas, engranajes y pantallas.',
     color: Color(0xFF37474F),
     status: WorldStatus.locked,
-    trackLength: '2500 m',
   ),
 ];
 
@@ -456,7 +455,7 @@ class _WorldCard extends StatelessWidget {
                         runSpacing: 6,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          _DistancePill(text: world.trackLength),
+                          _DistancePill(text: world.trackLabel),
                           if (!isLocked)
                             ...world.tags.map((t) => _ZoneChip(t)),
                         ],

@@ -2,11 +2,15 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
+import 'package:flame/input.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show KeyEventResult;
 
 import '../../../../core/services/audio_service.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/boss_config.dart';
+import '../../domain/entities/world_config.dart';
 import 'components/background_component.dart';
 import 'components/boss_component.dart';
 import 'components/coin_component.dart';
@@ -22,7 +26,7 @@ enum RunnerZone { inicio, nucleo, caos }
 /// animación de derrota del jefe → victoria.
 enum GamePhase { running, bossIntro, bossFight, bossDefeated, victory }
 
-class BrixRunGame extends FlameGame with ChangeNotifier {
+class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   final CharacterAppearance appearance;
   final CharacterType characterType;
   final String worldId;
@@ -56,7 +60,9 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
   static const int _dashScoreBonus = 300;
   static const int _victoryScoreBonus = 1000;
 
-  /// Metros a los que aparece el jefe (parametrizable para tests).
+  /// Metros a los que aparece el jefe. Por defecto es la longitud de pista
+  /// del mundo (ver [trackMetersFor]), que es la misma que se anuncia en la
+  /// pantalla de selección. Se puede forzar un valor para tests.
   final int bossTriggerMeters;
 
   BossComponent? _boss;
@@ -163,8 +169,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
     required this.worldId,
     this.onRunComplete,
     this.onHit,
-    this.bossTriggerMeters = 2000,
-  });
+    int? bossTriggerMeters,
+  }) : bossTriggerMeters = bossTriggerMeters ?? trackMetersFor(worldId);
 
   @override
   Future<void> onLoad() async {
@@ -530,6 +536,40 @@ class BrixRunGame extends FlameGame with ChangeNotifier {
       jumpCount++;
       AudioService.instance.playJump();
     }
+  }
+
+  /// Controles de teclado (escritorio/web): flechas para moverse, saltar y
+  /// deslizarse. Se aceptan también WASD y espacio por comodidad.
+  @override
+  KeyEventResult onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
+    // Solo la pulsación inicial: al mantener la tecla, Flutter emite
+    // KeyRepeatEvent y encadenaría cambios de carril o saltos sin querer.
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (paused || !isAlive) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.keyA) {
+      onSwipeLeft();
+    } else if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.keyD) {
+      onSwipeRight();
+    } else if (key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.keyW ||
+        key == LogicalKeyboardKey.space) {
+      onSwipeUp();
+    } else if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.keyS) {
+      onSwipeDown();
+    } else {
+      return KeyEventResult.ignored;
+    }
+
+    return KeyEventResult.handled;
   }
 
   // ── Game events ────────────────────────────────────────────────────────────
