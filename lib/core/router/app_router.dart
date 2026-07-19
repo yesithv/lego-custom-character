@@ -8,6 +8,7 @@ import '../../features/character_editor/presentation/pages/character_gallery_pag
 import '../../features/character_editor/presentation/pages/preset_gallery_page.dart';
 import '../../features/economy/presentation/pages/daily_roulette_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/monetization/presentation/pages/store_page.dart';
 import '../../features/ranking/presentation/pages/ranking_page.dart';
 import '../../features/runner/presentation/pages/pre_run_page.dart';
 import '../../features/runner/presentation/pages/runner_page.dart';
@@ -62,6 +63,11 @@ class AppRouter {
         path: '/roulette',
         name: 'roulette',
         builder: (context, state) => const DailyRoulettePage(),
+      ),
+      GoRoute(
+        path: '/store',
+        name: 'store',
+        builder: (context, state) => const StorePage(),
       ),
       GoRoute(
         path: '/pre-run',

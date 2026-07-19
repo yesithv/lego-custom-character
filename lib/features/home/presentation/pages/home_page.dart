@@ -77,6 +77,8 @@ class _HomeView extends StatelessWidget {
                       children: [
                         _HomeCoinBadge(),
                         const Spacer(),
+                        _StoreButton(onTap: () => context.pushNamed('store')),
+                        const SizedBox(width: 10),
                         BlocBuilder<WalletBloc, WalletState>(
                           builder: (context, walletState) => RouletteButton(
                             available:
@@ -155,6 +157,31 @@ class _HomeView extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => const _TestModeSheet(),
+    );
+  }
+}
+
+/// Botón redondo de acceso a la Tienda en la barra superior.
+class _StoreButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _StoreButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF063574).withValues(alpha: 0.6),
+      shape: const CircleBorder(
+        side: BorderSide(color: Color(0xFFFFD700), width: 2),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const Padding(
+          padding: EdgeInsets.all(9),
+          child: Icon(Icons.storefront_rounded,
+              color: Color(0xFFFFD700), size: 22),
+        ),
+      ),
     );
   }
 }

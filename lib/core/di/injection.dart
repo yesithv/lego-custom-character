@@ -23,6 +23,10 @@ import '../../features/missions/data/datasources/mission_local_datasource.dart';
 import '../../features/missions/data/repositories/mission_repository_impl.dart';
 import '../../features/missions/domain/repositories/mission_repository.dart';
 import '../../features/missions/presentation/bloc/mission_bloc.dart';
+import '../../features/monetization/data/datasources/store_local_datasource.dart';
+import '../../features/monetization/data/models/entitlements_model.dart';
+import '../../features/monetization/data/repositories/stub_store_repository.dart';
+import '../../features/monetization/domain/repositories/store_repository.dart';
 import '../../features/ranking/data/models/score_model.dart';
 import '../../features/ranking/data/repositories/score_local_repository.dart';
 import '../../features/ranking/domain/repositories/score_repository.dart';
@@ -38,12 +42,14 @@ Future<void> initDependencies() async {
   Hive.registerAdapter(CharacterAppearanceModelAdapter());
   Hive.registerAdapter(WalletModelAdapter());
   Hive.registerAdapter(ScoreModelAdapter());
+  Hive.registerAdapter(EntitlementsModelAdapter());
 
   // Open boxes
   await Hive.openBox<CharacterModel>('characters');
   await Hive.openBox<WalletModel>('wallet');
   await Hive.openBox<String>('missions');
   await Hive.openBox<ScoreModel>('scores');
+  await Hive.openBox<EntitlementsModel>('entitlements');
 
   // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
@@ -103,4 +109,14 @@ Future<void> initDependencies() async {
     () => ScoreLocalRepository(Hive.box('scores')),
   );
   sl.registerFactory(() => RankingBloc(repository: sl()));
+
+  // ── Monetización ──────────────────────────────────────────────────────────
+  // Swap StubStoreRepository → InAppPurchaseStoreRepository aquí para conectar
+  // el pago real (requiere plataformas nativas + productos en las consolas).
+  sl.registerLazySingleton<StoreLocalDatasource>(
+    () => StoreLocalDatasourceImpl(Hive.box('entitlements')),
+  );
+  sl.registerLazySingleton<StoreRepository>(
+    () => StubStoreRepository(sl()),
+  );
 }
