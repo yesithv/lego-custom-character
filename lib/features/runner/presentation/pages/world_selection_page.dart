@@ -119,26 +119,46 @@ const worlds = [
 ];
 
 class WorldSelectionPage extends StatelessWidget {
-  const WorldSelectionPage({super.key});
+  /// Id del personaje a preseleccionar en los chips "CORREDOR" (viene de la
+  /// Galería o del editor al pulsar "Jugar"). Null si se entra por ¡JUGAR!.
+  final String? selectedCharacterId;
+
+  const WorldSelectionPage({super.key, this.selectedCharacterId});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<CharacterEditorBloc>()..add(const LoadCharacters()),
-      child: const _WorldSelectionView(),
+      child: _WorldSelectionView(selectedCharacterId: selectedCharacterId),
     );
   }
 }
 
 class _WorldSelectionView extends StatefulWidget {
-  const _WorldSelectionView();
+  final String? selectedCharacterId;
+  const _WorldSelectionView({this.selectedCharacterId});
 
   @override
   State<_WorldSelectionView> createState() => _WorldSelectionViewState();
 }
 
 class _WorldSelectionViewState extends State<_WorldSelectionView> {
-  int _selectedCharacter = 0;
+  /// Índice elegido manualmente por el usuario (null hasta que toca un chip).
+  /// Mientras sea null se usa el personaje preseleccionado por id.
+  int? _selectedCharacter;
+
+  /// Índice efectivo del corredor: la elección manual si la hay; si no, el
+  /// personaje preseleccionado por id; si no, el primero.
+  int _effectiveIndex(List<Character> chars) {
+    final manual = _selectedCharacter;
+    if (manual != null) return manual.clamp(0, chars.length - 1);
+    final id = widget.selectedCharacterId;
+    if (id != null) {
+      final idx = chars.indexWhere((c) => c.id == id);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +176,8 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
           child: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
             builder: (context, state) {
               final characters = state.characters;
+              final selectedIndex =
+                  characters.isEmpty ? 0 : _effectiveIndex(characters);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,8 +224,7 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                     ),
                     _CharacterSelector(
                       characters: characters,
-                      selectedIndex:
-                          _selectedCharacter.clamp(0, characters.length - 1),
+                      selectedIndex: selectedIndex,
                       onSelect: (i) =>
                           setState(() => _selectedCharacter = i),
                     ),
@@ -218,8 +239,7 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                           itemCount: worlds.length,
                           itemBuilder: (context, i) => _WorldCard(
                             world: worlds[i],
-                            character: characters[_selectedCharacter.clamp(
-                                0, characters.length - 1)],
+                            character: characters[selectedIndex],
                           ),
                         ),
                       ),

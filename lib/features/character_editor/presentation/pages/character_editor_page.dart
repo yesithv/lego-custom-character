@@ -41,8 +41,17 @@ class CharacterEditorPage extends StatelessWidget {
   }
 }
 
-class _EditorView extends StatelessWidget {
+class _EditorView extends StatefulWidget {
   const _EditorView();
+
+  @override
+  State<_EditorView> createState() => _EditorViewState();
+}
+
+class _EditorViewState extends State<_EditorView> {
+  /// Cuando es true, tras guardar con éxito se va a elegir mundo (correr) en
+  /// vez de volver a la galería. Lo activa el botón "Guardar y jugar".
+  bool _playAfterSave = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +67,20 @@ class _EditorView extends StatelessWidget {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          context.goNamed('gallery');
+          if (_playAfterSave) {
+            _playAfterSave = false;
+            final id = state.currentCharacter?.id;
+            context.goNamed(
+              'worlds',
+              queryParameters:
+                  id != null ? {'character': id} : const <String, String>{},
+            );
+          } else {
+            context.goNamed('gallery');
+          }
         }
         if (state.status == EditorStatus.error && state.errorMessage != null) {
+          _playAfterSave = false;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -92,6 +112,18 @@ class _EditorView extends StatelessWidget {
             ),
           ),
           actions: [
+            // Guardar y correr de una vez con este personaje.
+            IconButton(
+              tooltip: 'Guardar y jugar',
+              onPressed: () {
+                _playAfterSave = true;
+                context
+                    .read<CharacterEditorBloc>()
+                    .add(const SaveCurrentCharacter());
+              },
+              icon: const Icon(Icons.play_circle_fill_rounded,
+                  color: Color(0xFF43A047), size: 30),
+            ),
             BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
               builder: (context, state) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

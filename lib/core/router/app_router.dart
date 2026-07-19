@@ -59,7 +59,9 @@ class AppRouter {
       GoRoute(
         path: '/worlds',
         name: 'worlds',
-        builder: (context, state) => const WorldSelectionPage(),
+        builder: (context, state) => WorldSelectionPage(
+          selectedCharacterId: state.uri.queryParameters['character'],
+        ),
       ),
       GoRoute(
         path: '/roulette',

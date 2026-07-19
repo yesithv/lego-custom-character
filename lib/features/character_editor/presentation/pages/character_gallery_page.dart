@@ -115,6 +115,10 @@ class _GalleryView extends StatelessWidget {
                                 // El primer personaje es el "corredor activo"
                                 // que aparece en el home (ver HomePage).
                                 isActive: i == 0,
+                                onPlay: () => context.goNamed(
+                                  'worlds',
+                                  queryParameters: {'character': character.id},
+                                ),
                                 onEdit: () => context.goNamed(
                                   'editor-edit',
                                   pathParameters: {'id': character.id},
@@ -198,12 +202,14 @@ class _GalleryView extends StatelessWidget {
 class _CharacterCard extends StatelessWidget {
   final Character character;
   final bool isActive;
+  final VoidCallback onPlay;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _CharacterCard({
     required this.character,
     required this.isActive,
+    required this.onPlay,
     required this.onEdit,
     required this.onDelete,
   });
@@ -272,6 +278,9 @@ class _CharacterCard extends StatelessWidget {
                 // Badge de tipo
                 _TypeBadge(label: _typeLabel(character.type), color: typeColor),
                 const SizedBox(height: 10),
+                // CTA principal: jugar con este personaje
+                _PlayCardButton(onTap: onPlay),
+                const SizedBox(height: 8),
                 // Acciones: editar + eliminar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -377,6 +386,46 @@ class _CharacterStand extends StatelessWidget {
 }
 
 // ── Small UI pieces ──────────────────────────────────────────────────────────
+
+/// Botón verde "Jugar" de la tarjeta: lleva a elegir mundo con este personaje.
+class _PlayCardButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _PlayCardButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Material(
+        color: const Color(0xFF43A047),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: const SizedBox(
+            height: 34,
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 4),
+                Text(
+                  'Jugar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _TypeBadge extends StatelessWidget {
   final String label;
