@@ -121,7 +121,7 @@ class _EditorViewState extends State<_EditorView> {
                     .read<CharacterEditorBloc>()
                     .add(const SaveCurrentCharacter());
               },
-              icon: const Icon(Icons.play_circle_fill_rounded,
+              icon: const Icon(Icons.sports_score_rounded,
                   color: Color(0xFF43A047), size: 30),
             ),
             BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
