@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' show Canvas;
 
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -119,6 +120,21 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   late PlayerComponent _player;
   final Random _rng = Random();
 
+  // ── Screen shake ────────────────────────────────────────────────────────────
+  double _shakeTimer = 0;
+  double _shakeDuration = 0;
+  double _shakeMagnitude = 0;
+
+  /// Dispara una sacudida de pantalla de [magnitude] píxeles durante
+  /// [duration] s (decae hasta 0). Se aplica solo al mundo del juego, no al HUD.
+  void shake({double magnitude = 8, double duration = 0.35}) {
+    if (magnitude >= _shakeMagnitude || _shakeTimer <= 0) {
+      _shakeMagnitude = magnitude;
+      _shakeDuration = duration;
+      _shakeTimer = duration;
+    }
+  }
+
   // ── Perspective system ──────────────────────────────────────────────────────
   // Pseudo-3D: objects spawn at the horizon (depth 0) and rush toward the
   // camera (depth 1 = player level).
@@ -209,6 +225,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   @override
   void update(double dt) {
     super.update(dt);
+    if (_shakeTimer > 0) _shakeTimer -= dt;
     if (!isAlive) return;
 
     elapsedSeconds += dt;
@@ -270,6 +287,29 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     notifyListeners();
   }
 
+  @override
+  void render(Canvas canvas) {
+    if (_shakeTimer > 0 && _shakeDuration > 0) {
+      final decay = (_shakeTimer / _shakeDuration).clamp(0.0, 1.0);
+      final amp = _shakeMagnitude * decay;
+      final dx = (_rng.nextDouble() * 2 - 1) * amp;
+      final dy = (_rng.nextDouble() * 2 - 1) * amp;
+      // Sobre-escalado justo para cubrir el desplazamiento y no descubrir los
+      // bordes del mundo durante la sacudida.
+      final minDim = min(size.x, size.y);
+      final overscale = minDim > 0 ? 1 + 2 * amp / minDim : 1.0;
+      canvas.save();
+      canvas.translate(size.x / 2, size.y / 2);
+      canvas.scale(overscale);
+      canvas.translate(-size.x / 2, -size.y / 2);
+      canvas.translate(dx, dy);
+      super.render(canvas);
+      canvas.restore();
+    } else {
+      super.render(canvas);
+    }
+  }
+
   void _recomputeScore() {
     score = meters + (coins * 5) + (obstacleStreak * 2);
     score = (score * multiplier).floor() + bossBonusScore;
@@ -323,6 +363,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     final kind = bossConfig.attackForRoll(_rng.nextDouble());
     final lane = _rng.nextInt(3);
     final startDepth = _boss?.depth ?? BossComponent.fightDepth;
+    _boss?.lunge(); // el jefe se lanza al atacar → pelea con más movimiento
     add(BossAttackComponent(kind: kind, lane: lane, depth: startDepth));
 
     // Enfurecido lanza a veces un segundo proyectil en otro carril
@@ -391,6 +432,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     _recomputeScore();
     _player.dash();
     _boss?.onDashHit();
+    shake(magnitude: 7, duration: 0.28);
     AudioService.instance.playHit();
     add(ScorePopupComponent(
       '¡EMBESTIDA! 💥',
@@ -420,6 +462,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
         '💥 ¡DERROTADO! 💥',
         spawnPosition: Vector2(size.x / 2, horizonY + 60),
       ));
+      shake(magnitude: 14, duration: 0.5); // sacudida fuerte del K.O.
       AudioService.instance.playPowerup();
     }
     notifyListeners();

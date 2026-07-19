@@ -16,11 +16,14 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
   /// Profundidad a la que se detiene para pelear (delante del jugador).
   static const double fightDepth = 0.52;
   static const double _introSpeed = 0.20; // profundidad/s durante la entrada
+  static const double _lungeDur = 0.38; // duración de la embestida al atacar
 
   double depth = 0.06;
   double _animT = 0;
   double _hitFlash = 0;
   double _defeatT = -1; // ≥0 cuando está derrotado (anima caída)
+  double _lungeT = -1; // ≥0 mientras embiste hacia el jugador (al atacar)
+  double _leanAngle = 0; // inclinación actual (se ladea al balancearse)
 
   bool get introDone => depth >= fightDepth;
   bool get isDefeated => _defeatT >= 0;
@@ -30,6 +33,10 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
 
   /// Destello blanco al recibir una embestida.
   void onDashHit() => _hitFlash = 0.45;
+
+  /// Arranca una embestida: el jefe se lanza hacia el jugador (se usa al
+  /// lanzar un ataque para que la pelea tenga más movimiento).
+  void lunge() => _lungeT = 0;
 
   /// Inicia la animación de derrota (gira, cae y se encoge).
   void startDefeat() {
@@ -41,6 +48,10 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
     _animT += dt;
     if (_hitFlash > 0) _hitFlash = max(0, _hitFlash - dt);
     if (_defeatT >= 0) _defeatT += dt;
+    if (_lungeT >= 0) {
+      _lungeT += dt;
+      if (_lungeT > _lungeDur) _lungeT = -1;
+    }
 
     if (!isDefeated && depth < fightDepth) {
       depth = min(fightDepth, depth + _introSpeed * dt);
@@ -51,19 +62,38 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
   void _syncTransform() {
     final defeatShrink =
         isDefeated ? (1.0 - (_defeatT / 1.4).clamp(0.0, 1.0) * 0.85) : 1.0;
-    final s = game.perspectiveScale(depth) * 1.18 * defeatShrink;
+
+    // Movimiento en pelea: respiración (pulso de escala) + embestida al atacar.
+    final breathing = isDefeated ? 0.0 : sin(_animT * 3.0) * 0.045;
+    final lunge = (!isDefeated && _lungeT >= 0)
+        ? sin((_lungeT / _lungeDur) * pi)
+        : 0.0;
+
+    final s = game.perspectiveScale(depth) *
+        1.18 *
+        defeatShrink *
+        (1 + breathing + lunge * 0.12);
     size = Vector2(baseW * s, baseH * s);
 
-    // Balanceo lateral entre carriles + flotación vertical
+    // Balanceo lateral entre carriles + flotación vertical (con un bob lento
+    // secundario para que no se sienta plano).
     final sway =
         isDefeated ? 0.0 : sin(_animT * 0.75) * game.laneSep * 0.85 * depth;
-    final hover = isDefeated ? 0.0 : sin(_animT * 2.3) * 6.0 * depth;
+    final hover = isDefeated
+        ? 0.0
+        : (sin(_animT * 2.3) * 6.0 + sin(_animT * 1.1) * 3.0) * depth;
+    // La embestida lo empuja hacia abajo (hacia el jugador).
+    final lungePush = lunge * 30 * depth;
     final fall = isDefeated ? _defeatT * game.size.y * 0.25 : 0.0;
+
+    // Se ladea hacia donde se balancea, y un poco más al embestir.
+    _leanAngle =
+        isDefeated ? 0.0 : sin(_animT * 0.75) * 0.13 + lunge * 0.10;
 
     final ground = game.perspectivePos(1, depth);
     position = Vector2(
       game.vanishX + sway - size.x / 2,
-      ground.y - size.y - 12 * s - hover + fall,
+      ground.y - size.y - 12 * s - hover + lungePush + fall,
     );
     priority = (200 * depth).floor() + 8;
   }
@@ -72,16 +102,19 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
   void render(Canvas canvas) {
     final defeated = isDefeated;
     if (defeated) {
-      // Gira mientras cae y se desvanece.
+      // Se desvanece mientras gira y cae.
       final fade = (1.0 - ((_defeatT - 0.5) / 0.9)).clamp(0.0, 1.0);
       canvas.saveLayer(
         null,
         Paint()..color = Colors.white.withValues(alpha: fade),
       );
-      canvas.translate(size.x / 2, size.y / 2);
-      canvas.rotate(_defeatT * 5.0);
-      canvas.translate(-size.x / 2, -size.y / 2);
+    } else {
+      canvas.save();
     }
+    // Pivote en el centro: inclinación durante la pelea, giro en la derrota.
+    canvas.translate(size.x / 2, size.y / 2);
+    canvas.rotate(defeated ? _defeatT * 5.0 : _leanAngle);
+    canvas.translate(-size.x / 2, -size.y / 2);
     paintBoss(
       canvas,
       Size(size.x, size.y),
@@ -90,7 +123,7 @@ class BossComponent extends PositionComponent with HasGameReference<BrixRunGame>
       enrage: defeated ? 0 : (3 - game.bossHearts).clamp(0, 2),
       hitFlash: _hitFlash > 0 ? (_hitFlash / 0.45) * 0.7 : 0,
     );
-    if (defeated) canvas.restore();
+    canvas.restore();
   }
 }
 
