@@ -61,9 +61,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   static const int maxBossHearts = 3;
   static const double _chargePerDodge = 0.2;
-  static const int victoryCoinBonus = 150;
-  static const int _dashScoreBonus = 300;
-  static const int _victoryScoreBonus = 1000;
+  // Recompensas por derrotar al jefe (el mayor logro de la partida): un buen
+  // botón de monedas al vencer, más puntos por cada embestida y por la victoria.
+  static const int victoryCoinBonus = 500;
+  static const int _dashScoreBonus = 400;
+  static const int _victoryScoreBonus = 2500;
 
   /// Metros a los que aparece el jefe. Por defecto es la longitud de pista
   /// del mundo (ver [trackMetersFor]), que es la misma que se anuncia en la

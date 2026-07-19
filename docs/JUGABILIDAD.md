@@ -188,7 +188,7 @@ Ser golpeado por un ataque del jefe equivale a un golpe normal: con escudo se co
 
 ### Recompensas por victoria
 
-Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`bossBonusScore`), luego `onRunComplete(coins)`.
+Al vencer al jefe: **+500 monedas** (`victoryCoinBonus`) y **+2500** al score (`bossBonusScore`), además de **+400** al score por cada embestida acertada (`_dashScoreBonus`). Luego `onRunComplete(coins)`.
 
 ### Jefes por mundo
 
