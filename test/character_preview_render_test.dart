@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/character.dart';
-import 'package:lego_custom_character/features/character_editor/presentation/widgets/character_preview.dart';
-import 'package:lego_custom_character/features/economy/domain/entities/part_catalog.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/character.dart';
+import 'package:run_for_win/features/character_editor/presentation/widgets/character_preview.dart';
+import 'package:run_for_win/features/economy/domain/entities/part_catalog.dart';
 
 /// Verifica que cada opción de personalización produzca un render distinto:
 /// dentro de cada dimensión (piel, ojos, torso, accesorios…) no puede haber

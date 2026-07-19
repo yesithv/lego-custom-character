@@ -18,7 +18,7 @@ Este documento describe cómo está organizado el código, las decisiones de dis
 
 ## Visión general
 
-Run For Win (codename **BrixRun** en el código; paquete `lego_custom_character`) es una app Flutter monolítica (un solo paquete) estructurada en **Clean Architecture** y dividida por **features** verticales. Cada feature es autocontenida y se comunica con el resto solo a través de entidades de dominio y de los BLoCs registrados globalmente.
+Run For Win (codename **BrixRun** en el código; paquete `run_for_win`) es una app Flutter monolítica (un solo paquete) estructurada en **Clean Architecture** y dividida por **features** verticales. Cada feature es autocontenida y se comunica con el resto solo a través de entidades de dominio y de los BLoCs registrados globalmente.
 
 Reglas de dependencia (de fuera hacia dentro):
 

@@ -249,7 +249,7 @@ class BackgroundComponent extends PositionComponent
       // Cross line
       canvas.drawLine(Offset(vx - halfW, ly), Offset(vx + halfW, ly), linePaint);
 
-      // LEGO stud dots on every other line
+      // Brix stud dots on every other line
       if ((base / dz).round().isEven) {
         final dotR = 3.5 * t;
         for (int lane = 0; lane < 3; lane++) {

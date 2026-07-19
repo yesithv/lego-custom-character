@@ -97,7 +97,7 @@ Color _lighter(Color c, double amount) {
   return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }
 
-// ── lego_city: Capataz Demoledor ────────────────────────────────────────────
+// ── brix_city: Capataz Demoledor ────────────────────────────────────────────
 
 void _paintForeman(
     Canvas canvas, Size size, BossConfig cfg, double t, int enrage) {
@@ -847,7 +847,7 @@ void _paintProjectile(
             fin..strokeWidth = 4);
       }
     default:
-      // lego_city: bola de demolición con cadena
+      // brix_city: bola de demolición con cadena
       canvas.drawCircle(c, r * 0.85, Paint()..color = cfg.attackColor);
       canvas.drawCircle(Offset(c.dx - r * 0.28, c.dy - r * 0.28), r * 0.2,
           Paint()..color = Colors.white.withValues(alpha: 0.3));
@@ -946,7 +946,7 @@ void _paintSweep(
       }
       canvas.drawRect(Rect.fromLTWH(0, h * 0.15, w, h * 0.18), ice);
     default:
-      // Franjas de peligro (lego_city, jungle, dark_city)
+      // Franjas de peligro (brix_city, jungle, dark_city)
       final dark = Paint()..color = Colors.black.withValues(alpha: 0.30);
       final n = max(4, (w / 30).floor());
       for (var i = 0; i < n; i++) {

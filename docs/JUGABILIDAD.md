@@ -196,7 +196,7 @@ Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`
 
 | Mundo | Jefe |
 |-------|------|
-| `lego_city` | 🏗️ Capataz Demoledor |
+| `brix_city` | 🏗️ Capataz Demoledor |
 | `medieval` | 🐉 Dragón Oscuro |
 | `galaxy` | 👾 Overlord Zenth |
 | `jungle` | 🦍 Gran Gorila |
@@ -205,7 +205,7 @@ Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`
 | `tundra` | ❄️ Yeti Glacial |
 | `robot_city` | 🤖 Mega-Bot X9 |
 
-`bossFor(worldId)` cae en el jefe de `lego_city` si el ID no existe.
+`bossFor(worldId)` cae en el jefe de `brix_city` si el ID no existe.
 
 ---
 
@@ -311,7 +311,7 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 
 | ID | Nombre | Estado | Jefe |
 |----|--------|--------|------|
-| `lego_city` | Ciudad Brix 🏙️ | Disponible | 🏗️ Capataz Demoledor |
+| `brix_city` | Ciudad Brix 🏙️ | Disponible | 🏗️ Capataz Demoledor |
 | `medieval` | Reino Medieval 🏰 | Disponible | 🐉 Dragón Oscuro |
 | `galaxy` | Galaxia Brix 🚀 | Bloqueado | 👾 Overlord Zenth |
 | `jungle` | Jungla Salvaje 🌿 | Bloqueado | 🦍 Gran Gorila |
@@ -320,7 +320,7 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 | `tundra` | Tundra ❄️ | Bloqueado | ❄️ Yeti Glacial |
 | `robot_city` | Ciudad Robot 🤖 | Bloqueado | 🤖 Mega-Bot X9 |
 
-`colorsFor(worldId)` cae en `lego_city` si el ID no existe.
+`colorsFor(worldId)` cae en `brix_city` si el ID no existe.
 
 ---
 

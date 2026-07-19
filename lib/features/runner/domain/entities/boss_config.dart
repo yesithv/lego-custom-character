@@ -40,7 +40,7 @@ class BossConfig {
 }
 
 const bossConfigs = <String, BossConfig>{
-  'lego_city': BossConfig(
+  'brix_city': BossConfig(
     name: 'Capataz Demoledor',
     emoji: '🏗️',
     primary: Color(0xFFF57C00),
@@ -123,4 +123,4 @@ const bossConfigs = <String, BossConfig>{
 };
 
 BossConfig bossFor(String worldId) =>
-    bossConfigs[worldId] ?? bossConfigs['lego_city']!;
+    bossConfigs[worldId] ?? bossConfigs['brix_city']!;

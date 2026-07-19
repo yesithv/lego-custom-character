@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/runner/domain/entities/world_music.dart';
+import 'package:run_for_win/features/runner/domain/entities/world_music.dart';
 
 void main() {
   group('Catálogo de música por mundo', () {
@@ -59,7 +59,7 @@ void main() {
     test('worldTracksFor usa Ciudad Brix como respaldo para un mundo desconocido',
         () {
       expect(worldTracksFor('mundo_inexistente'),
-          worldMusicCatalog['lego_city']);
+          worldMusicCatalog['brix_city']);
     });
   });
 }

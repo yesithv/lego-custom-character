@@ -144,7 +144,7 @@ class _CharacterPainter extends CustomPainter {
           canvas, Offset(w / 2, headTop - studR * 0.35), studR, skin);
     }
     _drawRoundRect(canvas, Rect.fromLTWH(hx, headTop, headSize, headSize), skin, 8);
-    // Extra glossy highlight on the cheek — LEGO heads are the shiniest piece
+    // Extra glossy highlight on the cheek — Brix heads are the shiniest piece
     canvas.drawOval(
       Rect.fromLTWH(hx + headSize * 0.08, headTop + headSize * 0.10,
           headSize * 0.22, headSize * 0.34),
@@ -2490,7 +2490,7 @@ class _CharacterPainter extends CustomPainter {
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
-    // Pupil with a white specular glint — the classic LEGO face detail
+    // Pupil with a white specular glint — the classic Brix face detail
     void pupil(Offset c, double r) {
       canvas.drawCircle(c, r, blackPaint);
       canvas.drawCircle(Offset(c.dx - r * 0.30, c.dy - r * 0.32), r * 0.30,

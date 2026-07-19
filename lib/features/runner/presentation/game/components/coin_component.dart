@@ -75,7 +75,7 @@ class CoinComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         ..strokeWidth = max(1.0, r * 0.14),
     );
 
-    // LEGO stud on coin face
+    // Brix stud on coin face
     if (r > 6) {
       canvas.drawCircle(
         Offset(r, r),

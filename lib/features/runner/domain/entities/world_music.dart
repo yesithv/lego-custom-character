@@ -26,30 +26,30 @@ class WorldTrack {
 
 /// Repertorio temático por identificador de mundo.
 const worldMusicCatalog = <String, List<WorldTrack>>{
-  'lego_city': [
+  'brix_city': [
     WorldTrack(
       name: 'Ritmo de Ciudad',
       description: 'Groove urbano de calles de bloques',
       emoji: '🏙️',
-      asset: 'music/lego_city_1.wav',
+      asset: 'music/brix_city_1.wav',
     ),
     WorldTrack(
       name: 'Hora Punta',
       description: 'Energía acelerada entre semáforos',
       emoji: '🚦',
-      asset: 'music/lego_city_2.wav',
+      asset: 'music/brix_city_2.wav',
     ),
     WorldTrack(
       name: 'Arcade del Centro',
       description: 'Chiptune alegre de plaza Brix',
       emoji: '🎮',
-      asset: 'music/lego_city_3.wav',
+      asset: 'music/brix_city_3.wav',
     ),
     WorldTrack(
       name: 'Atardecer en la Avenida',
       description: 'Lo-fi tranquilo al caer la tarde',
       emoji: '🌇',
-      asset: 'music/lego_city_4.wav',
+      asset: 'music/brix_city_4.wav',
     ),
   ],
   'medieval': [
@@ -202,4 +202,4 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
 
 /// Repertorio del mundo [worldId]; usa Ciudad Brix como respaldo.
 List<WorldTrack> worldTracksFor(String worldId) =>
-    worldMusicCatalog[worldId] ?? worldMusicCatalog['lego_city']!;
+    worldMusicCatalog[worldId] ?? worldMusicCatalog['brix_city']!;

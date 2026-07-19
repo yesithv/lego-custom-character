@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/character_editor/data/models/character_model.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/character.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/music_catalog.dart';
+import 'package:run_for_win/features/character_editor/data/models/character_model.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/character.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/music_catalog.dart';
 
 void main() {
   final now = DateTime(2026, 7, 12);

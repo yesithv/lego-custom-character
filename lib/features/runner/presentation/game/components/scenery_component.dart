@@ -79,13 +79,13 @@ class SceneryComponent extends PositionComponent
       case 'robot_city':
         _renderRobotCity(canvas, c);
       default:
-        _renderLegoCity(canvas, c);
+        _renderBrixCity(canvas, c);
     }
   }
 
-  // ── LEGO City: streetlamp / tree / traffic sign ─────────────────────────────
+  // ── Brix City: streetlamp / tree / traffic sign ─────────────────────────────
 
-  void _renderLegoCity(Canvas canvas, WorldColors c) {
+  void _renderBrixCity(Canvas canvas, WorldColors c) {
     final w = size.x;
     final h = size.y;
     switch (variant) {
@@ -98,7 +98,7 @@ class SceneryComponent extends PositionComponent
             w * 0.30,
             Paint()
               ..color = const Color(0xFFFFF59D).withValues(alpha: 0.25));
-      case 1: // Blocky LEGO tree
+      case 1: // Blocky Brix tree
         _trunk(canvas, w, h, const Color(0xFF6D4C41));
         final leaf = Paint()..color = const Color(0xFF2E7D32);
         canvas.drawCircle(Offset(w * 0.50, h * 0.28), w * 0.30, leaf);

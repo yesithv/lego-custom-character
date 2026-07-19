@@ -51,7 +51,7 @@ class WorldData {
 
 const worlds = [
   WorldData(
-    id: 'lego_city',
+    id: 'brix_city',
     name: 'Ciudad Brix',
     emoji: '🏙️',
     description: 'Calles de bloques, semáforos y autos.',

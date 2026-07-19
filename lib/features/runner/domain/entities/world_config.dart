@@ -21,7 +21,7 @@ class WorldColors {
 }
 
 const worldConfigs = <String, WorldColors>{
-  'lego_city': WorldColors(
+  'brix_city': WorldColors(
     sky: Color(0xFF87CEEB),
     midground: Color(0xFFB0C4DE),
     ground: Color(0xFF808080),
@@ -96,13 +96,13 @@ const worldConfigs = <String, WorldColors>{
 };
 
 WorldColors colorsFor(String worldId) =>
-    worldConfigs[worldId] ?? worldConfigs['lego_city']!;
+    worldConfigs[worldId] ?? worldConfigs['brix_city']!;
 
 /// Longitud de la pista de cada mundo, en metros. Es la distancia que hay que
 /// recorrer antes de que aparezca el jefe, y también lo que se anuncia en la
 /// tarjeta del mundo: única fuente de verdad para ambos.
 const worldTrackMeters = <String, int>{
-  'lego_city': 1200,
+  'brix_city': 1200,
   'medieval': 1500,
   'galaxy': 2000,
   'jungle': 1800,

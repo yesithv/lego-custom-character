@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/runner/domain/entities/boss_config.dart';
-import 'package:lego_custom_character/features/runner/presentation/game/components/boss_painters.dart';
+import 'package:run_for_win/features/runner/domain/entities/boss_config.dart';
+import 'package:run_for_win/features/runner/presentation/game/components/boss_painters.dart';
 
 const _worlds = [
-  'lego_city', 'medieval', 'galaxy', 'jungle',
+  'brix_city', 'medieval', 'galaxy', 'jungle',
   'dark_city', 'ocean', 'tundra', 'robot_city',
 ];
 

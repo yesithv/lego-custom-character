@@ -1,11 +1,11 @@
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/core/services/audio_service.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/character.dart';
-import 'package:lego_custom_character/features/runner/domain/entities/boss_config.dart';
-import 'package:lego_custom_character/features/runner/presentation/game/brix_run_game.dart';
-import 'package:lego_custom_character/features/runner/presentation/game/components/boss_component.dart';
+import 'package:run_for_win/core/services/audio_service.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/character.dart';
+import 'package:run_for_win/features/runner/domain/entities/boss_config.dart';
+import 'package:run_for_win/features/runner/presentation/game/brix_run_game.dart';
+import 'package:run_for_win/features/runner/presentation/game/components/boss_component.dart';
 
 /// Monta el juego en un GameWidget para que el ticker de test lo pilote.
 Future<BrixRunGame> startGame(
@@ -198,7 +198,7 @@ void main() {
   test('cada mundo tiene un jefe con nombre y config propios', () {
     final names = <String>{};
     for (final worldId in [
-      'lego_city', 'medieval', 'galaxy', 'jungle',
+      'brix_city', 'medieval', 'galaxy', 'jungle',
       'dark_city', 'ocean', 'tundra', 'robot_city',
     ]) {
       final cfg = bossFor(worldId);
