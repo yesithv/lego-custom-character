@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../analytics/domain/analytics_service.dart';
+import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../domain/entities/entitlements.dart';
@@ -23,6 +25,7 @@ class StorePage extends StatefulWidget {
 
 class _StorePageState extends State<StorePage> {
   final StoreRepository _store = sl<StoreRepository>();
+  final AnalyticsService _analytics = sl<AnalyticsService>();
 
   Entitlements _ent = const Entitlements();
   bool _loading = true;
@@ -35,6 +38,7 @@ class _StorePageState extends State<StorePage> {
   }
 
   Future<void> _load() async {
+    _analytics.track(AnalyticsEvents.storeOpen);
     final e = await _store.getEntitlements();
     if (!mounted) return;
     setState(() {
@@ -53,14 +57,22 @@ class _StorePageState extends State<StorePage> {
     }
 
     // Compuerta parental obligatoria antes de cualquier compra.
+    _analytics.track(AnalyticsEvents.parentalGateShown);
     final approved = await ParentalGate.show(context);
     if (!approved || !mounted) return;
+    _analytics.track(AnalyticsEvents.parentalGatePassed);
+    _analytics
+        .track(AnalyticsEvents.purchaseAttempt, params: {'product': product.id});
 
     setState(() => _busy = true);
     final result = await _store.buy(product);
     if (!mounted) return;
 
     if (result.success) {
+      _analytics.track(AnalyticsEvents.purchaseSuccess, params: {
+        'product': product.id,
+        'kind': product.kind.name,
+      });
       // Los packs cosméticos desbloquean accesorios en el wallet existente.
       if (product.kind == ProductKind.cosmeticBundle) {
         for (final partId in product.grantsPartIds) {

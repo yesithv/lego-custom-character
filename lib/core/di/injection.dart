@@ -8,6 +8,10 @@ import '../../features/character_editor/domain/repositories/character_repository
 import '../../features/character_editor/domain/usecases/delete_character.dart';
 import '../../features/character_editor/domain/usecases/get_all_characters.dart';
 import '../../features/character_editor/domain/usecases/save_character.dart';
+import '../../features/analytics/data/datasources/analytics_local_datasource.dart';
+import '../../features/analytics/data/local_analytics_service.dart';
+import '../../features/analytics/data/models/analytics_event_model.dart';
+import '../../features/analytics/domain/analytics_service.dart';
 import '../../features/character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../features/economy/data/datasources/wallet_local_datasource.dart';
 import '../../features/economy/data/models/wallet_model.dart';
@@ -43,6 +47,7 @@ Future<void> initDependencies() async {
   Hive.registerAdapter(WalletModelAdapter());
   Hive.registerAdapter(ScoreModelAdapter());
   Hive.registerAdapter(EntitlementsModelAdapter());
+  Hive.registerAdapter(AnalyticsEventModelAdapter());
 
   // Open boxes
   await Hive.openBox<CharacterModel>('characters');
@@ -50,6 +55,8 @@ Future<void> initDependencies() async {
   await Hive.openBox<String>('missions');
   await Hive.openBox<ScoreModel>('scores');
   await Hive.openBox<EntitlementsModel>('entitlements');
+  await Hive.openBox<AnalyticsEventModel>('analytics_events');
+  await Hive.openBox<dynamic>('analytics_meta');
 
   // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
@@ -118,5 +125,17 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton<StoreRepository>(
     () => StubStoreRepository(sl()),
+  );
+
+  // ── Analítica (first-party, local) ────────────────────────────────────────
+  // Envolver/añadir un sink remoto propio aquí para métricas agregadas.
+  sl.registerLazySingleton<AnalyticsLocalDatasource>(
+    () => AnalyticsLocalDatasourceImpl(
+      events: Hive.box<AnalyticsEventModel>('analytics_events'),
+      meta: Hive.box<dynamic>('analytics_meta'),
+    ),
+  );
+  sl.registerLazySingleton<AnalyticsService>(
+    () => LocalAnalyticsService(sl()),
   );
 }

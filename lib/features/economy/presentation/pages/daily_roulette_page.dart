@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/injection.dart';
+import '../../../analytics/domain/analytics_service.dart';
+import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
 import '../../domain/entities/wallet.dart';
@@ -255,9 +258,13 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
                         ? null
                         : _done
                             ? () => context.goNamed('home')
-                            : () => context
+                            : () {
+                            sl<AnalyticsService>()
+                                .track(AnalyticsEvents.rouletteSpin);
+                            context
                                 .read<WalletBloc>()
-                                .add(const ClaimRouletteEvent()),
+                                .add(const ClaimRouletteEvent());
+                          },
                   ),
                 ),
               ],

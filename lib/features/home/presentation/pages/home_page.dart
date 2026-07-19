@@ -156,7 +156,12 @@ class _HomeView extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => const _TestModeSheet(),
+      builder: (_) => _TestModeSheet(
+        onOpenAnalytics: () {
+          Navigator.pop(context);
+          context.pushNamed('analytics-debug');
+        },
+      ),
     );
   }
 }
@@ -338,7 +343,8 @@ class _TestModeBanner extends StatelessWidget {
 
 /// Contenido de la hoja inferior del modo de prueba: interruptor + detalle.
 class _TestModeSheet extends StatelessWidget {
-  const _TestModeSheet();
+  final VoidCallback onOpenAnalytics;
+  const _TestModeSheet({required this.onOpenAnalytics});
 
   static const _perks = [
     ('🎡', 'Ruleta diaria siempre disponible'),
@@ -414,6 +420,20 @@ class _TestModeSheet extends StatelessWidget {
               const Text(
                 'Los cambios de pista y jefe se aplican en la próxima carrera.',
                 style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onOpenAnalytics,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white30),
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Text('📊', style: TextStyle(fontSize: 16)),
+                label: const Text('Ver panel de analítica'),
               ),
             ],
           ),
