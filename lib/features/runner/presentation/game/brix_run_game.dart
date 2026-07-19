@@ -405,7 +405,22 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     if (bossHearts <= 0) {
       phase = GamePhase.bossDefeated;
       _defeatTimer = 0;
-      _boss?.startDefeat();
+      final b = _boss;
+      b?.startDefeat();
+      if (b != null) {
+        // Estallido de escombros en el centro del jefe.
+        add(BossDefeatEffect(
+          center: b.position + b.size / 2,
+          primary: bossConfig.primary,
+          secondary: bossConfig.secondary,
+          baseSize: b.size.x,
+        ));
+      }
+      add(ScorePopupComponent(
+        '💥 ¡DERROTADO! 💥',
+        spawnPosition: Vector2(size.x / 2, horizonY + 60),
+      ));
+      AudioService.instance.playPowerup();
     }
     notifyListeners();
   }
