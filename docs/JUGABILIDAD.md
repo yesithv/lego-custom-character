@@ -321,3 +321,26 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 | `robot_city` | Ciudad Robot 🤖 | Bloqueado | 🤖 Mega-Bot X9 |
 
 `colorsFor(worldId)` cae en `lego_city` si el ID no existe.
+
+---
+
+## Modo de prueba (desarrollo)
+
+Interruptor global en memoria definido en `lib/core/test_mode/test_mode.dart`
+(`TestMode.instance`). Sirve para probar cualquier pantalla al instante.
+
+**Cómo activarlo:** en la pantalla de inicio, **mantén pulsado el título
+"RUN FOR WIN"**. Se abre una hoja inferior con el interruptor y el detalle de
+lo que desbloquea. Mientras está encendido aparece la banda "🧪 MODO PRUEBA
+ACTIVO" en el inicio.
+
+Con el modo de prueba encendido:
+
+- 🎡 La ruleta diaria siempre se puede girar (`Wallet.canClaimRoulette`).
+- 🧩 Todos los accesorios de pago quedan disponibles gratis (`_AccessorySlot`).
+- 🗺️ Todos los mundos/pistas bloqueados quedan disponibles (`world_selection_page`).
+- 🏁 La pista se acorta a `TestMode.shortTrackMeters` (20 m): el jefe aparece enseguida.
+- 💪 El jefe baja a `TestMode.weakBossHearts` (1 corazón): una embestida y a la victoria.
+
+Los cambios de pista y jefe se leen al construir la partida, así que aplican en
+la siguiente carrera que inicies tras encender/apagar el modo.

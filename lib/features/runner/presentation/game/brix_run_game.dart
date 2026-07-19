@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show KeyEventResult;
 
 import '../../../../core/services/audio_service.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/boss_config.dart';
 import '../../domain/entities/world_config.dart';
@@ -47,7 +48,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   // Boss fight state — read by HUD
   GamePhase phase = GamePhase.running;
-  int bossHearts = maxBossHearts;
+
+  /// Corazones máximos del jefe en esta partida. Normalmente [maxBossHearts];
+  /// en modo de prueba baja a [TestMode.weakBossHearts] (jefe muy débil).
+  final int bossMaxHearts;
+
+  late int bossHearts = bossMaxHearts;
 
   /// Carga de embestida (0–1): sube con cada ataque esquivado; al llenarse
   /// el jugador embiste al jefe automáticamente.
@@ -62,7 +68,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   /// Metros a los que aparece el jefe. Por defecto es la longitud de pista
   /// del mundo (ver [trackMetersFor]), que es la misma que se anuncia en la
-  /// pantalla de selección. Se puede forzar un valor para tests.
+  /// pantalla de selección. En modo de prueba se acorta a
+  /// [TestMode.shortTrackMeters]. Se puede forzar un valor para tests.
   final int bossTriggerMeters;
 
   BossComponent? _boss;
@@ -170,7 +177,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     this.onRunComplete,
     this.onHit,
     int? bossTriggerMeters,
-  }) : bossTriggerMeters = bossTriggerMeters ?? trackMetersFor(worldId);
+  })  : bossTriggerMeters = bossTriggerMeters ??
+            (TestMode.instance.isOn
+                ? TestMode.shortTrackMeters
+                : trackMetersFor(worldId)),
+        bossMaxHearts = TestMode.instance.isOn
+            ? TestMode.weakBossHearts
+            : maxBossHearts;
 
   @override
   Future<void> onLoad() async {
@@ -289,7 +302,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   /// Intervalo entre ataques: se acorta cuando el jefe se enfurece.
   double get _attackInterval {
-    final enrage = (maxBossHearts - bossHearts).clamp(0, 2);
+    final enrage = (bossMaxHearts - bossHearts).clamp(0, 2);
     return const [1.15, 0.90, 0.70][enrage];
   }
 
@@ -312,7 +325,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     add(BossAttackComponent(kind: kind, lane: lane, depth: startDepth));
 
     // Enfurecido lanza a veces un segundo proyectil en otro carril
-    if (bossHearts < maxBossHearts &&
+    if (bossHearts < bossMaxHearts &&
         kind == BossAttackKind.projectile &&
         _rng.nextDouble() < 0.35) {
       final otherLane = (lane + 1 + _rng.nextInt(2)) % 3;
@@ -372,7 +385,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   void _performDash() {
     dashCharge = 0;
-    bossHearts = (bossHearts - 1).clamp(0, maxBossHearts);
+    bossHearts = (bossHearts - 1).clamp(0, bossMaxHearts);
     bossBonusScore += _dashScoreBonus;
     _recomputeScore();
     _player.dash();
@@ -660,7 +673,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     isAlive = true;
 
     phase = GamePhase.running;
-    bossHearts = maxBossHearts;
+    bossHearts = bossMaxHearts;
     dashCharge = 0;
     bossBonusScore = 0;
     _attackTimer = 0;

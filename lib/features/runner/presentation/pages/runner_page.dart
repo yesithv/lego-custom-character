@@ -401,7 +401,7 @@ class _BossBar extends StatelessWidget {
                 ),
               ),
               // Corazones del jefe
-              ...List.generate(BrixRunGame.maxBossHearts, (i) {
+              ...List.generate(game.bossMaxHearts, (i) {
                 final alive = i < game.bossHearts;
                 return Padding(
                   padding: const EdgeInsets.only(left: 2),

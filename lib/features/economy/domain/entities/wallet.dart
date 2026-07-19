@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/test_mode/test_mode.dart';
+
 class Wallet extends Equatable {
   final int coins;
   final DateTime? lastRouletteDate;
@@ -26,6 +28,8 @@ class Wallet extends Equatable {
   });
 
   bool get canClaimRoulette {
+    // Modo de prueba: la ruleta siempre está disponible.
+    if (TestMode.instance.isOn) return true;
     if (lastRouletteDate == null) return true;
     // Comparar por día natural LOCAL. En web, Hive puede devolver la fecha en
     // UTC; sin `toLocal()` un giro de noche se guarda como el día siguiente y

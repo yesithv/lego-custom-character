@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
@@ -207,16 +208,19 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                           setState(() => _selectedCharacter = i),
                     ),
                     const SizedBox(height: 10),
-                    // Lista de mundos
+                    // Lista de mundos (reacciona al modo de prueba en vivo)
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.horizontal,
-                            4, AppSpacing.horizontal, 20),
-                        itemCount: worlds.length,
-                        itemBuilder: (context, i) => _WorldCard(
-                          world: worlds[i],
-                          character: characters[
-                              _selectedCharacter.clamp(0, characters.length - 1)],
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: TestMode.instance.enabled,
+                        builder: (context, _, __) => ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.horizontal,
+                              4, AppSpacing.horizontal, 20),
+                          itemCount: worlds.length,
+                          itemBuilder: (context, i) => _WorldCard(
+                            world: worlds[i],
+                            character: characters[_selectedCharacter.clamp(
+                                0, characters.length - 1)],
+                          ),
                         ),
                       ),
                     ),
@@ -370,7 +374,9 @@ class _WorldCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocked = world.status == WorldStatus.locked;
+    // En modo de prueba todos los mundos quedan desbloqueados.
+    final isLocked =
+        world.status == WorldStatus.locked && !TestMode.instance.isOn;
     final lighter = Color.lerp(world.color, Colors.white, 0.14)!;
 
     return Padding(

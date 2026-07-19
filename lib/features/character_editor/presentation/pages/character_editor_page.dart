@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -811,7 +812,10 @@ class _AccessoriesTab extends StatelessWidget {
     return BlocBuilder<WalletBloc, WalletState>(
       builder: (context, walletState) {
         final unlocked = walletState.wallet.unlockedParts.toSet();
-        return ListView(
+        // Reacciona al modo de prueba en vivo (desbloquea todos los accesorios).
+        return ValueListenableBuilder<bool>(
+          valueListenable: TestMode.instance.enabled,
+          builder: (context, __, ___) => ListView(
           padding: AppSpacing.scrollContent,
           children: _slotMeta.map((meta) {
             final (label, field) = meta;
@@ -845,6 +849,7 @@ class _AccessoriesTab extends StatelessWidget {
               ),
             );
           }).toList(),
+          ),
         );
       },
     );
@@ -982,7 +987,9 @@ class _AccessorySlot extends StatelessWidget {
                 onTap: () => onSelect(null),
               ),
               ...entries.map((entry) {
-                final isAvailable = entry.isFree || unlockedParts.contains(entry.id);
+                final isAvailable = entry.isFree ||
+                    unlockedParts.contains(entry.id) ||
+                    TestMode.instance.isOn;
                 return _OptionChip(
                   label: entry.name,
                   isSelected: selected == entry.id,
