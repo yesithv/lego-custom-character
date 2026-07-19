@@ -309,18 +309,27 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 
 8 mundos temáticos definidos en `world_config.dart` (paletas de color, incluidos colores de obstáculo por mundo) y `world_selection_page.dart` (metadatos y estado). Cada mundo tiene colores de cielo, midground, suelo y acento propios, y su propio [jefe](#jefes-por-mundo).
 
-| ID | Nombre | Estado | Jefe |
-|----|--------|--------|------|
-| `brix_city` | Ciudad Brix 🏙️ | Disponible | 🏗️ Capataz Demoledor |
-| `medieval` | Reino Medieval 🏰 | Disponible | 🐉 Dragón Oscuro |
-| `galaxy` | Galaxia Brix 🚀 | Bloqueado | 👾 Overlord Zenth |
-| `jungle` | Jungla Salvaje 🌿 | Bloqueado | 🦍 Gran Gorila |
-| `dark_city` | Ciudad Oscura 🕷️ | Bloqueado | 🦹 Señor Sombra |
-| `ocean` | Fondo del Mar 🐙 | Bloqueado | 🐙 Kraken Abisal |
-| `tundra` | Tundra ❄️ | Bloqueado | ❄️ Yeti Glacial |
-| `robot_city` | Ciudad Robot 🤖 | Bloqueado | 🤖 Mega-Bot X9 |
+| ID | Nombre | Desbloqueo | Jefe |
+|----|--------|-----------|------|
+| `brix_city` | Ciudad Brix 🏙️ | Inicial | 🏗️ Capataz Demoledor |
+| `medieval` | Reino Medieval 🏰 | Inicial | 🐉 Dragón Oscuro |
+| `galaxy` | Galaxia Brix 🚀 | 🪙 500 acumuladas | 👾 Overlord Zenth |
+| `jungle` | Jungla Salvaje 🌿 | 🪙 1200 acumuladas | 🦍 Gran Gorila |
+| `dark_city` | Ciudad Oscura 🕷️ | 🪙 2200 acumuladas | 🦹 Señor Sombra |
+| `ocean` | Fondo del Mar 🐙 | 🪙 3500 acumuladas | 🐙 Kraken Abisal |
+| `tundra` | Tundra ❄️ | 🪙 5500 acumuladas | ❄️ Yeti Glacial |
+| `robot_city` | Ciudad Robot 🤖 | 🪙 8000 acumuladas | 🤖 Mega-Bot X9 |
 
 `colorsFor(worldId)` cae en `brix_city` si el ID no existe.
+
+### Desbloqueo de mundos
+
+Un mundo bloqueado se abre cuando el jugador ha **ganado en total**
+(`Wallet.totalCoinsEarned`) al menos su `unlockCost`. Como ese total **nunca
+baja al gastar monedas**, el desbloqueo es **permanente** y no necesita
+persistencia extra. La tarjeta del mundo muestra una barra de progreso
+`ganadas / coste` y, al tocar uno aún bloqueado, un aviso con cuántas faltan.
+El [modo de prueba](#modo-de-prueba-desarrollo) desbloquea todos.
 
 ---
 
