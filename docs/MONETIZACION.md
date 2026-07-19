@@ -59,7 +59,15 @@ wallet (`UnlockPartEvent`).
 - Anuncios recompensados **solo Android** (×2 monedas, giro extra de ruleta).
 - Analítica de funnel **first-party** (kid-safe para iOS).
 - Suscripción VIP con entregas diarias; pase de temporada.
-- Gastar gemas (ruleta premium determinista, cosméticos) — hoy solo se acumulan.
 - Rediseño del *trade dress* visual (minifigura/studs) — riesgo de IP real.
+
+## Gastar gemas (canjería)
+
+Las gemas (moneda dura, se obtienen comprando packs en la Tienda) se canjean
+en `/gems` (`GemStorePage`) por premios de **precio fijo y determinista** —
+sin azar ni cajas de botín (kid-safe): monedas o cosméticos concretos
+(`gem_product.dart`). El gasto se hace con `StoreRepository.spendGems` y el
+premio se entrega sobre el wallet existente (`EarnCoinsEvent` /
+`UnlockPartEvent`). Se accede desde un botón en la Tienda.
 
 [`ParentalGate`]: ../lib/features/monetization/presentation/widgets/parental_gate.dart

@@ -9,6 +9,7 @@ import '../../features/character_editor/presentation/pages/preset_gallery_page.d
 import '../../features/economy/presentation/pages/daily_roulette_page.dart';
 import '../../features/analytics/presentation/pages/analytics_debug_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/monetization/presentation/pages/gem_store_page.dart';
 import '../../features/monetization/presentation/pages/store_page.dart';
 import '../../features/ranking/presentation/pages/ranking_page.dart';
 import '../../features/runner/presentation/pages/pre_run_page.dart';
@@ -69,6 +70,11 @@ class AppRouter {
         path: '/store',
         name: 'store',
         builder: (context, state) => const StorePage(),
+      ),
+      GoRoute(
+        path: '/gems',
+        name: 'gems',
+        builder: (context, state) => const GemStorePage(),
       ),
       GoRoute(
         path: '/debug/analytics',

@@ -33,4 +33,9 @@ abstract class StoreRepository {
 
   /// Restaura compras no consumibles / suscripción (requisito de las tiendas).
   Future<Entitlements> restorePurchases();
+
+  /// Gasta [amount] gemas si hay saldo suficiente. Devuelve el estado
+  /// actualizado y si tuvo éxito. La entrega del premio (monedas/cosméticos)
+  /// la orquesta la capa de presentación sobre el wallet.
+  Future<({Entitlements entitlements, bool success})> spendGems(int amount);
 }

@@ -58,4 +58,14 @@ class StubStoreRepository implements StoreRepository {
 
   @override
   Future<Entitlements> restorePurchases() async => _ds.get().toEntity();
+
+  @override
+  Future<({Entitlements entitlements, bool success})> spendGems(
+      int amount) async {
+    var e = _ds.get().toEntity();
+    if (e.gems < amount) return (entitlements: e, success: false);
+    e = e.copyWith(gems: e.gems - amount);
+    await _ds.save(EntitlementsModel.fromEntity(e));
+    return (entitlements: e, success: true);
+  }
 }

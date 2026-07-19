@@ -22,6 +22,8 @@ class AnalyticsEvents {
   static const runDeath = 'run_death';
   static const rouletteSpin = 'roulette_spin';
   static const storeOpen = 'store_open';
+  static const gemStoreOpen = 'gem_store_open';
+  static const gemRedeem = 'gem_redeem';
   static const parentalGateShown = 'parental_gate_shown';
   static const parentalGatePassed = 'parental_gate_passed';
   static const purchaseAttempt = 'purchase_attempt';

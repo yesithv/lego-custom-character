@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../analytics/domain/analytics_service.dart';
@@ -34,11 +35,11 @@ class _StorePageState extends State<StorePage> {
   @override
   void initState() {
     super.initState();
+    _analytics.track(AnalyticsEvents.storeOpen);
     _load();
   }
 
   Future<void> _load() async {
-    _analytics.track(AnalyticsEvents.storeOpen);
     final e = await _store.getEntitlements();
     if (!mounted) return;
     setState(() {
@@ -138,6 +139,14 @@ class _StorePageState extends State<StorePage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
                     _StatusHeader(ent: _ent),
+                    const SizedBox(height: 10),
+                    _RedeemGemsButton(
+                      onTap: () async {
+                        await context.pushNamed('gems');
+                        // Al volver, refresca el saldo de gemas.
+                        if (mounted) _load();
+                      },
+                    ),
                     const SizedBox(height: 12),
                     const _StubBanner(),
                     const SizedBox(height: 12),
@@ -213,6 +222,48 @@ class _MiniBadge extends StatelessWidget {
       child: Text('$emoji $label',
           style: const TextStyle(
               color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+    );
+  }
+}
+
+/// Botón que lleva a la canjería de gemas.
+class _RedeemGemsButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _RedeemGemsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white24, width: 1),
+          ),
+          child: const Row(
+            children: [
+              Text('💎', style: TextStyle(fontSize: 18)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Canjear gemas por premios',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.white54),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
