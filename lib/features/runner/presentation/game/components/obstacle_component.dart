@@ -9,7 +9,7 @@ import '../brix_run_game.dart';
 enum ObstacleType { block, barrier, spike }
 
 class ObstacleComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   final int lane;
   final ObstacleType type;
 

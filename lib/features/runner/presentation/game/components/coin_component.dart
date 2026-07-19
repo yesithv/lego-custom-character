@@ -5,7 +5,7 @@ import 'package:flutter/material.dart' hide Image;
 
 import '../brix_run_game.dart';
 
-class CoinComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   final int lane;
 
   double _depth = 0.0;

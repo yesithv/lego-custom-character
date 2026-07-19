@@ -4,7 +4,7 @@ import 'package:flutter/material.dart' hide Image;
 import '../brix_run_game.dart';
 
 class ScorePopupComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   final String text;
   final Color color;
   double _life = 0;

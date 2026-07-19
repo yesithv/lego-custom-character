@@ -7,7 +7,7 @@ import '../../../domain/entities/world_config.dart';
 import '../brix_run_game.dart';
 
 class BackgroundComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   final String worldId;
 
   double _groundScroll = 0.0;

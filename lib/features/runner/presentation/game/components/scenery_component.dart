@@ -10,7 +10,7 @@ import '../brix_run_game.dart';
 /// track and rushes toward the camera like obstacles, but never collides.
 /// Each world draws its own set of 3 variants.
 class SceneryComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   /// -1 = left of the track, 1 = right of the track.
   final int side;
 

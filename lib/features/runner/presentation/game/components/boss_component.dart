@@ -9,7 +9,7 @@ import 'boss_painters.dart';
 
 /// El jefe del mundo: entra desde el horizonte, flota delante del jugador
 /// balanceándose entre carriles y encaja las embestidas hasta caer.
-class BossComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+class BossComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   static const double baseW = 175.0;
   static const double baseH = 190.0;
 
@@ -92,7 +92,7 @@ class BossComponent extends PositionComponent with HasGameRef<BrixRunGame> {
 /// Ataque lanzado por el jefe: nace a la profundidad del jefe y viaja hacia
 /// el jugador con la misma lógica de perspectiva que los obstáculos.
 class BossAttackComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   final BossAttackKind kind;
 
   /// Carril del proyectil; los ataques a lo ancho (onda/barrido) lo ignoran.
