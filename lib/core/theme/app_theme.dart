@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const _primaryColor = Color(0xFFFFD700); // LEGO yellow
-  static const _secondaryColor = Color(0xFF0055A5); // LEGO blue
+  static const _primaryColor = Color(0xFFFFD700); // Brix yellow
+  static const _secondaryColor = Color(0xFF0055A5); // Brix blue
   static const _backgroundColor = Color(0xFFF5F5F5);
 
   static ThemeData get light => ThemeData(

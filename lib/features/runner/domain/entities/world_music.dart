@@ -41,7 +41,7 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
     ),
     WorldTrack(
       name: 'Arcade del Centro',
-      description: 'Chiptune alegre de plaza LEGO',
+      description: 'Chiptune alegre de plaza Brix',
       emoji: '🎮',
       asset: 'music/lego_city_3.wav',
     ),
@@ -200,6 +200,6 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
   ],
 };
 
-/// Repertorio del mundo [worldId]; usa Ciudad LEGO como respaldo.
+/// Repertorio del mundo [worldId]; usa Ciudad Brix como respaldo.
 List<WorldTrack> worldTracksFor(String worldId) =>
     worldMusicCatalog[worldId] ?? worldMusicCatalog['lego_city']!;

@@ -56,7 +56,7 @@ void main() {
       expect(worldTracksFor('medieval'), worldMusicCatalog['medieval']);
     });
 
-    test('worldTracksFor usa Ciudad LEGO como respaldo para un mundo desconocido',
+    test('worldTracksFor usa Ciudad Brix como respaldo para un mundo desconocido',
         () {
       expect(worldTracksFor('mundo_inexistente'),
           worldMusicCatalog['lego_city']);

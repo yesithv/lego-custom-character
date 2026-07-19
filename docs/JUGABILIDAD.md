@@ -311,7 +311,7 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 
 | ID | Nombre | Estado | Jefe |
 |----|--------|--------|------|
-| `lego_city` | Ciudad LEGO 🏙️ | Disponible | 🏗️ Capataz Demoledor |
+| `lego_city` | Ciudad Brix 🏙️ | Disponible | 🏗️ Capataz Demoledor |
 | `medieval` | Reino Medieval 🏰 | Disponible | 🐉 Dragón Oscuro |
 | `galaxy` | Galaxia Brix 🚀 | Bloqueado | 👾 Overlord Zenth |
 | `jungle` | Jungla Salvaje 🌿 | Bloqueado | 🦍 Gran Gorila |
