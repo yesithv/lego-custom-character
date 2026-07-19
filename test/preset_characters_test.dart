@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/preset_characters.dart';
-import 'package:lego_custom_character/features/character_editor/presentation/widgets/character_preview.dart';
-import 'package:lego_custom_character/features/economy/domain/entities/part_catalog.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/preset_characters.dart';
+import 'package:run_for_win/features/character_editor/presentation/widgets/character_preview.dart';
+import 'package:run_for_win/features/economy/domain/entities/part_catalog.dart';
 
 void main() {
   group('presetCharacters', () {

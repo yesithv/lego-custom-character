@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/character_editor/domain/entities/character.dart';
-import 'package:lego_custom_character/features/character_editor/presentation/widgets/character_preview.dart';
+import 'package:run_for_win/features/character_editor/domain/entities/character.dart';
+import 'package:run_for_win/features/character_editor/presentation/widgets/character_preview.dart';
 import 'package:flutter/material.dart';
 
 void main() {

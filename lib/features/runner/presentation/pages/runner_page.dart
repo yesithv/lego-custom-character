@@ -8,7 +8,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/services/audio_service.dart';
+import '../../../analytics/domain/analytics_service.dart';
+import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
@@ -71,6 +74,8 @@ class _RunnerPageState extends State<RunnerPage> {
       onRunComplete: _onRunComplete,
       onHit: _onHit,
     );
+    sl<AnalyticsService>()
+        .track(AnalyticsEvents.runStart, params: {'world': widget.worldId});
     // Pre-load ranking for this world to show personal best in game over
     context.read<RankingBloc>().add(LoadRanking(widget.worldId));
     // Música de fondo temática del mundo elegida antes de correr (en bucle).
@@ -104,6 +109,14 @@ class _RunnerPageState extends State<RunnerPage> {
     // En derrota el cofre se abre automáticamente; en victoria se reclama
     // con el botón "Reclamar cofre" de la pantalla de victoria.
     final isVictory = _game.phase == GamePhase.victory;
+    sl<AnalyticsService>().track(
+      isVictory ? AnalyticsEvents.runVictory : AnalyticsEvents.runDeath,
+      params: {
+        'world': widget.worldId,
+        'meters': _game.meters,
+        'coins': _game.coins,
+      },
+    );
     setState(() {
       _showChest = !isVictory;
       _isPaused = false;
@@ -401,7 +414,7 @@ class _BossBar extends StatelessWidget {
                 ),
               ),
               // Corazones del jefe
-              ...List.generate(BrixRunGame.maxBossHearts, (i) {
+              ...List.generate(game.bossMaxHearts, (i) {
                 final alive = i < game.bossHearts;
                 return Padding(
                   padding: const EdgeInsets.only(left: 2),

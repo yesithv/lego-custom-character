@@ -7,7 +7,7 @@ import '../brix_run_game.dart';
 
 enum PowerupType { shield, magnet }
 
-class PowerupComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+class PowerupComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   final int lane;
   final PowerupType type;
 

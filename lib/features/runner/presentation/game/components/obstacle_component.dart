@@ -9,7 +9,7 @@ import '../brix_run_game.dart';
 enum ObstacleType { block, barrier, spike }
 
 class ObstacleComponent extends PositionComponent
-    with HasGameRef<BrixRunGame> {
+    with HasGameReference<BrixRunGame> {
   final int lane;
   final ObstacleType type;
 
@@ -83,8 +83,8 @@ class ObstacleComponent extends PositionComponent
     final h = size.y;
     final world = game.worldId;
 
-    if (world == 'lego_city') {
-      _renderLegoBuilding(canvas, w, h, color);
+    if (world == 'brix_city') {
+      _renderBrixBuilding(canvas, w, h, color);
       return;
     } else if (world == 'medieval') {
       _renderCastleTower(canvas, w, h, color);
@@ -113,8 +113,8 @@ class ObstacleComponent extends PositionComponent
     _renderDefaultBlock(canvas, w, h, color);
   }
 
-  // 1. LEGO Building (lego_city)
-  void _renderLegoBuilding(Canvas canvas, double w, double h, Color color) {
+  // 1. Brix Building (brix_city)
+  void _renderBrixBuilding(Canvas canvas, double w, double h, Color color) {
     final lighter = _lighten(color, 0.15);
     final darker = _darken(color, 0.25);
     final topH = h * 0.12;
@@ -505,7 +505,7 @@ class ObstacleComponent extends PositionComponent
       return;
     }
 
-    if (world == 'lego_city') {
+    if (world == 'brix_city') {
       _renderTrafficLightBarrier(canvas, w, h, color);
       return;
     } else if (world == 'medieval') {
@@ -529,7 +529,7 @@ class ObstacleComponent extends PositionComponent
     _renderDefaultBar(canvas, w, h, color, topH, sideW);
   }
 
-  // 1. LEGO Traffic Light Barrier (lego_city)
+  // 1. Brix Traffic Light Barrier (brix_city)
   void _renderTrafficLightBarrier(Canvas canvas, double w, double h, Color color) {
     final topH = h * 0.18;
     final sideW = w * 0.06;
@@ -762,7 +762,7 @@ class ObstacleComponent extends PositionComponent
     final world = game.worldId;
     final half = w / 2;
 
-    if (world == 'lego_city') {
+    if (world == 'brix_city') {
       _renderCone(canvas, w, h, color);
       return;
     } else if (world == 'medieval') {
@@ -965,7 +965,7 @@ class ObstacleComponent extends PositionComponent
     canvas.restore();
   }
 
-  // Traffic cone for lego_city
+  // Traffic cone for brix_city
   void _renderCone(Canvas canvas, double w, double h, Color color) {
     final half = w / 2;
     final cone = Path()

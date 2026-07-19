@@ -305,7 +305,7 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
   canvas.restore();
 }
 
-// ── Acabado de plástico LEGO ──────────────────────────────────────────────────
+// ── Acabado de plástico Brix ──────────────────────────────────────────────────
 // Helpers compartidos por el editor y el juego para que cada pieza se pinte
 // como plástico ABS brillante: degradado de luz cenital, reflejo especular y
 // contorno tonal (una versión oscura del propio color, nunca negro plano).

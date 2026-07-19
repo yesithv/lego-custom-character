@@ -5,7 +5,7 @@ import 'package:flutter/material.dart' hide Image;
 
 import '../brix_run_game.dart';
 
-class CoinComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   final int lane;
 
   double _depth = 0.0;
@@ -75,7 +75,7 @@ class CoinComponent extends PositionComponent with HasGameRef<BrixRunGame> {
         ..strokeWidth = max(1.0, r * 0.14),
     );
 
-    // LEGO stud on coin face
+    // Brix stud on coin face
     if (r > 6) {
       canvas.drawCircle(
         Offset(r, r),

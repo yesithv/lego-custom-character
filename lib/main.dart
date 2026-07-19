@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/analytics/domain/analytics_service.dart';
 import 'features/economy/presentation/bloc/wallet_bloc.dart';
 import 'features/economy/presentation/bloc/wallet_event.dart';
 import 'features/missions/presentation/bloc/mission_bloc.dart';
@@ -13,6 +14,8 @@ import 'features/ranking/presentation/bloc/ranking_bloc.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initDependencies();
+  // Registra el arranque (sesión + primer uso + día activo).
+  sl<AnalyticsService>().startSession();
   runApp(const BrixRunApp());
 }
 

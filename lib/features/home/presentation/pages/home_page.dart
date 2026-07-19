@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
@@ -63,7 +64,10 @@ class _HomeView extends StatelessWidget {
           child: SafeArea(
             child: Padding(
               padding: AppSpacing.horizontalOnly,
-              child: Column(
+              // El árbol reacciona en vivo al modo de prueba (banner + ruleta).
+              child: ValueListenableBuilder<bool>(
+                valueListenable: TestMode.instance.enabled,
+                builder: (context, testOn, _) => Column(
                 children: [
                   // Barra superior: monedas + ruleta diaria
                   Padding(
@@ -73,6 +77,8 @@ class _HomeView extends StatelessWidget {
                       children: [
                         _HomeCoinBadge(),
                         const Spacer(),
+                        _StoreButton(onTap: () => context.pushNamed('store')),
+                        const SizedBox(width: 10),
                         BlocBuilder<WalletBloc, WalletState>(
                           builder: (context, walletState) => RouletteButton(
                             available:
@@ -83,10 +89,20 @@ class _HomeView extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  // Aviso del modo de prueba (solo cuando está encendido)
+                  if (testOn)
+                    _TestModeBanner(
+                      onTap: () => _openTestModeSheet(context),
+                    ),
+
                   const Spacer(flex: 2),
 
-                  // Título compacto tipo píldora
-                  const _TitlePill(),
+                  // Título compacto tipo píldora. Mantén pulsado para abrir el
+                  // interruptor del modo de prueba.
+                  _TitlePill(
+                    onLongPress: () => _openTestModeSheet(context),
+                  ),
                   const Spacer(flex: 2),
 
                   // Corredor activo sobre pedestal
@@ -122,8 +138,53 @@ class _HomeView extends StatelessWidget {
                   const SizedBox(height: 20),
                 ],
               ),
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Hoja inferior con el interruptor del modo de prueba y el detalle de lo
+  /// que desbloquea. Accesible manteniendo pulsado el título de la app.
+  void _openTestModeSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF0A2A55),
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _TestModeSheet(
+        onOpenAnalytics: () {
+          Navigator.pop(context);
+          context.pushNamed('analytics-debug');
+        },
+      ),
+    );
+  }
+}
+
+/// Botón redondo de acceso a la Tienda en la barra superior.
+class _StoreButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _StoreButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF063574).withValues(alpha: 0.6),
+      shape: const CircleBorder(
+        side: BorderSide(color: Color(0xFFFFD700), width: 2),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const Padding(
+          padding: EdgeInsets.all(9),
+          child: Icon(Icons.storefront_rounded,
+              color: Color(0xFFFFD700), size: 22),
         ),
       ),
     );
@@ -201,33 +262,182 @@ class _PlayButtonState extends State<_PlayButton> {
 }
 
 /// Píldora de título con bandera a cuadros, como en el diseño.
+///
+/// Mantén pulsado para abrir el interruptor del modo de prueba ([onLongPress]).
 class _TitlePill extends StatelessWidget {
-  const _TitlePill();
+  final VoidCallback? onLongPress;
+  const _TitlePill({this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF063574).withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white24, width: 1.5),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('🏁', style: TextStyle(fontSize: 22)),
-          SizedBox(width: 10),
-          Text(
-            'RUN FOR WIN',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 22,
-              letterSpacing: 1.5,
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF063574).withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white24, width: 1.5),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🏁', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 10),
+            Text(
+              'RUN FOR WIN',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 1.5,
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Banda superior que avisa de que el modo de prueba está encendido.
+class _TestModeBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _TestModeBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF7C4DFF).withValues(alpha: 0.28),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFB388FF), width: 1.5),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🧪', style: TextStyle(fontSize: 16)),
+            SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                'MODO PRUEBA ACTIVO · todo desbloqueado',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Contenido de la hoja inferior del modo de prueba: interruptor + detalle.
+class _TestModeSheet extends StatelessWidget {
+  final VoidCallback onOpenAnalytics;
+  const _TestModeSheet({required this.onOpenAnalytics});
+
+  static const _perks = [
+    ('🎡', 'Ruleta diaria siempre disponible'),
+    ('🧩', 'Todos los accesorios de pago, gratis'),
+    ('🗺️', 'Todos los mundos y pistas desbloqueados'),
+    ('🏁', 'Pista súper corta: el jefe aparece enseguida'),
+    ('💪', 'Jefe muy débil: derrótalo de un golpe'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: TestMode.instance.enabled,
+          builder: (context, isOn, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('🧪', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Modo de prueba',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: isOn,
+                    activeThumbColor: const Color(0xFFB388FF),
+                    onChanged: (v) => TestMode.instance.isOn = v,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isOn
+                    ? 'Encendido: se ignoran todas las limitaciones del juego.'
+                    : 'Apagado: el juego funciona con sus reglas normales.',
+                style: const TextStyle(color: Colors.white60, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              ..._perks.map(
+                (p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(p.$1, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          p.$2,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Los cambios de pista y jefe se aplican en la próxima carrera.',
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onOpenAnalytics,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white30),
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Text('📊', style: TextStyle(fontSize: 16)),
+                label: const Text('Ver panel de analítica'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

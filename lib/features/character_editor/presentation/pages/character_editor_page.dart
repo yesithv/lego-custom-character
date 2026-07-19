@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -40,8 +41,17 @@ class CharacterEditorPage extends StatelessWidget {
   }
 }
 
-class _EditorView extends StatelessWidget {
+class _EditorView extends StatefulWidget {
   const _EditorView();
+
+  @override
+  State<_EditorView> createState() => _EditorViewState();
+}
+
+class _EditorViewState extends State<_EditorView> {
+  /// Cuando es true, tras guardar con éxito se va a elegir mundo (correr) en
+  /// vez de volver a la galería. Lo activa el botón "Guardar y jugar".
+  bool _playAfterSave = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +67,20 @@ class _EditorView extends StatelessWidget {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          context.goNamed('gallery');
+          if (_playAfterSave) {
+            _playAfterSave = false;
+            final id = state.currentCharacter?.id;
+            context.goNamed(
+              'worlds',
+              queryParameters:
+                  id != null ? {'character': id} : const <String, String>{},
+            );
+          } else {
+            context.goNamed('gallery');
+          }
         }
         if (state.status == EditorStatus.error && state.errorMessage != null) {
+          _playAfterSave = false;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -91,6 +112,18 @@ class _EditorView extends StatelessWidget {
             ),
           ),
           actions: [
+            // Guardar y correr de una vez con este personaje.
+            IconButton(
+              tooltip: 'Guardar y jugar',
+              onPressed: () {
+                _playAfterSave = true;
+                context
+                    .read<CharacterEditorBloc>()
+                    .add(const SaveCurrentCharacter());
+              },
+              icon: const Icon(Icons.sports_score_rounded,
+                  color: Color(0xFF43A047), size: 30),
+            ),
             BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
               builder: (context, state) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -811,7 +844,10 @@ class _AccessoriesTab extends StatelessWidget {
     return BlocBuilder<WalletBloc, WalletState>(
       builder: (context, walletState) {
         final unlocked = walletState.wallet.unlockedParts.toSet();
-        return ListView(
+        // Reacciona al modo de prueba en vivo (desbloquea todos los accesorios).
+        return ValueListenableBuilder<bool>(
+          valueListenable: TestMode.instance.enabled,
+          builder: (context, __, ___) => ListView(
           padding: AppSpacing.scrollContent,
           children: _slotMeta.map((meta) {
             final (label, field) = meta;
@@ -845,6 +881,7 @@ class _AccessoriesTab extends StatelessWidget {
               ),
             );
           }).toList(),
+          ),
         );
       },
     );
@@ -982,7 +1019,9 @@ class _AccessorySlot extends StatelessWidget {
                 onTap: () => onSelect(null),
               ),
               ...entries.map((entry) {
-                final isAvailable = entry.isFree || unlockedParts.contains(entry.id);
+                final isAvailable = entry.isFree ||
+                    unlockedParts.contains(entry.id) ||
+                    TestMode.instance.isOn;
                 return _OptionChip(
                   label: entry.name,
                   isSelected: selected == entry.id,

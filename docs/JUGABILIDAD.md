@@ -188,7 +188,7 @@ Ser golpeado por un ataque del jefe equivale a un golpe normal: con escudo se co
 
 ### Recompensas por victoria
 
-Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`bossBonusScore`), luego `onRunComplete(coins)`.
+Al vencer al jefe: **+500 monedas** (`victoryCoinBonus`) y **+2500** al score (`bossBonusScore`), además de **+400** al score por cada embestida acertada (`_dashScoreBonus`). Luego `onRunComplete(coins)`.
 
 ### Jefes por mundo
 
@@ -196,7 +196,7 @@ Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`
 
 | Mundo | Jefe |
 |-------|------|
-| `lego_city` | 🏗️ Capataz Demoledor |
+| `brix_city` | 🏗️ Capataz Demoledor |
 | `medieval` | 🐉 Dragón Oscuro |
 | `galaxy` | 👾 Overlord Zenth |
 | `jungle` | 🦍 Gran Gorila |
@@ -205,7 +205,7 @@ Al vencer al jefe: **+150 monedas** (`victoryCoinBonus`) y **+1000** al score (`
 | `tundra` | ❄️ Yeti Glacial |
 | `robot_city` | 🤖 Mega-Bot X9 |
 
-`bossFor(worldId)` cae en el jefe de `lego_city` si el ID no existe.
+`bossFor(worldId)` cae en el jefe de `brix_city` si el ID no existe.
 
 ---
 
@@ -309,15 +309,47 @@ Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una ca
 
 8 mundos temáticos definidos en `world_config.dart` (paletas de color, incluidos colores de obstáculo por mundo) y `world_selection_page.dart` (metadatos y estado). Cada mundo tiene colores de cielo, midground, suelo y acento propios, y su propio [jefe](#jefes-por-mundo).
 
-| ID | Nombre | Estado | Jefe |
-|----|--------|--------|------|
-| `lego_city` | Ciudad LEGO 🏙️ | Disponible | 🏗️ Capataz Demoledor |
-| `medieval` | Reino Medieval 🏰 | Disponible | 🐉 Dragón Oscuro |
-| `galaxy` | Galaxia Brix 🚀 | Bloqueado | 👾 Overlord Zenth |
-| `jungle` | Jungla Salvaje 🌿 | Bloqueado | 🦍 Gran Gorila |
-| `dark_city` | Ciudad Oscura 🕷️ | Bloqueado | 🦹 Señor Sombra |
-| `ocean` | Fondo del Mar 🐙 | Bloqueado | 🐙 Kraken Abisal |
-| `tundra` | Tundra ❄️ | Bloqueado | ❄️ Yeti Glacial |
-| `robot_city` | Ciudad Robot 🤖 | Bloqueado | 🤖 Mega-Bot X9 |
+| ID | Nombre | Desbloqueo | Jefe |
+|----|--------|-----------|------|
+| `brix_city` | Ciudad Brix 🏙️ | Inicial | 🏗️ Capataz Demoledor |
+| `medieval` | Reino Medieval 🏰 | Inicial | 🐉 Dragón Oscuro |
+| `galaxy` | Galaxia Brix 🚀 | 🪙 500 acumuladas | 👾 Overlord Zenth |
+| `jungle` | Jungla Salvaje 🌿 | 🪙 1200 acumuladas | 🦍 Gran Gorila |
+| `dark_city` | Ciudad Oscura 🕷️ | 🪙 2200 acumuladas | 🦹 Señor Sombra |
+| `ocean` | Fondo del Mar 🐙 | 🪙 3500 acumuladas | 🐙 Kraken Abisal |
+| `tundra` | Tundra ❄️ | 🪙 5500 acumuladas | ❄️ Yeti Glacial |
+| `robot_city` | Ciudad Robot 🤖 | 🪙 8000 acumuladas | 🤖 Mega-Bot X9 |
 
-`colorsFor(worldId)` cae en `lego_city` si el ID no existe.
+`colorsFor(worldId)` cae en `brix_city` si el ID no existe.
+
+### Desbloqueo de mundos
+
+Un mundo bloqueado se abre cuando el jugador ha **ganado en total**
+(`Wallet.totalCoinsEarned`) al menos su `unlockCost`. Como ese total **nunca
+baja al gastar monedas**, el desbloqueo es **permanente** y no necesita
+persistencia extra. La tarjeta del mundo muestra una barra de progreso
+`ganadas / coste` y, al tocar uno aún bloqueado, un aviso con cuántas faltan.
+El [modo de prueba](#modo-de-prueba-desarrollo) desbloquea todos.
+
+---
+
+## Modo de prueba (desarrollo)
+
+Interruptor global en memoria definido en `lib/core/test_mode/test_mode.dart`
+(`TestMode.instance`). Sirve para probar cualquier pantalla al instante.
+
+**Cómo activarlo:** en la pantalla de inicio, **mantén pulsado el título
+"RUN FOR WIN"**. Se abre una hoja inferior con el interruptor y el detalle de
+lo que desbloquea. Mientras está encendido aparece la banda "🧪 MODO PRUEBA
+ACTIVO" en el inicio.
+
+Con el modo de prueba encendido:
+
+- 🎡 La ruleta diaria siempre se puede girar (`Wallet.canClaimRoulette`).
+- 🧩 Todos los accesorios de pago quedan disponibles gratis (`_AccessorySlot`).
+- 🗺️ Todos los mundos/pistas bloqueados quedan disponibles (`world_selection_page`).
+- 🏁 La pista se acorta a `TestMode.shortTrackMeters` (20 m): el jefe aparece enseguida.
+- 💪 El jefe baja a `TestMode.weakBossHearts` (1 corazón): una embestida y a la victoria.
+
+Los cambios de pista y jefe se leen al construir la partida, así que aplican en
+la siguiente carrera que inicies tras encender/apagar el modo.

@@ -114,7 +114,7 @@ def lowpass(buf, alpha):
 # ── Presets ─────────────────────────────────────────────────────────────────
 
 WORLDS = {
-    'lego_city':  dict(scale='major',   root=60, prog=[0, 4, 5, 3]),
+    'brix_city':  dict(scale='major',   root=60, prog=[0, 4, 5, 3]),
     'medieval':   dict(scale='minor',   root=57, prog=[0, 5, 3, 4]),
     'galaxy':     dict(scale='lydian',  root=62, prog=[0, 3, 4, 1]),
     'jungle':     dict(scale='dorian',  root=52, prog=[0, 3, 0, 4]),
@@ -137,7 +137,7 @@ STYLES = {
 
 # Orden EXACTO del catálogo en world_music.dart -> (worldId, [estilos por índice])
 CATALOG = [
-    ('lego_city',  ['neon', 'rat', 'chip', 'chill']),
+    ('brix_city',  ['neon', 'rat', 'chip', 'chill']),
     ('medieval',   ['neon', 'rat', 'chip', 'chill']),
     ('galaxy',     ['neon', 'rat', 'chip']),
     ('jungle',     ['rat', 'chill', 'chip']),

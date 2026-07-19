@@ -9,7 +9,7 @@ import '../brix_run_game.dart';
 
 enum PlayerState { running, jumping, sliding, dead }
 
-class PlayerComponent extends PositionComponent with HasGameRef<BrixRunGame> {
+class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   final CharacterAppearance appearance;
   int currentLane;
 

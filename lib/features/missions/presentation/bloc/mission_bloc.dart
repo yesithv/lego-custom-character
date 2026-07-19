@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../domain/entities/mission.dart';
 import '../../domain/repositories/mission_repository.dart';
 import 'mission_event.dart';
 import 'mission_state.dart';

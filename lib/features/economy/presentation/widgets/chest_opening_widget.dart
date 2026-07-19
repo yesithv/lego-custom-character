@@ -415,7 +415,7 @@ class _ChestGraphic extends StatelessWidget {
               child: Transform(
                 alignment: Alignment.bottomCenter,
                 transform: Matrix4.rotationX(lidAngle)
-                  ..scale(1.0, lidScale.clamp(0.0, 1.2)),
+                  ..scaleByDouble(1.0, lidScale.clamp(0.0, 1.2), 1.0, 1.0),
                 child: Container(
                   width: 116,
                   height: 38,

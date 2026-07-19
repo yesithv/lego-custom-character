@@ -1,8 +1,8 @@
 # 🧱 Run For Win
 
-> Creador de personajes estilo LEGO + Endless Runner pseudo-3D con jefes de mundo, hecho en Flutter + Flame.
+> Creador de personajes de bloques **Brix** + Endless Runner pseudo-3D con jefes de mundo, hecho en Flutter + Flame.
 
-> **Nota de nombres:** el nombre de producto (título de la app y UI) es **Run For Win**. El **codename interno** del código sigue siendo **BrixRun** (clases `BrixRunApp`, `BrixRunGame`), y el paquete Dart es `lego_custom_character`. En esta documentación se usa "Run For Win" para el producto y "BrixRun" cuando se hace referencia al código.
+> **Nota de nombres:** el nombre de producto (título de la app y UI) es **Run For Win**. **Brix** es la marca del estilo de bloques del juego (personajes, mundos). El **codename interno** del código sigue siendo **BrixRun** (clases `BrixRunApp`, `BrixRunGame`), y el paquete Dart es `run_for_win`. En esta documentación se usa "Run For Win" para el producto y "BrixRun" cuando se hace referencia al código.
 
 Run For Win combina dos experiencias en una sola app:
 
@@ -100,7 +100,7 @@ lib/
 ├── core/                         # Infra transversal
 │   ├── di/injection.dart         # get_it: registro de dependencias y cajas Hive
 │   ├── router/app_router.dart    # go_router: rutas de la app
-│   ├── theme/app_theme.dart      # Tema claro/oscuro (amarillo + azul LEGO)
+│   ├── theme/app_theme.dart      # Tema claro/oscuro (amarillo + azul Brix)
 │   ├── services/audio_service.dart
 │   └── error/failures.dart
 └── features/

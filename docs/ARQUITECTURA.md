@@ -18,7 +18,7 @@ Este documento describe cómo está organizado el código, las decisiones de dis
 
 ## Visión general
 
-Run For Win (codename **BrixRun** en el código; paquete `lego_custom_character`) es una app Flutter monolítica (un solo paquete) estructurada en **Clean Architecture** y dividida por **features** verticales. Cada feature es autocontenida y se comunica con el resto solo a través de entidades de dominio y de los BLoCs registrados globalmente.
+Run For Win (codename **BrixRun** en el código; paquete `run_for_win`) es una app Flutter monolítica (un solo paquete) estructurada en **Clean Architecture** y dividida por **features** verticales. Cada feature es autocontenida y se comunica con el resto solo a través de entidades de dominio y de los BLoCs registrados globalmente.
 
 Reglas de dependencia (de fuera hacia dentro):
 
@@ -89,7 +89,7 @@ El BLoC recibe los usecases por constructor (no accede a repositorios directamen
 |---------|-----|
 | `di/injection.dart` | Registra dependencias en `get_it` y abre las cajas Hive. |
 | `router/app_router.dart` | Configuración de `go_router` (rutas y redirecciones). |
-| `theme/app_theme.dart` | Temas claro/oscuro. Colores marca: amarillo LEGO `#FFD700`, azul LEGO `#0055A5`. Fuente `Nunito`. |
+| `theme/app_theme.dart` | Temas claro/oscuro. Colores marca: amarillo Brix `#FFD700`, azul Brix `#0055A5`. Fuente `Nunito`. |
 | `services/audio_service.dart` | Singleton de audio con un `AudioPlayer` por efecto. |
 | `error/failures.dart` | Tipos de fallo para el manejo de errores. |
 

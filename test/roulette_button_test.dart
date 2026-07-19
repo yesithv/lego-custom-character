@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lego_custom_character/features/home/presentation/widgets/roulette_button.dart';
+import 'package:run_for_win/features/home/presentation/widgets/roulette_button.dart';
 
 /// Lee la rotación actual de la rueda desde el painter montado.
 double _rotationOf(WidgetTester tester) {

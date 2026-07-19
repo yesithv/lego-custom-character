@@ -1,5 +1,23 @@
 # Run For Win — Instrucciones de proyecto para Claude Code
 
+## Contexto y decisiones (léelo al iniciar una sesión)
+
+> Estado completo, arquitectura, lo construido y lo pendiente en
+> **`docs/ESTADO-PROYECTO.md`**. Léelo antes de trabajar en monetización o
+> economía. Resumen de decisiones **firmes**:
+
+- **Público: niños (<13)** → COPPA / reglas Kids de las tiendas.
+- **Marca:** producto **"Run For Win"**; estilo de bloques **"Brix"** (fuera de
+  LEGO). Codename de código: `BrixRun`. Paquete Dart: `run_for_win`.
+- **Objetivo:** publicar nativo en **iOS + Android** (la web es solo demo).
+- **Monetización: solo IAP, SIN anuncios en ninguna plataforma.** Motor:
+  cosméticos (IAP) + gemas + suscripción VIP. **No construir anuncios.**
+- **Kids-safe:** compuerta parental antes de comprar; analítica **first-party**
+  (sin SDK de terceros); sin loot boxes con dinero real; sin pay-to-win.
+- **Patrón:** servicios externos detrás de interfaz + **stub** (Store, Analytics,
+  Score); pasar a real = una línea en `core/di/injection.dart`.
+- **Hive a mano**, `typeId` en uso 0–5, **próximo libre: 6**.
+
 ## Flujo de trabajo Git
 
 **Siempre desarrollar en la rama feature. Nunca hacer push directo a main.**

@@ -3,12 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
 import '../../../character_editor/presentation/bloc/character_editor_state.dart';
 import '../../../character_editor/presentation/widgets/character_preview.dart';
+import '../../../economy/presentation/bloc/wallet_bloc.dart';
+import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../domain/entities/world_config.dart';
 
 enum WorldStatus { available, locked }
@@ -50,8 +53,8 @@ class WorldData {
 
 const worlds = [
   WorldData(
-    id: 'lego_city',
-    name: 'Ciudad LEGO',
+    id: 'brix_city',
+    name: 'Ciudad Brix',
     emoji: '🏙️',
     description: 'Calles de bloques, semáforos y autos.',
     color: Color(0xFF0055A5),
@@ -74,6 +77,7 @@ const worlds = [
     description: 'Estación espacial y asteroides.',
     color: Color(0xFF1A0A3B),
     status: WorldStatus.locked,
+    unlockCost: 500,
   ),
   WorldData(
     id: 'jungle',
@@ -82,6 +86,7 @@ const worlds = [
     description: 'Árboles de bloques, ríos y lianas.',
     color: Color(0xFF2D6A4F),
     status: WorldStatus.locked,
+    unlockCost: 1200,
   ),
   WorldData(
     id: 'dark_city',
@@ -90,6 +95,7 @@ const worlds = [
     description: 'Halloween, cementerio y niebla.',
     color: Color(0xFF1A1A2E),
     status: WorldStatus.locked,
+    unlockCost: 2200,
   ),
   WorldData(
     id: 'ocean',
@@ -98,6 +104,7 @@ const worlds = [
     description: 'Arrecifes de coral y burbujas.',
     color: Color(0xFF006994),
     status: WorldStatus.locked,
+    unlockCost: 3500,
   ),
   WorldData(
     id: 'tundra',
@@ -106,6 +113,7 @@ const worlds = [
     description: 'Nieve, témpanos y ventisca.',
     color: Color(0xFF5BA4CF),
     status: WorldStatus.locked,
+    unlockCost: 5500,
   ),
   WorldData(
     id: 'robot_city',
@@ -114,30 +122,51 @@ const worlds = [
     description: 'Fábricas, engranajes y pantallas.',
     color: Color(0xFF37474F),
     status: WorldStatus.locked,
+    unlockCost: 8000,
   ),
 ];
 
 class WorldSelectionPage extends StatelessWidget {
-  const WorldSelectionPage({super.key});
+  /// Id del personaje a preseleccionar en los chips "CORREDOR" (viene de la
+  /// Galería o del editor al pulsar "Jugar"). Null si se entra por ¡JUGAR!.
+  final String? selectedCharacterId;
+
+  const WorldSelectionPage({super.key, this.selectedCharacterId});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<CharacterEditorBloc>()..add(const LoadCharacters()),
-      child: const _WorldSelectionView(),
+      child: _WorldSelectionView(selectedCharacterId: selectedCharacterId),
     );
   }
 }
 
 class _WorldSelectionView extends StatefulWidget {
-  const _WorldSelectionView();
+  final String? selectedCharacterId;
+  const _WorldSelectionView({this.selectedCharacterId});
 
   @override
   State<_WorldSelectionView> createState() => _WorldSelectionViewState();
 }
 
 class _WorldSelectionViewState extends State<_WorldSelectionView> {
-  int _selectedCharacter = 0;
+  /// Índice elegido manualmente por el usuario (null hasta que toca un chip).
+  /// Mientras sea null se usa el personaje preseleccionado por id.
+  int? _selectedCharacter;
+
+  /// Índice efectivo del corredor: la elección manual si la hay; si no, el
+  /// personaje preseleccionado por id; si no, el primero.
+  int _effectiveIndex(List<Character> chars) {
+    final manual = _selectedCharacter;
+    if (manual != null) return manual.clamp(0, chars.length - 1);
+    final id = widget.selectedCharacterId;
+    if (id != null) {
+      final idx = chars.indexWhere((c) => c.id == id);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +184,8 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
           child: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
             builder: (context, state) {
               final characters = state.characters;
+              final selectedIndex =
+                  characters.isEmpty ? 0 : _effectiveIndex(characters);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,22 +232,28 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                     ),
                     _CharacterSelector(
                       characters: characters,
-                      selectedIndex:
-                          _selectedCharacter.clamp(0, characters.length - 1),
+                      selectedIndex: selectedIndex,
                       onSelect: (i) =>
                           setState(() => _selectedCharacter = i),
                     ),
                     const SizedBox(height: 10),
-                    // Lista de mundos
+                    // Lista de mundos. Reacciona al modo de prueba y al saldo
+                    // acumulado (los mundos se desbloquean al acumular monedas).
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.horizontal,
-                            4, AppSpacing.horizontal, 20),
-                        itemCount: worlds.length,
-                        itemBuilder: (context, i) => _WorldCard(
-                          world: worlds[i],
-                          character: characters[
-                              _selectedCharacter.clamp(0, characters.length - 1)],
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: TestMode.instance.enabled,
+                        builder: (context, _, __) =>
+                            BlocBuilder<WalletBloc, WalletState>(
+                          builder: (context, walletState) => ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.horizontal, 4, AppSpacing.horizontal, 20),
+                            itemCount: worlds.length,
+                            itemBuilder: (context, i) => _WorldCard(
+                              world: worlds[i],
+                              character: characters[selectedIndex],
+                              coinsEarned: walletState.wallet.totalCoinsEarned,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -343,7 +380,15 @@ class _WorldCard extends StatelessWidget {
   final WorldData world;
   final Character character;
 
-  const _WorldCard({required this.world, required this.character});
+  /// Monedas ganadas en total por el jugador (acumulado). Un mundo se
+  /// desbloquea cuando este total llega a su [WorldData.unlockCost].
+  final int coinsEarned;
+
+  const _WorldCard({
+    required this.world,
+    required this.character,
+    required this.coinsEarned,
+  });
 
   void _startRun(BuildContext context) {
     context.pushNamed(
@@ -359,10 +404,14 @@ class _WorldCard extends StatelessWidget {
   }
 
   void _showLocked(BuildContext context) {
+    final remaining =
+        (world.unlockCost - coinsEarned).clamp(0, world.unlockCost);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-            '¡Mundo bloqueado! Gana ${world.unlockCost} monedas para desbloquearlo.'),
+          'Llevas 🪙 $coinsEarned de ${world.unlockCost}. '
+          '¡Te faltan $remaining para desbloquear ${world.name}!',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -370,7 +419,12 @@ class _WorldCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocked = world.status == WorldStatus.locked;
+    // Un mundo bloqueado se abre al acumular suficientes monedas ganadas
+    // (permanente: totalCoinsEarned no baja al gastar). El modo de prueba
+    // desbloquea todo.
+    final isLocked = world.status == WorldStatus.locked &&
+        !TestMode.instance.isOn &&
+        coinsEarned < world.unlockCost;
     final lighter = Color.lerp(world.color, Colors.white, 0.14)!;
 
     return Padding(
@@ -460,6 +514,13 @@ class _WorldCard extends StatelessWidget {
                             ...world.tags.map((t) => _ZoneChip(t)),
                         ],
                       ),
+                      if (isLocked) ...[
+                        const SizedBox(height: 8),
+                        _UnlockProgress(
+                          earned: coinsEarned,
+                          cost: world.unlockCost,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -505,6 +566,43 @@ class _DistancePill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Barra de progreso hacia el desbloqueo del mundo por monedas acumuladas.
+class _UnlockProgress extends StatelessWidget {
+  final int earned;
+  final int cost;
+  const _UnlockProgress({required this.earned, required this.cost});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = cost <= 0 ? 1.0 : (earned / cost).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '🪙 $earned / $cost',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: p,
+            minHeight: 6,
+            backgroundColor: Colors.black.withValues(alpha: 0.28),
+            valueColor:
+                const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+          ),
+        ),
+      ],
     );
   }
 }
