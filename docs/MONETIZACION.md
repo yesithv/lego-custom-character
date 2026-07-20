@@ -38,20 +38,31 @@ wallet (`UnlockPartEvent`).
 
 ## Conectar el pago real (cuando haya apps nativas)
 
+El adaptador real **ya está escrito**:
+`data/repositories/in_app_purchase_store_repository.dart`
+(`InAppPurchaseStoreRepository implements StoreRepository`). Usa la tienda para
+comprar/restaurar y el datasource local para el estado (gemas/VIP/poseídos).
+La dependencia `in_app_purchase` ya está en `pubspec.yaml`.
+
+Pasos para activarlo:
+
 1. `flutter create .` para generar las carpetas `android/` e `ios/`.
-2. Añadir `in_app_purchase` (y en Android `google_mobile_ads`). **Ojo:** estos
-   plugins no soportan web; mantener la web con el stub o tras `kIsWeb`.
+2. `flutter pub get` (baja `in_app_purchase`). El plugin **no soporta web**;
+   por eso el adaptador se registra **condicionado a plataforma** (`kIsWeb`).
 3. Crear los productos en Google Play Console y App Store Connect con los mismos
-   `id` que en `store_product.dart` (`remove_ads`, `vip_monthly`, `gems_*`,
-   `bundle_starter`).
-4. Implementar `InAppPurchaseStoreRepository implements StoreRepository` y
-   cambiar **una línea** en `injection.dart`:
+   `id` que en `store_product.dart` (`vip_monthly`, `gems_small`, `gems_medium`,
+   `bundle_starter`, …).
+4. Cambiar el registro en `injection.dart` (una línea, con guarda de web):
    ```dart
-   sl.registerLazySingleton<StoreRepository>(() => StubStoreRepository(sl()));
-   // →
-   sl.registerLazySingleton<StoreRepository>(() => InAppPurchaseStoreRepository(...));
+   sl.registerLazySingleton<StoreRepository>(() => kIsWeb
+       ? StubStoreRepository(sl())
+       : InAppPurchaseStoreRepository(sl()));
    ```
-5. Validar recibos (idealmente en backend) antes de conceder `entitlements`.
+5. (Recomendado) Validar recibos en un backend antes de conceder `entitlements`.
+
+Limitaciones actuales del adaptador (aptas para v1): sin validación de recibos
+en servidor, y la suscripción se marca activa sin rastrear su vencimiento (ver
+comentarios en el archivo).
 
 ## Pendiente (siguientes pasos)
 

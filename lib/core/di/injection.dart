@@ -118,8 +118,18 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => RankingBloc(repository: sl()));
 
   // ── Monetización ──────────────────────────────────────────────────────────
-  // Swap StubStoreRepository → InAppPurchaseStoreRepository aquí para conectar
-  // el pago real (requiere plataformas nativas + productos en las consolas).
+  // Pago real: sustituye StubStoreRepository por InAppPurchaseStoreRepository
+  // (ver `data/repositories/in_app_purchase_store_repository.dart`). Ese
+  // adaptador SOLO funciona en iOS/Android; para no romper la web, regístralo
+  // condicionado a la plataforma, p. ej.:
+  //
+  //   import 'package:flutter/foundation.dart' show kIsWeb;
+  //   sl.registerLazySingleton<StoreRepository>(() => kIsWeb
+  //       ? StubStoreRepository(sl())
+  //       : InAppPurchaseStoreRepository(sl()));
+  //
+  // Requisitos: `flutter pub get`, plataformas nativas y productos dados de
+  // alta en Google Play / App Store con los mismos IDs que `storeCatalog`.
   sl.registerLazySingleton<StoreLocalDatasource>(
     () => StoreLocalDatasourceImpl(Hive.box('entitlements')),
   );
