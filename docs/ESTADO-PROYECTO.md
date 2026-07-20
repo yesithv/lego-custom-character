@@ -107,7 +107,9 @@ vía `StoreRepository.entitlementsSync()`).
   `coin_component.dart`, `background_component.dart`, `obstacle_component.dart`,
   `scenery_component.dart`, `appearance_colors.dart`.
 - (Recomendado) **Backend** (p. ej. Firebase) para validar recibos y recibir la
-  analítica agregada (hoy es local por dispositivo).
+  analítica agregada (hoy es local por dispositivo). → Diseño detallado en
+  **`docs/BACKEND-PAGOS.md`** (validación server-to-server Apple/Google,
+  entitlements como fuente de verdad, webhooks de reembolso, recomendaciones).
 
 ## 7. Notas operativas
 
@@ -118,7 +120,7 @@ vía `StoreRepository.entitlementsSync()`).
   (todo lo anterior) ya está mergeado en `main`.
 - **No tocar** el nombre del repo/URLs `/lego-custom-character/` (GitHub Pages)
   sin renombrar el repo en GitHub.
-- Docs relacionadas: `MONETIZACION.md`, `JUGABILIDAD.md`, `ARQUITECTURA.md`,
-  `DESARROLLO.md`. Documentación de tiendas (política de privacidad, términos,
-  ficha, formularios, checklist) en **`docs/publicacion/`** (borradores con
-  marcadores `[...]` por rellenar).
+- Docs relacionadas: `MONETIZACION.md`, `BACKEND-PAGOS.md`, `JUGABILIDAD.md`,
+  `ARQUITECTURA.md`, `DESARROLLO.md`. Documentación de tiendas (política de
+  privacidad, términos, ficha, formularios, checklist) en **`docs/publicacion/`**
+  (borradores con marcadores `[...]` por rellenar).
