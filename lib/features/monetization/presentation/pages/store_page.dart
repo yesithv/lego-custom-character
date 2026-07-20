@@ -9,6 +9,7 @@ import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../domain/entities/entitlements.dart';
 import '../../domain/entities/store_product.dart';
+import '../../domain/entities/vip_perks.dart';
 import '../../domain/repositories/store_repository.dart';
 import '../widgets/parental_gate.dart';
 
@@ -98,6 +99,24 @@ class _StorePageState extends State<StorePage> {
     _snack('Compras restauradas.');
   }
 
+  Future<void> _claimVipDaily() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final result = await _store.claimVipDaily();
+    if (!mounted) return;
+    setState(() {
+      _ent = result.entitlements;
+      _busy = false;
+    });
+    if (result.gemsGranted > 0) {
+      _analytics.track(AnalyticsEvents.vipDailyClaim,
+          params: {'gems': result.gemsGranted});
+      _snack('¡Regalo VIP: +${result.gemsGranted} 💎!');
+    } else {
+      _snack('Ya reclamaste tu regalo VIP de hoy.');
+    }
+  }
+
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
@@ -147,6 +166,14 @@ class _StorePageState extends State<StorePage> {
                         if (mounted) _load();
                       },
                     ),
+                    if (_ent.subscriptionActive) ...[
+                      const SizedBox(height: 10),
+                      _VipDailyCard(
+                        available: _ent.canClaimVipDaily,
+                        busy: _busy,
+                        onClaim: _claimVipDaily,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     const _StubBanner(),
                     const SizedBox(height: 12),
@@ -195,11 +222,8 @@ class _StatusHeader extends StatelessWidget {
           const Text('gemas',
               style: TextStyle(color: Colors.white60, fontSize: 13)),
           const Spacer(),
-          if (ent.adsDisabled) const _MiniBadge(emoji: '🚫', label: 'Sin ads'),
-          if (ent.subscriptionActive) ...[
-            const SizedBox(width: 6),
+          if (ent.subscriptionActive)
             const _MiniBadge(emoji: '👑', label: 'VIP'),
-          ],
         ],
       ),
     );
@@ -263,6 +287,78 @@ class _RedeemGemsButton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tarjeta del regalo diario VIP (solo visible para suscriptores).
+class _VipDailyCard extends StatelessWidget {
+  final bool available;
+  final bool busy;
+  final VoidCallback onClaim;
+
+  const _VipDailyCard({
+    required this.available,
+    required this.busy,
+    required this.onClaim,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFB8860B).withValues(alpha: 0.35),
+            const Color(0xFF8A5E00).withValues(alpha: 0.25),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Text('👑', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Regalo diario VIP',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  '+${VipPerks.dailyGems} 💎 cada día',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  available ? const Color(0xFFFFD700) : Colors.white24,
+              foregroundColor:
+                  available ? const Color(0xFF3D2C00) : Colors.white54,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            onPressed: (busy || !available) ? null : onClaim,
+            child: Text(
+              available ? 'Reclamar' : 'Mañana',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }

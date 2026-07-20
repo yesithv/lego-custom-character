@@ -34,6 +34,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   final void Function(int coins)? onRunComplete;
   final VoidCallback? onHit;
 
+  /// Multiplicador de monedas ganadas (VIP: 1.5; normal: 1.0). Se aplica de
+  /// forma suave con un acumulador fraccionario para no dar saltos raros.
+  final double coinMultiplier;
+  double _coinFraction = 0;
+
   // Runtime state — read by HUD
   double speed = 220.0;
   int score = 0;
@@ -193,6 +198,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     required this.worldId,
     this.onRunComplete,
     this.onHit,
+    this.coinMultiplier = 1.0,
     int? bossTriggerMeters,
   })  : bossTriggerMeters = bossTriggerMeters ??
             (TestMode.instance.isOn
@@ -647,7 +653,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   // ── Game events ────────────────────────────────────────────────────────────
 
   void collectCoin() {
-    final value = characterType == CharacterType.villain ? 2 : 1;
+    final base = characterType == CharacterType.villain ? 2 : 1;
+    // Multiplicador VIP aplicado con acumulador fraccionario (evita saltos).
+    _coinFraction += base * coinMultiplier;
+    final value = _coinFraction.floor();
+    _coinFraction -= value;
     coins += value;
     AudioService.instance.playCoin();
     add(ScorePopupComponent(
@@ -711,6 +721,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   void restart() {
     score = 0;
     coins = 0;
+    _coinFraction = 0;
     meters = 0;
     multiplier = characterType == CharacterType.mysterious ? 2.0 : 1.0;
     obstacleStreak = characterType == CharacterType.mysterious ? 10 : 0;

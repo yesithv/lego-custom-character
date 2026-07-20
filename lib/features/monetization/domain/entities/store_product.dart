@@ -65,19 +65,12 @@ class StoreProduct {
 /// Catálogo de la tienda. Precios de ejemplo — ajústalos y replícalos como
 /// SKUs en las consolas de las tiendas antes de conectar el pago real.
 const storeCatalog = <StoreProduct>[
-  StoreProduct(
-    id: 'remove_ads',
-    title: 'Quitar anuncios',
-    description: 'Juega sin anuncios para siempre.',
-    priceLabel: 'USD 2.99',
-    kind: ProductKind.removeAds,
-    type: ProductType.nonConsumable,
-    emoji: '🚫',
-  ),
+  // Nota: el juego NO tiene anuncios (decisión de producto), por eso no hay
+  // producto "quitar anuncios". El VIP se centra en valor tangible.
   StoreProduct(
     id: 'vip_monthly',
     title: 'Club VIP',
-    description: 'Sin anuncios + gemas diarias + ruleta exclusiva.',
+    description: 'Gemas diarias + monedas x1.5 en cada carrera.',
     priceLabel: 'USD 4.99 / mes',
     kind: ProductKind.subscription,
     type: ProductType.subscription,

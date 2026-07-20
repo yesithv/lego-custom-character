@@ -1,5 +1,6 @@
 import '../../domain/entities/entitlements.dart';
 import '../../domain/entities/store_product.dart';
+import '../../domain/entities/vip_perks.dart';
 import '../../domain/repositories/store_repository.dart';
 import '../datasources/store_local_datasource.dart';
 import '../models/entitlements_model.dart';
@@ -17,6 +18,21 @@ class StubStoreRepository implements StoreRepository {
 
   @override
   Future<Entitlements> getEntitlements() async => _ds.get().toEntity();
+
+  @override
+  Entitlements entitlementsSync() => _ds.get().toEntity();
+
+  @override
+  Future<({Entitlements entitlements, int gemsGranted})> claimVipDaily() async {
+    var e = _ds.get().toEntity();
+    if (!e.canClaimVipDaily) return (entitlements: e, gemsGranted: 0);
+    e = e.copyWith(
+      gems: e.gems + VipPerks.dailyGems,
+      lastVipClaim: DateTime.now(),
+    );
+    await _ds.save(EntitlementsModel.fromEntity(e));
+    return (entitlements: e, gemsGranted: VipPerks.dailyGems);
+  }
 
   @override
   Future<PurchaseResult> buy(StoreProduct product) async {

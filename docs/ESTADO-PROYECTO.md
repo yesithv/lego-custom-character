@@ -4,7 +4,7 @@
 > **decisiones firmes**, lo **construido** y lo **pendiente**. Mantenerlo al día
 > al cerrar cada bloque de trabajo.
 
-_Última actualización: rama `claude/game-test-mode-0bntvx` (PR #27)._
+_Última actualización: rama `claude/vip-benefits` (beneficios VIP)._
 
 ## 1. Qué es el proyecto
 
@@ -85,13 +85,16 @@ peleas contra un jefe al final de cada mundo. Actualmente corre en **web**
 
 ## 5. Pendiente (roadmap de monetización, IAP-only)
 
-- **Quitar el producto "Quitar anuncios"** de la Tienda (ya no hay anuncios; el
-  campo `adsRemoved` se conserva por estabilidad de esquema).
-- **Beneficios VIP reales** (la suscripción hoy se compra pero no hace nada):
-  gemas diarias, multiplicador de monedas, cofre/ruleta o cosméticos exclusivos.
-- **Vías de ganar gemas gratis** (VIP diario, misiones, hitos).
+- **Vías de ganar gemas gratis** además del VIP diario (misiones, hitos).
 - **Pase de temporada** (cosméticos estacionales).
 - **Pago real**: adaptador `in_app_purchase` que sustituya el stub.
+
+_Hecho recientemente:_ producto "Quitar anuncios" retirado del catálogo (ya no
+hay anuncios; `adsRemoved` se conserva por estabilidad de esquema). **Beneficios
+VIP reales** implementados (`features/monetization/domain/entities/vip_perks.dart`):
+**gemas diarias** reclamables en la Tienda (`claimVipDaily`, +25 💎/día) y
+**multiplicador de monedas ×1.5** en carrera (`BrixRunGame.coinMultiplier`, leído
+vía `StoreRepository.entitlementsSync()`).
 
 ## 6. Acciones del usuario (no-código)
 
@@ -111,7 +114,8 @@ peleas contra un jefe al final de cada mundo. Actualmente corre en **web**
 - **Algunas sesiones remotas no tienen toolchain Flutter/Dart** → los cambios se
   revisan por inspección; **verificar con `flutter analyze` / `flutter run` en
   local**. Objetivo: `analyze` en 0 issues.
-- **Rama de desarrollo actual:** `claude/game-test-mode-0bntvx` (PR #27 → `main`).
+- **Rama de desarrollo actual:** `claude/vip-benefits` (PR → `main`). PR #27
+  (todo lo anterior) ya está mergeado en `main`.
 - **No tocar** el nombre del repo/URLs `/lego-custom-character/` (GitHub Pages)
   sin renombrar el repo en GitHub.
 - Docs relacionadas: `MONETIZACION.md`, `JUGABILIDAD.md`, `ARQUITECTURA.md`,

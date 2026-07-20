@@ -22,6 +22,8 @@ import '../../../missions/presentation/bloc/mission_bloc.dart';
 import '../../../missions/presentation/bloc/mission_event.dart';
 import '../../../missions/presentation/bloc/mission_state.dart';
 import '../../../missions/presentation/widgets/mission_card.dart';
+import '../../../monetization/domain/entities/vip_perks.dart';
+import '../../../monetization/domain/repositories/store_repository.dart';
 import '../../../ranking/domain/entities/score.dart';
 import '../../../ranking/presentation/bloc/ranking_bloc.dart';
 import '../../../ranking/presentation/bloc/ranking_event.dart';
@@ -67,12 +69,15 @@ class _RunnerPageState extends State<RunnerPage> {
   @override
   void initState() {
     super.initState();
+    // Los VIP ganan monedas con un multiplicador (beneficio de suscripción).
+    final vip = sl<StoreRepository>().entitlementsSync().subscriptionActive;
     _game = BrixRunGame(
       appearance: widget.character.appearance,
       characterType: widget.character.type,
       worldId: widget.worldId,
       onRunComplete: _onRunComplete,
       onHit: _onHit,
+      coinMultiplier: vip ? VipPerks.coinMultiplier : 1.0,
     );
     sl<AnalyticsService>()
         .track(AnalyticsEvents.runStart, params: {'world': widget.worldId});
