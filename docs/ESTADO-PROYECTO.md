@@ -119,4 +119,6 @@ vía `StoreRepository.entitlementsSync()`).
 - **No tocar** el nombre del repo/URLs `/lego-custom-character/` (GitHub Pages)
   sin renombrar el repo en GitHub.
 - Docs relacionadas: `MONETIZACION.md`, `JUGABILIDAD.md`, `ARQUITECTURA.md`,
-  `DESARROLLO.md`.
+  `DESARROLLO.md`. Documentación de tiendas (política de privacidad, términos,
+  ficha, formularios, checklist) en **`docs/publicacion/`** (borradores con
+  marcadores `[...]` por rellenar).
