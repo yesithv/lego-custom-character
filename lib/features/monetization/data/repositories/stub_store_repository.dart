@@ -1,3 +1,4 @@
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/entities/entitlements.dart';
 import '../../domain/entities/store_product.dart';
 import '../../domain/entities/vip_perks.dart';
@@ -47,7 +48,7 @@ class StubStoreRepository implements StoreRepository {
       return PurchaseResult(
         success: false,
         entitlements: e,
-        error: 'Ya tienes este producto.',
+        error: L10n.t('iap_already_owned'),
       );
     }
 

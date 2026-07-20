@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
 import '../bloc/wallet_bloc.dart';
@@ -198,7 +199,9 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    widget.isVip ? '🌟 Cofre VIP' : '📦 Cofre de Carrera',
+                    widget.isVip
+                        ? '🌟 ${context.l10n.tr('chest_vip')}'
+                        : '📦 ${context.l10n.tr('chest_run')}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -295,9 +298,9 @@ class _ChestOpeningWidgetState extends State<ChestOpeningWidget>
                           ),
                         ),
                         onPressed: widget.onDismiss,
-                        child: const Text(
-                          '¡Genial!',
-                          style: TextStyle(
+                        child: Text(
+                          context.l10n.tr('chest_nice'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
@@ -552,12 +555,12 @@ class _RewardReveal extends StatelessWidget {
   }
 
   String get _rarityLabel {
-    if (reward is! PartReward) return 'Monedas';
+    if (reward is! PartReward) return L10n.t('chest_coins');
     final r = (reward as PartReward).rarity;
-    if (r == AccessoryRarity.legendary) return '¡LEGENDARIO!';
-    if (r == AccessoryRarity.epic) return '¡Epico!';
-    if (r == AccessoryRarity.rare) return '¡Raro!';
-    return 'Comun';
+    if (r == AccessoryRarity.legendary) return L10n.t('chest_legendary');
+    if (r == AccessoryRarity.epic) return L10n.t('chest_epic');
+    if (r == AccessoryRarity.rare) return L10n.t('chest_rare');
+    return L10n.t('chest_common');
   }
 
   @override

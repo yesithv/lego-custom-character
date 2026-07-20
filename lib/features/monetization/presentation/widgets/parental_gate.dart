@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
+
 /// Compuerta parental.
 ///
 /// **Obligatoria** antes de cualquier compra o enlace externo en un producto
@@ -75,19 +77,19 @@ class _ParentalGateDialogState extends State<_ParentalGateDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Row(
+      title: Row(
         children: [
-          Text('🔒', style: TextStyle(fontSize: 20)),
-          SizedBox(width: 8),
-          Expanded(child: Text('Control parental')),
+          const Text('🔒', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(context.l10n.tr('parental_title'))),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Para continuar, pide a un adulto que resuelva:',
-            style: TextStyle(fontSize: 13, color: Colors.black54),
+          Text(
+            context.l10n.tr('parental_prompt'),
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
           const SizedBox(height: 16),
           Text(
@@ -117,9 +119,9 @@ class _ParentalGateDialogState extends State<_ParentalGateDialog> {
           ),
           if (_wrong) ...[
             const SizedBox(height: 12),
-            const Text(
-              'Respuesta incorrecta, inténtalo de nuevo.',
-              style: TextStyle(color: Colors.red, fontSize: 12),
+            Text(
+              context.l10n.tr('parental_wrong'),
+              style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ],
         ],
@@ -127,7 +129,7 @@ class _ParentalGateDialogState extends State<_ParentalGateDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
+          child: Text(context.l10n.tr('cancel')),
         ),
       ],
     );

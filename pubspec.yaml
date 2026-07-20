@@ -11,6 +11,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Internationalization (Global Material/Widgets/Cupertino localizations)
+  flutter_localizations:
+    sdk: flutter
+
   # State management
   flutter_bloc: ^8.1.6
   equatable: ^2.0.5

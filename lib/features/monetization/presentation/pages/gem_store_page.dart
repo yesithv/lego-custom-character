@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -48,7 +49,7 @@ class _GemStorePageState extends State<GemStorePage> {
     if (_busy) return;
 
     if (_ent.gems < product.gemPrice) {
-      _snack('No tienes suficientes gemas. Consíguelas en la Tienda.');
+      _snack(context.l10n.tr('not_enough_gems_store'));
       return;
     }
 
@@ -61,7 +62,7 @@ class _GemStorePageState extends State<GemStorePage> {
 
     if (!result.success) {
       setState(() => _busy = false);
-      _snack('No tienes suficientes gemas.');
+      _snack(context.l10n.tr('not_enough_gems'));
       return;
     }
 
@@ -84,7 +85,9 @@ class _GemStorePageState extends State<GemStorePage> {
       _ent = result.entitlements;
       _busy = false;
     });
-    _snack('¡Canjeado! "${product.title}".');
+    _snack(context.l10n.trp('redeemed_done', {
+      'title': context.l10n.storeProductTitle(product.id, product.title),
+    }));
   }
 
   Future<bool?> _confirm(GemProduct product) {
@@ -92,11 +95,14 @@ class _GemStorePageState extends State<GemStorePage> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Canjear ${product.title}'),
+        title: Text(context.l10n.trp('redeem_prefix', {
+          'title': context.l10n.storeProductTitle(product.id, product.title),
+        })),
         content: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Cuesta ', style: TextStyle(fontSize: 15)),
+            Text(context.l10n.tr('costs_label'),
+                style: const TextStyle(fontSize: 15)),
             const Text('💎 ', style: TextStyle(fontSize: 18)),
             Text('${product.gemPrice}',
                 style: const TextStyle(
@@ -106,7 +112,7 @@ class _GemStorePageState extends State<GemStorePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -116,8 +122,8 @@ class _GemStorePageState extends State<GemStorePage> {
                   RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Canjear',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: Text(context.l10n.tr('redeem_action'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -138,8 +144,8 @@ class _GemStorePageState extends State<GemStorePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
-        title: const Text('💎 Canjear gemas',
-            style: TextStyle(fontWeight: FontWeight.w900)),
+        title: Text('💎 ${context.l10n.tr('redeem_gems_title')}',
+            style: const TextStyle(fontWeight: FontWeight.w900)),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -199,8 +205,8 @@ class _GemBalance extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Text('gemas disponibles',
-              style: TextStyle(color: Colors.white60, fontSize: 13)),
+          Text(context.l10n.tr('gems_available'),
+              style: const TextStyle(color: Colors.white60, fontSize: 13)),
         ],
       ),
     );
@@ -249,7 +255,7 @@ class _GemProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.title,
+                  context.l10n.storeProductTitle(product.id, product.title),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -258,7 +264,8 @@ class _GemProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  product.description,
+                  context.l10n
+                      .storeProductDescription(product.id, product.description),
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],

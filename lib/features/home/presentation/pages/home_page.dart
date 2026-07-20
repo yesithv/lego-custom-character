@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
@@ -119,7 +120,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: _SecondaryTile(
                           icon: Icons.face_retouching_natural,
-                          label: 'Mis personajes',
+                          label: context.l10n.tr('my_characters'),
                           iconColor: Colors.white,
                           onTap: () => context.goNamed('gallery'),
                         ),
@@ -128,7 +129,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: _SecondaryTile(
                           icon: Icons.emoji_events_rounded,
-                          label: 'Ver Ranking',
+                          label: context.l10n.tr('view_ranking'),
                           iconColor: const Color(0xFFFFD700),
                           onTap: () => _openRanking(context),
                         ),
@@ -240,14 +241,15 @@ class _PlayButtonState extends State<_PlayButton> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.play_arrow_rounded, size: 32, color: Color(0xFF3D2C00)),
-            SizedBox(width: 8),
+            const Icon(Icons.play_arrow_rounded,
+                size: 32, color: Color(0xFF3D2C00)),
+            const SizedBox(width: 8),
             Text(
-              '¡JUGAR!',
-              style: TextStyle(
+              context.l10n.tr('action_play'),
+              style: const TextStyle(
                 color: Color(0xFF3D2C00),
                 fontWeight: FontWeight.w900,
                 fontSize: 24,
@@ -318,15 +320,15 @@ class _TestModeBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFB388FF), width: 1.5),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('🧪', style: TextStyle(fontSize: 16)),
-            SizedBox(width: 8),
+            const Text('🧪', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'MODO PRUEBA ACTIVO · todo desbloqueado',
-                style: TextStyle(
+                context.l10n.tr('home_test_banner'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 12.5,
@@ -346,13 +348,13 @@ class _TestModeSheet extends StatelessWidget {
   final VoidCallback onOpenAnalytics;
   const _TestModeSheet({required this.onOpenAnalytics});
 
-  static const _perks = [
-    ('🎡', 'Ruleta diaria siempre disponible'),
-    ('🧩', 'Todos los accesorios de pago, gratis'),
-    ('🗺️', 'Todos los mundos y pistas desbloqueados'),
-    ('🏁', 'Pista súper corta: el jefe aparece enseguida'),
-    ('💪', 'Jefe muy débil: derrótalo de un golpe'),
-  ];
+  static List<(String, String)> _perksFor(AppLocalizations l10n) => [
+        ('🎡', l10n.tr('home_perk_roulette')),
+        ('🧩', l10n.tr('home_perk_accessories')),
+        ('🗺️', l10n.tr('home_perk_worlds')),
+        ('🏁', l10n.tr('home_perk_short_track')),
+        ('💪', l10n.tr('home_perk_weak_boss')),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -369,10 +371,10 @@ class _TestModeSheet extends StatelessWidget {
                 children: [
                   const Text('🧪', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Modo de prueba',
-                      style: TextStyle(
+                      context.l10n.tr('test_mode'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 20,
@@ -389,12 +391,12 @@ class _TestModeSheet extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 isOn
-                    ? 'Encendido: se ignoran todas las limitaciones del juego.'
-                    : 'Apagado: el juego funciona con sus reglas normales.',
+                    ? context.l10n.tr('test_mode_on_desc')
+                    : context.l10n.tr('test_mode_off_desc'),
                 style: const TextStyle(color: Colors.white60, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              ..._perks.map(
+              ..._perksFor(context.l10n).map(
                 (p) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
@@ -417,9 +419,9 @@ class _TestModeSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Los cambios de pista y jefe se aplican en la próxima carrera.',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
+              Text(
+                context.l10n.tr('test_mode_footer'),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -433,7 +435,7 @@ class _TestModeSheet extends StatelessWidget {
                   ),
                 ),
                 icon: const Text('📊', style: TextStyle(fontSize: 16)),
-                label: const Text('Ver panel de analítica'),
+                label: Text(context.l10n.tr('view_analytics_panel')),
               ),
             ],
           ),
@@ -627,23 +629,23 @@ class _ActiveCharacterCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white24, width: 1.5),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('🧱', style: TextStyle(fontSize: 40)),
-                  SizedBox(height: 8),
+                  const Text('🧱', style: TextStyle(fontSize: 40)),
+                  const SizedBox(height: 8),
                   Text(
-                    'Crea tu corredor',
-                    style: TextStyle(
+                    context.l10n.tr('home_create_runner'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Necesitas un personaje para correr',
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                    context.l10n.tr('home_need_char_run'),
+                    style: const TextStyle(color: Colors.white60, fontSize: 12),
                   ),
                 ],
               ),
@@ -660,7 +662,7 @@ class _ActiveCharacterCard extends StatelessWidget {
               _CharacterStage(appearance: character.appearance),
               const SizedBox(height: 8),
               Text(
-                character.name.isEmpty ? 'Sin nombre' : character.name,
+                character.name.isEmpty ? context.l10n.tr('no_name') : character.name,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -745,13 +747,6 @@ class _CharacterTypeBadge extends StatelessWidget {
 
   const _CharacterTypeBadge({required this.type});
 
-  String get _label => switch (type) {
-        CharacterType.hero => 'Héroe',
-        CharacterType.villain => 'Villano',
-        CharacterType.neutral => 'Neutral',
-        CharacterType.mysterious => 'Misterioso',
-      };
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -762,7 +757,7 @@ class _CharacterTypeBadge extends StatelessWidget {
         border: Border.all(color: Colors.white38, width: 1.5),
       ),
       child: Text(
-        _label,
+        context.l10n.characterType(type),
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,

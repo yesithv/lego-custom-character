@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/entities/preset_characters.dart';
 import '../widgets/character_preview.dart';
@@ -21,9 +22,9 @@ class PresetGalleryPage extends StatelessWidget {
           color: Colors.black87,
           onPressed: () => context.goNamed('gallery'),
         ),
-        title: const Text(
-          'Personajes precargados',
-          style: TextStyle(
+        title: Text(
+          context.l10n.tr('preset_characters'),
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             fontSize: 20,
             color: Colors.black87,
@@ -33,13 +34,12 @@ class PresetGalleryPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
                 AppSpacing.horizontal, 8, AppSpacing.horizontal, 4),
             child: Text(
-              'Elige un personaje para cargarlo con toda su configuración. '
-              'Luego podrás cambiar lo que quieras antes de guardarlo.',
-              style: TextStyle(color: Colors.black54, fontSize: 13),
+              context.l10n.tr('preset_intro'),
+              style: const TextStyle(color: Colors.black54, fontSize: 13),
             ),
           ),
           for (final collection in presetCollections)
@@ -55,6 +55,17 @@ class _CollectionSection extends StatelessWidget {
   final String collection;
   const _CollectionSection({required this.collection});
 
+  String _collectionLabel(BuildContext context) {
+    switch (collection) {
+      case 'Ninjas dorados':
+        return context.l10n.tr('collection_golden_ninjas');
+      case 'Superhéroes':
+        return context.l10n.tr('collection_superheroes');
+      default:
+        return collection;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final presets = presetsForCollection(collection);
@@ -65,7 +76,7 @@ class _CollectionSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.horizontal, 16, AppSpacing.horizontal, 8),
           child: Text(
-            collection,
+            _collectionLabel(context),
             style: const TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 18,

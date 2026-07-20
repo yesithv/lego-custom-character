@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/entities/entitlements.dart';
 import '../../domain/entities/store_product.dart';
 import '../../domain/entities/vip_perks.dart';
@@ -94,14 +95,14 @@ class InAppPurchaseStoreRepository implements StoreRepository {
       return PurchaseResult(
         success: false,
         entitlements: current,
-        error: 'Ya tienes este producto.',
+        error: L10n.t('iap_already_owned'),
       );
     }
     if (!await _iap.isAvailable()) {
       return PurchaseResult(
         success: false,
         entitlements: current,
-        error: 'La tienda no está disponible.',
+        error: L10n.t('iap_store_unavailable'),
       );
     }
 
@@ -110,7 +111,7 @@ class InAppPurchaseStoreRepository implements StoreRepository {
       return PurchaseResult(
         success: false,
         entitlements: current,
-        error: 'Producto no encontrado en la tienda (revisa el SKU "${product.id}").',
+        error: L10n.tp('iap_product_not_found', {'id': product.id}),
       );
     }
 
@@ -153,7 +154,7 @@ class InAppPurchaseStoreRepository implements StoreRepository {
                 PurchaseResult(
                   success: false,
                   entitlements: _ds.get().toEntity(),
-                  error: p.error?.message ?? 'Error en la compra.',
+                  error: p.error?.message ?? L10n.t('iap_purchase_error'),
                 ),
               );
         case PurchaseStatus.canceled:
@@ -162,7 +163,7 @@ class InAppPurchaseStoreRepository implements StoreRepository {
                 PurchaseResult(
                   success: false,
                   entitlements: _ds.get().toEntity(),
-                  error: 'Compra cancelada.',
+                  error: L10n.t('iap_purchase_canceled'),
                 ),
               );
         case PurchaseStatus.pending:

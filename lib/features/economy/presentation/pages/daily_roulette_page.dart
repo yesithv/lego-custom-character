@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../character_editor/domain/entities/character.dart';
@@ -141,9 +142,9 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => context.goNamed('home'),
             ),
-            title: const Text(
-              '🎡 Ruleta Diaria',
-              style: TextStyle(
+            title: Text(
+              '🎡 ${context.l10n.tr('roulette_title')}',
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
                 fontSize: 20,
@@ -232,11 +233,11 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
 
                 // Indicador de giro disponible
                 if (!_spinning && !_done)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: Text(
-                      '✨ 1 giro disponible hoy',
-                      style: TextStyle(
+                      '✨ ${context.l10n.tr('roulette_one_spin')}',
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -249,10 +250,10 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
                   padding: const EdgeInsets.fromLTRB(40, 0, 40, 20),
                   child: _SpinButton(
                     label: _spinning && !_done
-                        ? '¡Girando!'
+                        ? context.l10n.tr('roulette_spinning')
                         : _done
-                            ? '¡Genial!'
-                            : '¡GIRAR!',
+                            ? context.l10n.tr('roulette_nice')
+                            : context.l10n.tr('roulette_spin'),
                     done: _done,
                     onTap: _spinning && !_done
                         ? null
@@ -542,9 +543,9 @@ class _RewardCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '¡Premio!',
-                  style: TextStyle(
+                Text(
+                  context.l10n.tr('roulette_prize'),
+                  style: const TextStyle(
                     color: Colors.white60,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -581,7 +582,7 @@ class _CoinBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
       ),
       child: Text(
-        '🪙  $coins monedas',
+        '🪙  ${context.l10n.trp('roulette_coins', {'coins': coins})}',
         style: const TextStyle(
           color: Color(0xFFFFD700),
           fontWeight: FontWeight.w900,
@@ -653,27 +654,27 @@ class _ClaimedPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            '¡Ya reclamaste tu ruleta hoy!',
+          Text(
+            context.l10n.tr('roulette_already'),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
               fontSize: 21,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Vuelve mañana para girar de nuevo.',
+          Text(
+            context.l10n.tr('roulette_come_back'),
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: const TextStyle(color: Colors.white54, fontSize: 14),
           ),
           const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
                 child: _InfoCard(
-                  label: 'HOY GANASTE',
+                  label: context.l10n.tr('roulette_won_today'),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -695,17 +696,17 @@ class _ClaimedPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: _InfoCard(
-                  label: 'PRÓXIMO GIRO',
-                  child: _Countdown(),
+                  label: context.l10n.tr('roulette_next_spin'),
+                  child: const _Countdown(),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 18),
           _SpinButton(
-            label: 'Entendido',
+            label: context.l10n.tr('ok_understood'),
             done: false,
             onTap: () => context.goNamed('home'),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
@@ -264,9 +265,9 @@ class _MissionsBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '🎯  Misiones activas',
-            style: TextStyle(
+          Text(
+            '🎯  ${context.l10n.tr('missions_active')}',
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
               fontSize: 15,
@@ -289,9 +290,9 @@ class _MissionsBanner extends StatelessWidget {
                 );
               }
               if (state.missions.isEmpty) {
-                return const Text(
-                  'Sin misiones activas por ahora.',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                return Text(
+                  context.l10n.tr('no_active_missions'),
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
                 );
               }
               // Cada misión en paralelo (columnas) para reducir la altura.
@@ -370,7 +371,7 @@ class _MissionMini extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            mission.title,
+            context.l10n.missionTitle(mission),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -433,10 +434,10 @@ class _MusicPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '🎵  Música del mundo',
-                  style: TextStyle(
+                  '🎵  ${context.l10n.tr('world_music')}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
@@ -520,9 +521,9 @@ class _MusicPanel extends StatelessWidget {
             }),
           ] else ...[
             const SizedBox(height: 6),
-            const Text(
-              'Correrás en silencio. Activa el interruptor para elegir una pista.',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
+            Text(
+              context.l10n.tr('music_off_hint'),
+              style: const TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
         ],
@@ -617,14 +618,14 @@ class _RunButtonState extends State<_RunButton> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('🏁', style: TextStyle(fontSize: 22)),
-            SizedBox(width: 10),
+            const Text('🏁', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 10),
             Text(
-              '¡CORRER!',
-              style: TextStyle(
+              context.l10n.tr('action_run'),
+              style: const TextStyle(
                 color: Color(0xFF3D2C00),
                 fontWeight: FontWeight.w900,
                 fontSize: 22,
@@ -676,7 +677,7 @@ class _CharacterTypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = _labels[type]!;
+    final (_, color) = _labels[type]!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
@@ -685,7 +686,7 @@ class _CharacterTypeBadge extends StatelessWidget {
         border: Border.all(color: color, width: 1.5),
       ),
       child: Text(
-        label,
+        context.l10n.characterType(type),
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,
