@@ -32,6 +32,10 @@ dependencies:
   uuid: ^4.4.2
   get_it: ^8.0.2
 
+  # Compras integradas (IAP). Solo iOS/Android; en web no hay implementación
+  # (nunca se instancia el adaptador real en web → la build web no se afecta).
+  in_app_purchase: ^3.2.0
+
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
