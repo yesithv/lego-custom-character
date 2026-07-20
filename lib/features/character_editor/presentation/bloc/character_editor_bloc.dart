@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/usecases/delete_character.dart';
 import '../../domain/usecases/get_all_characters.dart';
@@ -121,7 +122,7 @@ class CharacterEditorBloc
     if (current == null || current.name.trim().isEmpty) {
       emit(state.copyWith(
         status: EditorStatus.error,
-        errorMessage: 'El personaje necesita un nombre.',
+        errorMessage: L10n.t('editor_needs_name'),
       ));
       return;
     }
@@ -157,7 +158,7 @@ class CharacterEditorBloc
     final now = DateTime.now();
     final duplicate = Character(
       id: _uuid.v4(),
-      name: '${original.name} (copia)',
+      name: '${original.name} ${L10n.t('copy_suffix')}',
       type: original.type,
       specialPower: original.specialPower,
       appearance: original.appearance,

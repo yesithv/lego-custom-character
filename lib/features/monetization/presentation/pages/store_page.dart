@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -54,7 +55,9 @@ class _StorePageState extends State<StorePage> {
 
     final oneTime = product.type != ProductType.consumable;
     if (oneTime && _ent.owns(product.id)) {
-      _snack('Ya tienes "${product.title}".');
+      _snack(context.l10n.trp('already_owned', {
+        'title': context.l10n.storeProductTitle(product.id, product.title),
+      }));
       return;
     }
 
@@ -85,10 +88,12 @@ class _StorePageState extends State<StorePage> {
         _ent = result.entitlements;
         _busy = false;
       });
-      _snack('¡Listo! "${product.title}" desbloqueado.');
+      _snack(context.l10n.trp('purchase_done', {
+        'title': context.l10n.storeProductTitle(product.id, product.title),
+      }));
     } else {
       setState(() => _busy = false);
-      _snack(result.error ?? 'No se pudo completar la compra.');
+      _snack(result.error ?? context.l10n.tr('purchase_failed'));
     }
   }
 
@@ -96,7 +101,7 @@ class _StorePageState extends State<StorePage> {
     final e = await _store.restorePurchases();
     if (!mounted) return;
     setState(() => _ent = e);
-    _snack('Compras restauradas.');
+    _snack(context.l10n.tr('purchases_restored'));
   }
 
   Future<void> _claimVipDaily() async {
@@ -111,9 +116,9 @@ class _StorePageState extends State<StorePage> {
     if (result.gemsGranted > 0) {
       _analytics.track(AnalyticsEvents.vipDailyClaim,
           params: {'gems': result.gemsGranted});
-      _snack('¡Regalo VIP: +${result.gemsGranted} 💎!');
+      _snack(context.l10n.trp('vip_gift_snack', {'n': result.gemsGranted}));
     } else {
-      _snack('Ya reclamaste tu regalo VIP de hoy.');
+      _snack(context.l10n.tr('vip_already_claimed'));
     }
   }
 
@@ -131,13 +136,13 @@ class _StorePageState extends State<StorePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
-        title: const Text('🛍️ Tienda',
-            style: TextStyle(fontWeight: FontWeight.w900)),
+        title: Text('🛍️ ${context.l10n.tr('store_title')}',
+            style: const TextStyle(fontWeight: FontWeight.w900)),
         actions: [
           TextButton(
             onPressed: _busy ? null : _restore,
-            child: const Text('Restaurar',
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
+            child: Text(context.l10n.tr('store_restore'),
+                style: const TextStyle(color: Colors.white70, fontSize: 13)),
           ),
         ],
       ),
@@ -219,8 +224,8 @@ class _StatusHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          const Text('gemas',
-              style: TextStyle(color: Colors.white60, fontSize: 13)),
+          Text(context.l10n.tr('gems_label'),
+              style: const TextStyle(color: Colors.white60, fontSize: 13)),
           const Spacer(),
           if (ent.subscriptionActive)
             const _MiniBadge(emoji: '👑', label: 'VIP'),
@@ -269,21 +274,21 @@ class _RedeemGemsButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white24, width: 1),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Text('💎', style: TextStyle(fontSize: 18)),
-              SizedBox(width: 10),
+              const Text('💎', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Canjear gemas por premios',
-                  style: TextStyle(
+                  context.l10n.tr('redeem_gems_for_prizes'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: Colors.white54),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white54),
             ],
           ),
         ),
@@ -322,21 +327,22 @@ class _VipDailyCard extends StatelessWidget {
         children: [
           const Text('👑', style: TextStyle(fontSize: 22)),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Regalo diario VIP',
-                  style: TextStyle(
+                  context.l10n.tr('vip_daily_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
                 ),
                 Text(
-                  '+${VipPerks.dailyGems} 💎 cada día',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  context.l10n
+                      .trp('vip_daily_subtitle', {'n': VipPerks.dailyGems}),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -354,7 +360,9 @@ class _VipDailyCard extends StatelessWidget {
             ),
             onPressed: (busy || !available) ? null : onClaim,
             child: Text(
-              available ? 'Reclamar' : 'Mañana',
+              available
+                  ? context.l10n.tr('vip_claim')
+                  : context.l10n.tr('vip_tomorrow'),
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
             ),
           ),
@@ -377,15 +385,14 @@ class _StubBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFFFB300), width: 1),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Text('🧪', style: TextStyle(fontSize: 14)),
-          SizedBox(width: 8),
+          const Text('🧪', style: TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Compras simuladas (modo desarrollo). Se conectará el pago real '
-              'al publicar en las tiendas.',
-              style: TextStyle(color: Colors.white, fontSize: 11.5),
+              context.l10n.tr('store_stub_banner'),
+              style: const TextStyle(color: Colors.white, fontSize: 11.5),
             ),
           ),
         ],
@@ -436,7 +443,7 @@ class _ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.title,
+                  context.l10n.storeProductTitle(product.id, product.title),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -445,7 +452,8 @@ class _ProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  product.description,
+                  context.l10n
+                      .storeProductDescription(product.id, product.description),
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
@@ -476,8 +484,8 @@ class _OwnedChip extends StatelessWidget {
         color: const Color(0xFF43A047),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Text('Adquirido',
-          style: TextStyle(
+      child: Text(context.l10n.tr('owned'),
+          style: const TextStyle(
               color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/analytics_service.dart';
 import '../../domain/entities/analytics_event.dart';
 import '../../domain/entities/analytics_summary.dart';
@@ -46,18 +47,18 @@ class _AnalyticsDebugPageState extends State<AnalyticsDebugPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         foregroundColor: Colors.white,
-        title: const Text('📊 Analítica (local)',
-            style: TextStyle(fontWeight: FontWeight.w900)),
+        title: Text('📊 ${context.l10n.tr('analytics_title')}',
+            style: const TextStyle(fontWeight: FontWeight.w900)),
         actions: [
           IconButton(
             onPressed: _reload,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Recargar',
+            tooltip: context.l10n.tr('analytics_reload'),
           ),
           IconButton(
             onPressed: _clear,
             icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Borrar datos',
+            tooltip: context.l10n.tr('analytics_clear'),
           ),
         ],
       ),
@@ -76,17 +77,17 @@ class _AnalyticsDebugPageState extends State<AnalyticsDebugPage> {
               const SizedBox(height: 12),
               _SummaryCard(summary: summary),
               const SizedBox(height: 16),
-              const Text(
-                'Eventos recientes',
-                style: TextStyle(
+              Text(
+                context.l10n.tr('analytics_recent'),
+                style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 15),
               ),
               const SizedBox(height: 8),
               if (events.isEmpty)
-                const Text('Sin eventos todavía.',
-                    style: TextStyle(color: Colors.white54, fontSize: 13))
+                Text(context.l10n.tr('analytics_no_events'),
+                    style: const TextStyle(color: Colors.white54, fontSize: 13))
               else
                 ...events.map((e) => _EventRow(event: e)),
             ],
@@ -109,10 +110,9 @@ class _Note extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFB388FF), width: 1),
       ),
-      child: const Text(
-        'Datos solo de este dispositivo (first-party). Para métricas agregadas '
-        'de negocio se enviarán a un backend propio.',
-        style: TextStyle(color: Colors.white, fontSize: 11.5),
+      child: Text(
+        context.l10n.tr('analytics_footer'),
+        style: const TextStyle(color: Colors.white, fontSize: 11.5),
       ),
     );
   }
@@ -139,28 +139,42 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Metric(label: 'Sesiones', value: '${summary.sessions}'),
-              _Metric(label: 'Eventos', value: '${summary.totalEvents}'),
-              _Metric(label: 'Días activos', value: '${summary.activeDays}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_sessions'),
+                  value: '${summary.sessions}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_events'),
+                  value: '${summary.totalEvents}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_active_days'),
+                  value: '${summary.activeDays}'),
             ],
           ),
           const Divider(color: Colors.white12, height: 24),
           Row(
             children: [
-              _Metric(label: 'Carreras', value: '${summary.runs}'),
-              _Metric(label: 'Victorias', value: '${summary.victories}'),
               _Metric(
-                  label: 'Tasa victoria',
+                  label: context.l10n.tr('analytics_runs'),
+                  value: '${summary.runs}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_victories'),
+                  value: '${summary.victories}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_win_rate'),
                   value: _pct(summary.victoryRate)),
             ],
           ),
           const Divider(color: Colors.white12, height: 24),
           Row(
             children: [
-              _Metric(label: 'Tienda', value: '${summary.storeOpens}'),
-              _Metric(label: 'Compras', value: '${summary.purchases}'),
               _Metric(
-                  label: 'Conversión',
+                  label: context.l10n.tr('analytics_store'),
+                  value: '${summary.storeOpens}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_purchases'),
+                  value: '${summary.purchases}'),
+              _Metric(
+                  label: context.l10n.tr('analytics_conversion'),
                   value: _pct(summary.purchaseConversion)),
             ],
           ),
@@ -169,7 +183,9 @@ class _SummaryCard extends StatelessWidget {
             children: [
               _Metric(label: 'D1', value: summary.retainedD1 ? '✓' : '—'),
               _Metric(label: 'D7', value: summary.retainedD7 ? '✓' : '—'),
-              _Metric(label: '1er uso', value: _date(summary.firstOpen)),
+              _Metric(
+                  label: context.l10n.tr('analytics_first_use'),
+                  value: _date(summary.firstOpen)),
             ],
           ),
         ],

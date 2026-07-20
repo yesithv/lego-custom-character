@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/domain/entities/character.dart';
@@ -201,9 +202,9 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                           onTap: () => context.goNamed('home'),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Elige tu mundo',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.tr('choose_your_world'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
                             fontSize: 22,
@@ -217,12 +218,12 @@ class _WorldSelectionViewState extends State<_WorldSelectionView> {
                     const Expanded(child: _NoCharactersState())
                   else ...[
                     // Etiqueta + chips de personaje (imagen + nombre debajo)
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
                           AppSpacing.horizontal, 4, AppSpacing.horizontal, 8),
                       child: Text(
-                        'CORREDOR',
-                        style: TextStyle(
+                        context.l10n.tr('runner_label'),
+                        style: const TextStyle(
                           color: Colors.white54,
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
@@ -281,10 +282,10 @@ class _NoCharactersState extends StatelessWidget {
           children: [
             const Text('🧱', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 12),
-            const Text(
-              'Necesitas un personaje para jugar',
+            Text(
+              context.l10n.tr('need_char_play'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
@@ -294,7 +295,7 @@ class _NoCharactersState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.goNamed('editor-new'),
               icon: const Icon(Icons.add),
-              label: const Text('Crear personaje'),
+              label: Text(context.l10n.tr('create_character')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFD700),
                 foregroundColor: const Color(0xFF3D2C00),
@@ -396,7 +397,7 @@ class _WorldCard extends StatelessWidget {
       extra: {
         'character': character,
         'worldId': world.id,
-        'worldName': world.name,
+        'worldName': context.l10n.worldName(world.id),
         'worldEmoji': world.emoji,
         'worldColor': world.color,
       },
@@ -409,8 +410,12 @@ class _WorldCard extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Llevas 🪙 $coinsEarned de ${world.unlockCost}. '
-          '¡Te faltan $remaining para desbloquear ${world.name}!',
+          context.l10n.trp('world_locked_snack', {
+            'earned': coinsEarned,
+            'cost': world.unlockCost,
+            'remaining': remaining,
+            'name': context.l10n.worldName(world.id),
+          }),
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -476,7 +481,7 @@ class _WorldCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              world.name,
+                              context.l10n.worldName(world.id),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -495,7 +500,7 @@ class _WorldCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        world.description,
+                        context.l10n.worldDescription(world.id),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -511,7 +516,8 @@ class _WorldCard extends StatelessWidget {
                         children: [
                           _DistancePill(text: world.trackLabel),
                           if (!isLocked)
-                            ...world.tags.map((t) => _ZoneChip(t)),
+                            ...world.tags.map(
+                                (t) => _ZoneChip(context.l10n.worldTag(t))),
                         ],
                       ),
                       if (isLocked) ...[

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
@@ -61,8 +62,8 @@ class _EditorViewState extends State<_EditorView> {
       listener: (context, state) {
         if (state.showSaveSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Personaje guardado!'),
+            SnackBar(
+              content: Text(context.l10n.tr('editor_saved')),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
@@ -103,7 +104,7 @@ class _EditorViewState extends State<_EditorView> {
             buildWhen: (p, c) => p.currentCharacter?.name != c.currentCharacter?.name,
             builder: (context, state) => Text(
               state.currentCharacter?.name.isEmpty ?? true
-                  ? 'Nuevo personaje'
+                  ? context.l10n.tr('editor_new_character')
                   : state.currentCharacter!.name,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
@@ -114,7 +115,7 @@ class _EditorViewState extends State<_EditorView> {
           actions: [
             // Guardar y correr de una vez con este personaje.
             IconButton(
-              tooltip: 'Guardar y jugar',
+              tooltip: context.l10n.tr('editor_save_and_play'),
               onPressed: () {
                 _playAfterSave = true;
                 context
@@ -239,9 +240,9 @@ class _PreviewSectionState extends State<_PreviewSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'NOMBRE',
-                  style: TextStyle(
+                Text(
+                  context.l10n.tr('editor_name_label'),
+                  style: const TextStyle(
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
@@ -254,7 +255,7 @@ class _PreviewSectionState extends State<_PreviewSection> {
                   onChanged: (v) =>
                       context.read<CharacterEditorBloc>().add(UpdateName(v)),
                   decoration: InputDecoration(
-                    hintText: 'Nombre del personaje',
+                    hintText: context.l10n.tr('editor_name_hint'),
                     filled: true,
                     fillColor: Colors.white,
                     isDense: true,
@@ -327,22 +328,23 @@ class _EditorTabs extends StatelessWidget {
           // Fondo oscuro para que las pestañas contrasten con el tema.
           Container(
             color: const Color(0xFF121A2C),
-            child: const TabBar(
+            child: TabBar(
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              labelColor: Color(0xFFFFD700),
+              labelColor: const Color(0xFFFFD700),
               unselectedLabelColor: Colors.white70,
-              indicatorColor: Color(0xFFFFD700),
+              indicatorColor: const Color(0xFFFFD700),
               indicatorWeight: 3,
-              labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              labelStyle:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               unselectedLabelStyle:
-                  TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               tabs: [
-                Tab(text: 'Cabeza'),
-                Tab(text: 'Cabello'),
-                Tab(text: 'Torso'),
-                Tab(text: 'Piernas'),
-                Tab(text: 'Accesorios'),
+                Tab(text: context.l10n.tr('tab_head')),
+                Tab(text: context.l10n.tr('tab_hair')),
+                Tab(text: context.l10n.tr('tab_torso')),
+                Tab(text: context.l10n.tr('tab_legs')),
+                Tab(text: context.l10n.tr('tab_accessories')),
               ],
             ),
           ),
@@ -394,7 +396,8 @@ class _SkinColorTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Color de piel', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_skin'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -430,46 +433,49 @@ class _SkinColorTab extends StatelessWidget {
             }).toList(),
           ),
           const SizedBox(height: 20),
-          const Text('Ojos', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_eyes'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<EyeStyle>(
             values: EyeStyle.values,
             selected: appearance.eyes,
-            label: _eyeLabel,
+            label: (e) => context.l10n.tr('eye_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(eyes: e)),
                 ),
           ),
           const SizedBox(height: 16),
-          const Text('Cejas', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_eyebrows'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<EyebrowStyle>(
             values: EyebrowStyle.values,
             selected: appearance.eyebrows,
-            label: _eyebrowLabel,
+            label: (e) => context.l10n.tr('eyebrow_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(eyebrows: e)),
                 ),
           ),
           const SizedBox(height: 16),
-          const Text('Boca', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_mouth'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<MouthStyle>(
             values: MouthStyle.values,
             selected: appearance.mouth,
-            label: _mouthLabel,
+            label: (e) => context.l10n.tr('mouth_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(mouth: e)),
                 ),
           ),
           const SizedBox(height: 20),
-          const Text('Extras faciales',
-              style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_facial_extra'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<FacialExtra>(
             values: FacialExtra.values,
             selected: appearance.facialExtra,
-            label: _facialExtraLabel,
+            label: (e) => context.l10n.tr('facial_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(facialExtra: e)),
                 ),
@@ -479,46 +485,6 @@ class _SkinColorTab extends StatelessWidget {
     );
   }
 
-  static String _eyeLabel(EyeStyle e) => switch (e) {
-        EyeStyle.happy => 'Feliz',
-        EyeStyle.angry => 'Enfadado',
-        EyeStyle.surprised => 'Sorpresa',
-        EyeStyle.sleepy => 'Dormido',
-        EyeStyle.wink => 'Guiño',
-        EyeStyle.laser => 'Láser',
-        EyeStyle.robot => 'Robot',
-        EyeStyle.crying => 'Llorando',
-        EyeStyle.starry => 'Estrellas',
-        EyeStyle.determined => 'Decidido',
-      };
-
-  static String _eyebrowLabel(EyebrowStyle e) => switch (e) {
-        EyebrowStyle.normal => 'Normales',
-        EyebrowStyle.arched => 'Arqueadas',
-        EyebrowStyle.angry => 'Enfadadas',
-        EyebrowStyle.friendly => 'Amables',
-        EyebrowStyle.absent => 'Sin cejas',
-      };
-
-  static String _mouthLabel(MouthStyle e) => switch (e) {
-        MouthStyle.smile => 'Sonrisa',
-        MouthStyle.frown => 'Enfado',
-        MouthStyle.teeth => 'Dientes',
-        MouthStyle.fangs => 'Colmillos',
-        MouthStyle.mustache => 'Bigote',
-        MouthStyle.tongueOut => 'Lengua fuera',
-        MouthStyle.silent => 'Seria',
-      };
-
-  static String _facialExtraLabel(FacialExtra e) => switch (e) {
-        FacialExtra.none => 'Ninguno',
-        FacialExtra.freckles => 'Pecas',
-        FacialExtra.blush => 'Rubor',
-        FacialExtra.scar => 'Cicatriz',
-        FacialExtra.tribalTattoo => 'Tatuaje',
-        FacialExtra.warPaint => 'Pintura',
-        FacialExtra.monocle => 'Monóculo',
-      };
 }
 
 // ── Tab: Hair ───────────────────────────────────────────────────────────────
@@ -534,30 +500,26 @@ class _HairTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Tipo', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_type'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<HeadwearType>(
             values: HeadwearType.values,
             selected: appearance.headwearType,
-            label: (e) {
-              if (e == HeadwearType.none) return 'Ninguno';
-              if (e == HeadwearType.hair) return 'Cabello';
-              if (e == HeadwearType.helmet) return 'Casco';
-              return 'Sombrero';
-            },
+            label: (e) => context.l10n.tr('headwear_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(headwearType: e)),
                 ),
           ),
           if (appearance.headwearType == HeadwearType.hair) ...[
             const SizedBox(height: 16),
-            const Text('Estilo de cabello',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            Text(context.l10n.tr('sec_hair_style'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             _EnumSelector<HairStyle>(
               values: HairStyle.values,
               selected: appearance.hairStyle,
-              label: _hairLabel,
+              label: (e) => context.l10n.tr('hair_${e.name}'),
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(hairStyle: e)),
                   ),
@@ -565,13 +527,13 @@ class _HairTab extends StatelessWidget {
           ],
           if (appearance.headwearType == HeadwearType.helmet) ...[
             const SizedBox(height: 16),
-            const Text('Tipo de casco',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            Text(context.l10n.tr('sec_helmet_type'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             _EnumSelector<HelmetStyle>(
               values: HelmetStyle.values,
               selected: appearance.helmetStyle,
-              label: _helmetLabel,
+              label: (e) => context.l10n.tr('helmet_${e.name}'),
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(helmetStyle: e)),
                   ),
@@ -579,13 +541,13 @@ class _HairTab extends StatelessWidget {
           ],
           if (appearance.headwearType == HeadwearType.hat) ...[
             const SizedBox(height: 16),
-            const Text('Tipo de sombrero',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            Text(context.l10n.tr('sec_hat_type'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             _EnumSelector<HatStyle>(
               values: HatStyle.values,
               selected: appearance.hatStyle,
-              label: _hatLabel,
+              label: (e) => context.l10n.tr('hat_${e.name}'),
               onSelect: (e) => context.read<CharacterEditorBloc>().add(
                     UpdateAppearance(appearance.copyWith(hatStyle: e)),
                   ),
@@ -596,50 +558,6 @@ class _HairTab extends StatelessWidget {
     );
   }
 
-  static String _hairLabel(HairStyle e) => switch (e) {
-        HairStyle.straight => 'Liso',
-        HairStyle.curly => 'Rizado',
-        HairStyle.afro => 'Afro',
-        HairStyle.mohawk => 'Mohicano',
-        HairStyle.ponytail => 'Coleta',
-        HairStyle.braids => 'Trenzas',
-        HairStyle.shaved => 'Rapado',
-        HairStyle.bald => 'Calvo',
-        HairStyle.messy => 'Despeinado',
-        HairStyle.swept => 'Peinado atrás',
-        HairStyle.fringe => 'Flequillo',
-        HairStyle.longBlonde => 'Largo rubio',
-        HairStyle.longBlack => 'Largo negro',
-        HairStyle.wavyBob => 'Melena ondulada',
-      };
-
-  static String _helmetLabel(HelmetStyle e) => switch (e) {
-        HelmetStyle.medieval => 'Medieval',
-        HelmetStyle.space => 'Espacial',
-        HelmetStyle.roman => 'Romano',
-        HelmetStyle.viking => 'Vikingo',
-        HelmetStyle.firefighter => 'Bombero',
-        HelmetStyle.biker => 'Motero',
-        HelmetStyle.astronaut => 'Astronauta',
-        HelmetStyle.ninjaHood => 'Capucha ninja',
-        HelmetStyle.ironMan => 'Hombre de hierro',
-        HelmetStyle.spiderMan => 'Arácnido',
-        HelmetStyle.blackPanther => 'Pantera',
-        HelmetStyle.deadpool => 'Mercenario',
-        HelmetStyle.wolverine => 'Lobezno',
-        HelmetStyle.ghostSpider => 'Arácnida fantasma',
-      };
-
-  static String _hatLabel(HatStyle e) => switch (e) {
-        HatStyle.wizard => 'Mago',
-        HatStyle.cowboy => 'Vaquero',
-        HatStyle.cap => 'Gorra',
-        HatStyle.crown => 'Corona',
-        HatStyle.tiara => 'Tiara',
-        HatStyle.topHat => 'Chistera',
-        HatStyle.pirate => 'Pirata',
-        HatStyle.conical => 'Cónico',
-      };
 }
 
 // ── Tab: Torso ──────────────────────────────────────────────────────────────
@@ -655,13 +573,13 @@ class _TorsoTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Diseño de torso',
-              style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_torso_design'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<TorsoDesign>(
             values: TorsoDesign.values,
             selected: appearance.torso,
-            label: _torsoLabel,
+            label: (e) => context.l10n.tr('torso_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(torso: e)),
                 ),
@@ -669,7 +587,8 @@ class _TorsoTab extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Text('Capa', style: TextStyle(fontWeight: FontWeight.w700)),
+              Text(context.l10n.tr('sec_cape'),
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
               const Spacer(),
               Switch(
                 value: appearance.hasCape,
@@ -680,12 +599,13 @@ class _TorsoTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text('Guantes', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_gloves'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<GloveType>(
             values: GloveType.values,
             selected: appearance.gloves,
-            label: _gloveLabel,
+            label: (e) => context.l10n.tr('glove_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(gloves: e)),
                 ),
@@ -695,44 +615,6 @@ class _TorsoTab extends StatelessWidget {
     );
   }
 
-  static String _torsoLabel(TorsoDesign e) => switch (e) {
-        TorsoDesign.plain => 'Liso',
-        TorsoDesign.police => 'Policía',
-        TorsoDesign.firefighter => 'Bombero',
-        TorsoDesign.astronaut => 'Astronauta',
-        TorsoDesign.doctor => 'Médico',
-        TorsoDesign.chef => 'Chef',
-        TorsoDesign.military => 'Militar',
-        TorsoDesign.ninja => 'Ninja',
-        TorsoDesign.pirate => 'Pirata',
-        TorsoDesign.superhero => 'Superhéroe',
-        TorsoDesign.casual => 'Casual',
-        TorsoDesign.medieval => 'Medieval',
-        TorsoDesign.futuristic => 'Futurista',
-        TorsoDesign.samurai => 'Samurái',
-        TorsoDesign.dinosaur => 'Dinosaurio',
-        TorsoDesign.robot => 'Robot',
-        TorsoDesign.monster => 'Monstruo',
-        TorsoDesign.alien => 'Alienígena',
-        TorsoDesign.tactical => 'Táctico',
-        TorsoDesign.tanktop => 'Camiseta',
-        TorsoDesign.commando => 'Comando',
-        TorsoDesign.golden => 'Dorado',
-        TorsoDesign.spiderGwen => 'Arácnida',
-        TorsoDesign.wonderWoman => 'Amazona',
-        TorsoDesign.captainMarvel => 'Capitana',
-        TorsoDesign.blackWidow => 'Viuda negra',
-      };
-
-  static String _gloveLabel(GloveType e) => switch (e) {
-        GloveType.none => 'Ninguno',
-        GloveType.boxing => 'Boxeo',
-        GloveType.medieval => 'Medieval',
-        GloveType.superhero => 'Superhéroe',
-        GloveType.claws => 'Garras',
-        GloveType.energy => 'Energía',
-        GloveType.spiderWeb => 'Telaraña',
-      };
 }
 
 // ── Tab: Legs ───────────────────────────────────────────────────────────────
@@ -748,35 +630,37 @@ class _LegsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Diseño de piernas',
-              style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_legs_design'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<LegDesign>(
             values: LegDesign.values,
             selected: appearance.legDesign,
-            label: _legDesignLabel,
+            label: (e) => context.l10n.tr('legDesign_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(legDesign: e)),
                 ),
           ),
           const SizedBox(height: 16),
-          const Text('Tipo', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_type'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<LegType>(
             values: LegType.values,
             selected: appearance.legType,
-            label: _legTypeLabel,
+            label: (e) => context.l10n.tr('legType_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(legType: e)),
                 ),
           ),
           const SizedBox(height: 16),
-          const Text('Zapatos', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(context.l10n.tr('sec_shoes'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _EnumSelector<ShoeType>(
             values: ShoeType.values,
             selected: appearance.shoes,
-            label: _shoeLabel,
+            label: (e) => context.l10n.tr('shoe_${e.name}'),
             onSelect: (e) => context.read<CharacterEditorBloc>().add(
                   UpdateAppearance(appearance.copyWith(shoes: e)),
                 ),
@@ -786,40 +670,6 @@ class _LegsTab extends StatelessWidget {
     );
   }
 
-  static String _legDesignLabel(LegDesign e) => switch (e) {
-        LegDesign.plain => 'Liso',
-        LegDesign.camouflage => 'Camuflaje',
-        LegDesign.stripes => 'Rayas',
-        LegDesign.checkered => 'Cuadros',
-        LegDesign.flames => 'Llamas',
-        LegDesign.stars => 'Estrellas',
-        LegDesign.armor => 'Armadura',
-        LegDesign.desertCamo => 'Camuflaje desierto',
-        LegDesign.mechanic => 'Mecánico',
-        LegDesign.urbanCamo => 'Camuflaje urbano',
-        LegDesign.golden => 'Dorado',
-      };
-
-  static String _legTypeLabel(LegType e) => switch (e) {
-        LegType.pants => 'Pantalón',
-        LegType.shorts => 'Pantalón corto',
-        LegType.skirt => 'Falda',
-        LegType.legArmor => 'Grebas',
-        LegType.spacesuit => 'Traje espacial',
-      };
-
-  static String _shoeLabel(ShoeType e) => switch (e) {
-        ShoeType.sneakers => 'Zapatillas',
-        ShoeType.military => 'Botas militares',
-        ShoeType.cowboy => 'Botas vaqueras',
-        ShoeType.sandals => 'Sandalias',
-        ShoeType.skates => 'Patines',
-        ShoeType.flippers => 'Aletas',
-        ShoeType.witchBoots => 'Botas de bruja',
-        ShoeType.barefoot => 'Descalzo',
-        ShoeType.heroBoots => 'Botas de héroe',
-        ShoeType.balletTeal => 'Zapatillas de ballet',
-      };
 }
 
 // ── Tab: Accessories ────────────────────────────────────────────────────────
@@ -850,11 +700,11 @@ class _AccessoriesTab extends StatelessWidget {
           builder: (context, __, ___) => ListView(
           padding: AppSpacing.scrollContent,
           children: _slotMeta.map((meta) {
-            final (label, field) = meta;
+            final field = meta.$2;
             final entries = catalogForSlot(field);
             final current = _getField(appearance.accessories, field);
             return _AccessorySlot(
-              label: label,
+              label: context.l10n.tr('slot_$field'),
               entries: entries,
               selected: current,
               unlockedParts: unlocked,
@@ -898,7 +748,9 @@ class _AccessoriesTab extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Desbloquear ${entry.name}'),
+        title: Text(context.l10n.trp('unlock_prefix', {
+          'name': context.l10n.partName(entry),
+        })),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -909,14 +761,14 @@ class _AccessoriesTab extends StatelessWidget {
               children: [
                 const Text('🪙 ', style: TextStyle(fontSize: 18)),
                 Text(
-                  '${entry.coinCost} monedas',
+                  context.l10n.trp('coins_amount', {'n': entry.coinCost}),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
               ],
             ),
             const SizedBox(height: 6),
             Text(
-              'Tienes: 🪙 $coins',
+              context.l10n.trp('you_have_coins', {'n': coins}),
               style: TextStyle(
                 color: canAfford ? Colors.black54 : Colors.red,
                 fontSize: 13,
@@ -924,10 +776,10 @@ class _AccessoriesTab extends StatelessWidget {
             ),
             if (!canAfford) ...[
               const SizedBox(height: 8),
-              const Text(
-                'No tienes suficientes monedas.\n¡Juega para ganar más!',
+              Text(
+                context.l10n.tr('not_enough_coins'),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.red, fontSize: 12),
+                style: const TextStyle(color: Colors.red, fontSize: 12),
               ),
             ],
           ],
@@ -935,7 +787,7 @@ class _AccessoriesTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.tr('cancel')),
           ),
           if (canAfford)
             ElevatedButton(
@@ -949,7 +801,8 @@ class _AccessoriesTab extends StatelessWidget {
                 Navigator.pop(context);
                 onConfirm();
               },
-              child: const Text('Desbloquear', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(context.l10n.tr('unlock_action'),
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -1013,7 +866,7 @@ class _AccessorySlot extends StatelessWidget {
           child: Row(
             children: [
               _OptionChip(
-                label: 'Ninguno',
+                label: context.l10n.tr('opt_none'),
                 isSelected: selected == null,
                 isLocked: false,
                 onTap: () => onSelect(null),
@@ -1023,7 +876,7 @@ class _AccessorySlot extends StatelessWidget {
                     unlockedParts.contains(entry.id) ||
                     TestMode.instance.isOn;
                 return _OptionChip(
-                  label: entry.name,
+                  label: context.l10n.partName(entry),
                   isSelected: selected == entry.id,
                   isLocked: !isAvailable,
                   coinCost: isAvailable ? null : entry.coinCost,
@@ -1138,16 +991,16 @@ class _RarityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label;
+    final String label = context.l10n.rarity(rarity);
     final Color color;
     if (rarity == AccessoryRarity.legendary) {
-      label = 'Legendario'; color = const Color(0xFFE67E22);
+      color = const Color(0xFFE67E22);
     } else if (rarity == AccessoryRarity.epic) {
-      label = 'Épico'; color = const Color(0xFF9B59B6);
+      color = const Color(0xFF9B59B6);
     } else if (rarity == AccessoryRarity.rare) {
-      label = 'Raro'; color = const Color(0xFF4A90E2);
+      color = const Color(0xFF4A90E2);
     } else {
-      label = 'Común'; color = Colors.grey;
+      color = Colors.grey;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

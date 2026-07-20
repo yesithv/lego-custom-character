@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
@@ -44,10 +45,10 @@ class RankingPage extends StatelessWidget {
 // Periodo del ranking (filtra por fecha de la puntuación).
 enum _Period { semana, mes, global }
 
-String _periodLabel(_Period p) => switch (p) {
-      _Period.semana => 'Semana',
-      _Period.mes => 'Mes',
-      _Period.global => 'Global',
+String _periodLabel(BuildContext context, _Period p) => switch (p) {
+      _Period.semana => context.l10n.tr('period_week'),
+      _Period.mes => context.l10n.tr('period_month'),
+      _Period.global => context.l10n.tr('period_global'),
     };
 
 class _RankingView extends StatefulWidget {
@@ -119,9 +120,9 @@ class _RankingViewState extends State<_RankingView> {
                       onTap: () => context.goNamed('home'),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Ranking',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.tr('ranking'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 22,
@@ -136,7 +137,7 @@ class _RankingViewState extends State<_RankingView> {
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.horizontal, 4, AppSpacing.horizontal, 12),
                 child: _WorldBanner(
-                  worldName: _world.name,
+                  worldName: context.l10n.worldName(_world.id),
                   worldEmoji: _world.emoji,
                   worldColor: _world.color,
                   period: _period,
@@ -251,9 +252,9 @@ class _WorldBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'MUNDO',
-                  style: TextStyle(
+                Text(
+                  context.l10n.tr('world_label'),
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
@@ -298,7 +299,7 @@ class _PeriodDropdown extends StatelessWidget {
           .map((p) => PopupMenuItem<_Period>(
                 value: p,
                 child: Text(
-                  _periodLabel(p),
+                  _periodLabel(context, p),
                   style: TextStyle(
                     color: p == period ? const Color(0xFFFFD700) : Colors.white,
                     fontWeight: FontWeight.w700,
@@ -317,7 +318,7 @@ class _PeriodDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _periodLabel(period),
+              _periodLabel(context, period),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -401,7 +402,7 @@ class _WorldChip extends StatelessWidget {
               Text(world.emoji, style: const TextStyle(fontSize: 15)),
               const SizedBox(width: 6),
               Text(
-                world.name,
+                context.l10n.worldName(world.id),
                 style: TextStyle(
                   color: selected ? const Color(0xFF3D2C00) : Colors.white70,
                   fontWeight: FontWeight.w800,
@@ -446,7 +447,9 @@ class _ScoreRow extends StatelessWidget {
     final isChampion = rank == 1;
     final highlighted = isChampion || isYou;
     final avatarColor = _avatarColors[(rank - 1) % _avatarColors.length];
-    final name = score.characterName.isEmpty ? 'Corredor' : score.characterName;
+    final name = score.characterName.isEmpty
+        ? context.l10n.tr('default_runner')
+        : score.characterName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -512,9 +515,9 @@ class _ScoreRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     text: TextSpan(
                       children: [
-                        const TextSpan(
-                          text: 'Tú ',
-                          style: TextStyle(
+                        TextSpan(
+                          text: '${context.l10n.tr('you')} ',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
                             fontSize: 15,
@@ -576,8 +579,8 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               period == _Period.global
-                  ? '¡Sé el primero en correr aquí!'
-                  : 'Sin marcas en este periodo',
+                  ? context.l10n.tr('ranking_empty_global')
+                  : context.l10n.tr('ranking_empty_period'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -586,10 +589,10 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Corre en este mundo para entrar al ranking.',
+            Text(
+              context.l10n.tr('ranking_empty_hint'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 14),
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
             ),
           ],
         ),

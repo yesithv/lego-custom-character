@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show KeyEventResult;
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../character_editor/domain/entities/character.dart';
@@ -359,7 +360,9 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     add(_boss!);
     AudioService.instance.playPowerup();
     add(ScorePopupComponent(
-      '${bossConfig.emoji} ¡${bossConfig.name}!',
+      '${bossConfig.emoji} ${L10n.tp('boss_intro', {
+            'name': L10n.t('boss_$worldId'),
+          })}',
       spawnPosition: Vector2(size.x / 2, horizonY + 30),
     ));
     notifyListeners();
@@ -441,7 +444,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     shake(magnitude: 7, duration: 0.28);
     AudioService.instance.playHit();
     add(ScorePopupComponent(
-      '¡EMBESTIDA! 💥',
+      '${L10n.t('dash_ready')} 💥',
       spawnPosition: Vector2(playerX, playerY - 30),
     ));
     // Limpia los ataques en vuelo para dar una pausa justa tras el golpe
@@ -465,7 +468,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
         ));
       }
       add(ScorePopupComponent(
-        '💥 ¡DERROTADO! 💥',
+        '💥 ${L10n.t('defeated')} 💥',
         spawnPosition: Vector2(size.x / 2, horizonY + 60),
       ));
       shake(magnitude: 14, duration: 0.5); // sacudida fuerte del K.O.

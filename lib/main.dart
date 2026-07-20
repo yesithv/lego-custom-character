@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/injection.dart';
+import 'core/l10n/app_localizations.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/analytics/domain/analytics_service.dart';
@@ -36,6 +38,17 @@ class BrixRunApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         routerConfig: AppRouter.router,
         debugShowCheckedModeBanner: false,
+        // Internacionalización: detecta el idioma del dispositivo y carga uno
+        // de los soportados; si no hay coincidencia, cae a español.
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        localeListResolutionCallback: (deviceLocales, supported) =>
+            Locale(AppLocalizations.resolveLanguage(deviceLocales)),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/entities/mission.dart';
 
 class MissionCard extends StatelessWidget {
@@ -41,7 +42,7 @@ class MissionCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  mission.title,
+                  context.l10n.missionTitle(mission),
                   style: TextStyle(
                     color: done ? Colors.green.shade300 : Colors.white,
                     fontWeight: FontWeight.w700,
@@ -65,7 +66,7 @@ class MissionCard extends StatelessWidget {
           if (!compact) ...[
             const SizedBox(height: 4),
             Text(
-              mission.description,
+              context.l10n.missionDescription(mission),
               style: const TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ],

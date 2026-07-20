@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/entities/character.dart';
 import '../bloc/character_editor_bloc.dart';
@@ -53,10 +54,10 @@ class _GalleryView extends StatelessWidget {
                         onTap: () => context.goNamed('home'),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Mis personajes',
-                          style: TextStyle(
+                          context.l10n.tr('my_characters'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
                             fontSize: 22,
@@ -157,25 +158,28 @@ class _GalleryView extends StatelessWidget {
 
   void _confirmDelete(BuildContext context, Character character) {
     final bloc = context.read<CharacterEditorBloc>();
-    final name = character.name.isEmpty ? 'este personaje' : character.name;
+    final l10n = context.l10n;
+    final name = character.name.isEmpty
+        ? l10n.tr('this_character')
+        : character.name;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF152238),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Eliminar personaje',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        title: Text(
+          l10n.tr('delete_character'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
         ),
         content: Text(
-          '¿Seguro que quieres eliminar $name? Esta acción no se puede deshacer.',
+          l10n.trp('delete_character_confirm', {'name': name}),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Colors.white70)),
+            child: Text(l10n.tr('cancel'),
+                style: const TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -188,8 +192,8 @@ class _GalleryView extends StatelessWidget {
               bloc.add(DeleteCharacterById(character.id));
               Navigator.pop(dialogContext);
             },
-            child: const Text('Eliminar',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(l10n.tr('delete'),
+                style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -263,7 +267,9 @@ class _CharacterCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
-                    character.name.isEmpty ? 'Sin nombre' : character.name,
+                    character.name.isEmpty
+                        ? context.l10n.tr('no_name')
+                        : character.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -276,7 +282,9 @@ class _CharacterCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 // Badge de tipo
-                _TypeBadge(label: _typeLabel(character.type), color: typeColor),
+                _TypeBadge(
+                    label: context.l10n.characterType(character.type),
+                    color: typeColor),
                 const SizedBox(height: 10),
                 // CTA principal: jugar con este personaje
                 _PlayCardButton(onTap: onPlay),
@@ -289,14 +297,14 @@ class _CharacterCard extends StatelessWidget {
                       icon: Icons.edit_rounded,
                       color: const Color(0xFFFFD700),
                       onTap: onEdit,
-                      tooltip: 'Editar',
+                      tooltip: context.l10n.tr('edit'),
                     ),
                     const SizedBox(width: 10),
                     _ActionChip(
                       icon: Icons.delete_outline_rounded,
                       color: const Color(0xFFFF6B81),
                       onTap: onDelete,
-                      tooltip: 'Eliminar',
+                      tooltip: context.l10n.tr('delete'),
                     ),
                   ],
                 ),
@@ -402,17 +410,18 @@ class _PlayCardButton extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
-          child: const SizedBox(
+          child: SizedBox(
             height: 34,
             width: double.infinity,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-                SizedBox(width: 4),
+                const Icon(Icons.play_arrow_rounded,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 4),
                 Text(
-                  'Jugar',
-                  style: TextStyle(
+                  context.l10n.tr('play'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
@@ -539,16 +548,17 @@ class _NewButton extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add_rounded, color: Color(0xFF3D2C00), size: 20),
-                SizedBox(width: 4),
+                const Icon(Icons.add_rounded,
+                    color: Color(0xFF3D2C00), size: 20),
+                const SizedBox(width: 4),
                 Text(
-                  'Nuevo',
-                  style: TextStyle(
+                  context.l10n.tr('new_label'),
+                  style: const TextStyle(
                     color: Color(0xFF3D2C00),
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
@@ -582,15 +592,15 @@ class _PresetsButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.auto_awesome_rounded,
+              const Icon(Icons.auto_awesome_rounded,
                   color: Color(0xFFFFD700), size: 20),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'Ver personajes precargados',
-                style: TextStyle(
+                context.l10n.tr('view_presets'),
+                style: const TextStyle(
                   color: Color(0xFFFFD700),
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
@@ -621,25 +631,25 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Text('🧱', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
-            const Text(
-              '¡Crea tu primer personaje!',
-              style: TextStyle(
+            Text(
+              context.l10n.tr('create_first_character'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Diseña tu minifigura y úsala en el runner.',
+            Text(
+              context.l10n.tr('design_minifig_hint'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onCreateTap,
               icon: const Icon(Icons.add),
-              label: const Text('Crear personaje'),
+              label: Text(context.l10n.tr('create_character')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFD700),
                 foregroundColor: const Color(0xFF3D2C00),
@@ -651,7 +661,7 @@ class _EmptyState extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onPresetsTap,
               icon: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700)),
-              label: const Text('Ver personajes precargados'),
+              label: Text(context.l10n.tr('view_presets')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 minimumSize: const Size(220, 52),
@@ -666,13 +676,6 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-String _typeLabel(CharacterType type) => switch (type) {
-      CharacterType.hero => 'Héroe',
-      CharacterType.villain => 'Villano',
-      CharacterType.neutral => 'Neutral',
-      CharacterType.mysterious => 'Misterioso',
-    };
 
 Color _typeColor(CharacterType type) => switch (type) {
       CharacterType.hero => const Color(0xFF4A90E2),

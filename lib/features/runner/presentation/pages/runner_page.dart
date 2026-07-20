@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
@@ -408,8 +409,9 @@ class _BossBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   game.phase == GamePhase.bossIntro
-                      ? '¡${cfg.name} se acerca!'
-                      : cfg.name,
+                      ? context.l10n.trp('boss_approaching',
+                          {'name': context.l10n.bossName(game.worldId)})
+                      : context.l10n.bossName(game.worldId),
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
@@ -461,9 +463,9 @@ class _BossBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        const Text(
-          '⚡ Esquiva ataques para cargar tu EMBESTIDA',
-          style: TextStyle(
+        Text(
+          '⚡ ${context.l10n.tr('dash_hint')}',
+          style: const TextStyle(
             color: Colors.white70,
             fontSize: 10,
             fontWeight: FontWeight.w600,
@@ -588,7 +590,7 @@ class _CoinCombo extends StatelessWidget {
                 border: Border.all(color: Colors.white, width: 1.5),
               ),
               child: Text(
-                '+$streak combo!',
+                '+$streak ${context.l10n.tr('combo')}!',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -879,9 +881,12 @@ class _ZoneBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (zone) {
-      RunnerZone.inicio => ('Zona Inicio', const Color(0xFF43A047)),
-      RunnerZone.nucleo => ('Zona Núcleo', const Color(0xFFF57C00)),
-      RunnerZone.caos => ('Zona Caos', const Color(0xFFE53935)),
+      RunnerZone.inicio =>
+        (context.l10n.tr('zone_start'), const Color(0xFF43A047)),
+      RunnerZone.nucleo =>
+        (context.l10n.tr('zone_core'), const Color(0xFFF57C00)),
+      RunnerZone.caos =>
+        (context.l10n.tr('zone_chaos'), const Color(0xFFE53935)),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -928,9 +933,9 @@ class _PauseOverlay extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '⏸ Pausa',
-                    style: TextStyle(
+                  Text(
+                    '⏸ ${context.l10n.tr('pause')}',
+                    style: const TextStyle(
                       color: Color(0xFFFFD700),
                       fontWeight: FontWeight.w900,
                       fontSize: 22,
@@ -950,9 +955,9 @@ class _PauseOverlay extends StatelessWidget {
                       ),
                       onPressed: onResume,
                       icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text(
-                        'Continuar',
-                        style: TextStyle(
+                      label: Text(
+                        context.l10n.tr('resume'),
+                        style: const TextStyle(
                             fontWeight: FontWeight.w800, fontSize: 16),
                       ),
                     ),
@@ -971,7 +976,7 @@ class _PauseOverlay extends StatelessWidget {
                       ),
                       onPressed: onExit,
                       icon: const Icon(Icons.map_outlined, size: 18),
-                      label: const Text('Salir al mapa'),
+                      label: Text(context.l10n.tr('exit_to_map')),
                     ),
                   ),
                 ],
@@ -1024,18 +1029,18 @@ class _GameOverOverlay extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  '¡Sigue creando!',
-                  style: TextStyle(
+                Text(
+                  context.l10n.tr('keep_creating'),
+                  style: const TextStyle(
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.w900,
                     fontSize: 26,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  '¡Casi llegas al podio!',
-                  style: TextStyle(color: Colors.white60, fontSize: 14),
+                Text(
+                  context.l10n.tr('almost_podium'),
+                  style: const TextStyle(color: Colors.white60, fontSize: 14),
                 ),
                 const SizedBox(height: 20),
 
@@ -1046,7 +1051,7 @@ class _GameOverOverlay extends StatelessWidget {
                       child: _StatBox(
                         icon: '📏',
                         value: _fmtNum(game.meters),
-                        label: 'metros',
+                        label: context.l10n.tr('stat_meters'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1054,7 +1059,7 @@ class _GameOverOverlay extends StatelessWidget {
                       child: _StatBox(
                         icon: '🪙',
                         value: _fmtNum(game.coins),
-                        label: 'monedas',
+                        label: context.l10n.tr('stat_coins'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1062,7 +1067,7 @@ class _GameOverOverlay extends StatelessWidget {
                       child: _StatBox(
                         icon: '⭐',
                         value: _fmtNum(game.score),
-                        label: 'puntos',
+                        label: context.l10n.tr('stat_points'),
                       ),
                     ),
                   ],
@@ -1085,16 +1090,18 @@ class _GameOverOverlay extends StatelessWidget {
                         return Padding(
                           padding: const EdgeInsets.only(left: 12),
                           child: isNew
-                              ? const Text(
-                                  '🎉 ¡Nuevo récord!',
-                                  style: TextStyle(
+                              ? Text(
+                                  '🎉 ${context.l10n.tr('new_record')}',
+                                  style: const TextStyle(
                                     color: Color(0xFFFFD700),
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
                                   ),
                                 )
                               : Text(
-                                  '🥇 Récord: $pb pts',
+                                  '🥇 ${context.l10n.trp('record_pts', {
+                                        'pb': pb
+                                      })}',
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w700,
@@ -1112,7 +1119,7 @@ class _GameOverOverlay extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '🎯 Misiones completadas',
+                      '🎯 ${context.l10n.tr('missions_completed')}',
                       style: TextStyle(
                         color: Colors.green.shade300,
                         fontWeight: FontWeight.w700,
@@ -1128,13 +1135,13 @@ class _GameOverOverlay extends StatelessWidget {
 
                 _GoldActionButton(
                   icon: Icons.replay_rounded,
-                  label: 'Jugar de nuevo',
+                  label: context.l10n.tr('play_again'),
                   onTap: onRestart,
                 ),
                 const SizedBox(height: 14),
                 _DarkActionButton(
                   icon: Icons.map_rounded,
-                  label: 'Elegir mundo',
+                  label: context.l10n.tr('choose_world'),
                   onTap: onExit,
                 ),
                 const SizedBox(height: 6),
@@ -1148,9 +1155,9 @@ class _GameOverOverlay extends StatelessWidget {
                       'worldColor': worldColor,
                     },
                   ),
-                  child: const Text(
-                    '🏆  Ver ranking',
-                    style: TextStyle(
+                  child: Text(
+                    '🏆  ${context.l10n.tr('view_ranking_short')}',
+                    style: const TextStyle(
                       color: Color(0xFFFFD700),
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -1219,9 +1226,9 @@ class _VictoryOverlay extends StatelessWidget {
                     const SizedBox(height: 24),
                     const Text('🏆', style: TextStyle(fontSize: 52)),
                     const SizedBox(height: 6),
-                    const Text(
-                      '¡VICTORIA!',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.tr('victory'),
+                      style: const TextStyle(
                         color: Color(0xFFFFD700),
                         fontWeight: FontWeight.w900,
                         fontSize: 34,
@@ -1230,7 +1237,8 @@ class _VictoryOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$worldEmoji  $worldName completada',
+                      context.l10n.trp('world_completed',
+                          {'emoji': worldEmoji, 'name': worldName}),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
@@ -1247,7 +1255,7 @@ class _VictoryOverlay extends StatelessWidget {
                           child: _StatBox(
                             icon: '🪙',
                             value: _fmtNum(game.coins),
-                            label: 'monedas',
+                            label: context.l10n.tr('stat_coins'),
                             valueColor: const Color(0xFFFFD700),
                           ),
                         ),
@@ -1256,7 +1264,7 @@ class _VictoryOverlay extends StatelessWidget {
                           child: _StatBox(
                             icon: '📏',
                             value: _fmtNum(game.meters),
-                            label: 'metros',
+                            label: context.l10n.tr('stat_meters'),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1264,7 +1272,7 @@ class _VictoryOverlay extends StatelessWidget {
                           child: _StatBox(
                             icon: '⭐',
                             value: _fmtNum(game.score),
-                            label: 'puntos',
+                            label: context.l10n.tr('stat_points'),
                           ),
                         ),
                       ],
@@ -1272,11 +1280,11 @@ class _VictoryOverlay extends StatelessWidget {
 
                     if (completedMissions.isNotEmpty) ...[
                       const SizedBox(height: 22),
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          '🎯  Misiones completadas',
-                          style: TextStyle(
+                          '🎯  ${context.l10n.tr('missions_completed')}',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 15,
@@ -1302,13 +1310,13 @@ class _VictoryOverlay extends StatelessWidget {
                       children: [
                         _GoldActionButton(
                           icon: Icons.replay_rounded,
-                          label: 'Jugar de nuevo',
+                          label: context.l10n.tr('play_again'),
                           onTap: onRestart,
                         ),
                         const SizedBox(height: 12),
                         _DarkActionButton(
                           icon: Icons.map_rounded,
-                          label: 'Elegir mundo',
+                          label: context.l10n.tr('choose_world'),
                           onTap: onExit,
                         ),
                         const SizedBox(height: 4),
@@ -1322,9 +1330,9 @@ class _VictoryOverlay extends StatelessWidget {
                               'worldColor': worldColor,
                             },
                           ),
-                          child: const Text(
-                            '🏆  Ver ranking',
-                            style: TextStyle(
+                          child: Text(
+                            '🏆  ${context.l10n.tr('view_ranking_short')}',
+                            style: const TextStyle(
                               color: Color(0xFFFFD700),
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
@@ -1335,7 +1343,7 @@ class _VictoryOverlay extends StatelessWidget {
                     )
                   : _GoldActionButton(
                       icon: Icons.card_giftcard_rounded,
-                      label: 'Reclamar cofre',
+                      label: context.l10n.tr('claim_chest'),
                       onTap: onClaimChest,
                     ),
             ),
@@ -1378,7 +1386,7 @@ class _CompletedMissionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  mission.title,
+                  context.l10n.missionTitle(mission),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1388,7 +1396,7 @@ class _CompletedMissionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  mission.description,
+                  context.l10n.missionDescription(mission),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
