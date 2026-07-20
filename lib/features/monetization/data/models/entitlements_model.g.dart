@@ -17,13 +17,15 @@ class EntitlementsModelAdapter extends TypeAdapter<EntitlementsModel> {
       adsRemoved: fields[1] as bool,
       subscriptionActive: fields[2] as bool,
       ownedProductIds: (fields[3] as List).cast<String>(),
+      // Campo añadido después: los datos antiguos no lo tienen → null.
+      lastVipClaimMs: fields[4] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, EntitlementsModel obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.gems)
       ..writeByte(1)
@@ -31,7 +33,9 @@ class EntitlementsModelAdapter extends TypeAdapter<EntitlementsModel> {
       ..writeByte(2)
       ..write(obj.subscriptionActive)
       ..writeByte(3)
-      ..write(obj.ownedProductIds);
+      ..write(obj.ownedProductIds)
+      ..writeByte(4)
+      ..write(obj.lastVipClaimMs);
   }
 
   @override

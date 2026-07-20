@@ -7,13 +7,13 @@ sola implementación.
 
 ## Producto para niños — reglas que condicionan todo
 
-- **Apple (categoría Kids):** prohíbe anuncios de terceros y analítica de
-  terceros. → en iOS se monetiza con **IAP + suscripción**, sin ads de terceros.
-- **Android (Designed for Families):** anuncios recompensados **no
-  personalizados** con SDK certificado.
+- **Decisión de producto: SIN anuncios en ninguna plataforma.** Máxima confianza
+  de los padres y sin la complejidad de cumplimiento de ads. Se monetiza solo con
+  **IAP (cosméticos) + gemas + suscripción VIP**. (Apple Kids prohíbe ads/analítica
+  de terceros de todas formas; por eso la analítica es first-party.)
 - **Toda compra pasa por [`ParentalGate`]** (compuerta parental). Obligatorio.
-- Nada de pago-para-ganar ni cajas de botín con dinero real. Solo cosmético,
-  conveniencia o quitar-anuncios.
+- Nada de pago-para-ganar ni cajas de botín con dinero real. Solo cosmético o
+  conveniencia, a precio transparente.
 
 ## Arquitectura (feature `monetization`)
 
@@ -56,10 +56,21 @@ wallet (`UnlockPartEvent`).
 ## Pendiente (siguientes pasos)
 
 - Compuerta parental también antes de enlaces externos (políticas, redes).
-- Anuncios recompensados **solo Android** (×2 monedas, giro extra de ruleta).
-- Analítica de funnel **first-party** (kid-safe para iOS).
-- Suscripción VIP con entregas diarias; pase de temporada.
+- Vías de ganar gemas gratis además del VIP diario (misiones, hitos).
+- Pase de temporada.
+- Adaptador `in_app_purchase` real que sustituya el stub.
 - Rediseño del *trade dress* visual (minifigura/studs) — riesgo de IP real.
+
+## Club VIP (suscripción)
+
+`vip_monthly` da beneficios reales (`vip_perks.dart`), sin anuncios de por medio:
+- **Gemas diarias** (+25 💎): reclamables en la Tienda con `StoreRepository.claimVipDaily()`
+  (una vez por día natural; se guarda `Entitlements.lastVipClaim`).
+- **Monedas ×1.5 en carrera**: `BrixRunGame.coinMultiplier`, leído al arrancar la
+  partida vía `StoreRepository.entitlementsSync().subscriptionActive`.
+
+No hay producto "quitar anuncios" (el juego no tiene anuncios); el campo
+`adsRemoved` se conserva solo por estabilidad del esquema Hive.
 
 ## Gastar gemas (canjería)
 

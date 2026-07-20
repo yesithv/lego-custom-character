@@ -24,6 +24,7 @@ class AnalyticsEvents {
   static const storeOpen = 'store_open';
   static const gemStoreOpen = 'gem_store_open';
   static const gemRedeem = 'gem_redeem';
+  static const vipDailyClaim = 'vip_daily_claim';
   static const parentalGateShown = 'parental_gate_shown';
   static const parentalGatePassed = 'parental_gate_passed';
   static const purchaseAttempt = 'purchase_attempt';
