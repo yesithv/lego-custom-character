@@ -59,6 +59,7 @@ Pasos para activarlo:
        : InAppPurchaseStoreRepository(sl()));
    ```
 5. (Recomendado) Validar recibos en un backend antes de conceder `entitlements`.
+   → Diseño completo del backend en **`docs/BACKEND-PAGOS.md`**.
 
 Limitaciones actuales del adaptador (aptas para v1): sin validación de recibos
 en servidor, y la suscripción se marca activa sin rastrear su vencimiento (ver
