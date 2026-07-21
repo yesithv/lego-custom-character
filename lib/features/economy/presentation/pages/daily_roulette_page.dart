@@ -160,7 +160,13 @@ class _DailyRoulettePageState extends State<DailyRoulettePage>
 
               const SizedBox(height: 12),
 
-              if (!state.wallet.canClaimRoulette && !_done) ...[
+              // Solo mostramos el panel de "ya reclamaste" cuando entramos a la
+              // pantalla sin giro disponible. Una vez que el usuario inicia un
+              // giro en esta sesión (`_spinning`), la wallet marca
+              // `canClaimRoulette == false` de inmediato, pero debemos seguir
+              // mostrando la ruleta girando y luego la recompensa: nunca el
+              // panel bloqueado en mitad del giro.
+              if (!state.wallet.canClaimRoulette && !_spinning && !_done) ...[
                 const SizedBox(height: 4),
                 const Opacity(opacity: 0.35, child: _Pointer()),
                 const SizedBox(height: 10),
