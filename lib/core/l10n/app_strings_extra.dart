@@ -72,12 +72,12 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'helmet_biker': {'es': 'Motero', 'en': 'Biker', 'pt': 'Motoqueiro', 'de': 'Biker', 'ru': 'Байкер', 'fr': 'Motard'},
   'helmet_astronaut': {'es': 'Astronauta', 'en': 'Astronaut', 'pt': 'Astronauta', 'de': 'Astronaut', 'ru': 'Астронавт', 'fr': 'Astronaute'},
   'helmet_ninjaHood': {'es': 'Capucha ninja', 'en': 'Ninja hood', 'pt': 'Capuz ninja', 'de': 'Ninja-Kapuze', 'ru': 'Капюшон ниндзя', 'fr': 'Capuche ninja'},
-  'helmet_ironMan': {'es': 'Hombre de hierro', 'en': 'Iron man', 'pt': 'Homem de ferro', 'de': 'Eisenmann', 'ru': 'Железный человек', 'fr': 'Homme de fer'},
+  'helmet_ironMan': {'es': 'Armadura', 'en': 'Armor', 'pt': 'Armadura', 'de': 'Rüstung', 'ru': 'Броня', 'fr': 'Armure'},
   'helmet_spiderMan': {'es': 'Arácnido', 'en': 'Spider', 'pt': 'Aracnídeo', 'de': 'Spinne', 'ru': 'Паук', 'fr': 'Araignée'},
   'helmet_blackPanther': {'es': 'Pantera', 'en': 'Panther', 'pt': 'Pantera', 'de': 'Panther', 'ru': 'Пантера', 'fr': 'Panthère'},
   'helmet_deadpool': {'es': 'Mercenario', 'en': 'Mercenary', 'pt': 'Mercenário', 'de': 'Söldner', 'ru': 'Наёмник', 'fr': 'Mercenaire'},
-  'helmet_wolverine': {'es': 'Lobezno', 'en': 'Wolverine', 'pt': 'Wolverine', 'de': 'Vielfraß', 'ru': 'Росомаха', 'fr': 'Wolverine'},
-  'helmet_ghostSpider': {'es': 'Arácnida fantasma', 'en': 'Ghost spider', 'pt': 'Aranha fantasma', 'de': 'Geisterspinne', 'ru': 'Паук-призрак', 'fr': 'Araignée fantôme'},
+  'helmet_wolverine': {'es': 'Fiera', 'en': 'Beast', 'pt': 'Fera', 'de': 'Bestie', 'ru': 'Зверь', 'fr': 'Bête'},
+  'helmet_ghostSpider': {'es': 'Arácnida fantasma', 'en': 'Phantom arachnid', 'pt': 'Aranha fantasma', 'de': 'Geisterspinne', 'ru': 'Паук-призрак', 'fr': 'Araignée fantôme'},
 
   // ── Sombrero ──────────────────────────────────────────────────────────────
   'hat_wizard': {'es': 'Mago', 'en': 'Wizard', 'pt': 'Mago', 'de': 'Zauberer', 'ru': 'Волшебник', 'fr': 'Magicien'},
@@ -112,10 +112,10 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'torso_tanktop': {'es': 'Camiseta', 'en': 'Tank top', 'pt': 'Regata', 'de': 'Tanktop', 'ru': 'Майка', 'fr': 'Débardeur'},
   'torso_commando': {'es': 'Comando', 'en': 'Commando', 'pt': 'Comando', 'de': 'Kommando', 'ru': 'Коммандо', 'fr': 'Commando'},
   'torso_golden': {'es': 'Dorado', 'en': 'Golden', 'pt': 'Dourado', 'de': 'Golden', 'ru': 'Золотой', 'fr': 'Doré'},
-  'torso_spiderGwen': {'es': 'Arácnida', 'en': 'Spider-girl', 'pt': 'Aranha', 'de': 'Spinnenfrau', 'ru': 'Женщина-паук', 'fr': 'Araignée'},
+  'torso_spiderGwen': {'es': 'Arácnida', 'en': 'Arachnid girl', 'pt': 'Aranha', 'de': 'Spinnenfrau', 'ru': 'Женщина-паук', 'fr': 'Araignée'},
   'torso_wonderWoman': {'es': 'Amazona', 'en': 'Amazon', 'pt': 'Amazona', 'de': 'Amazone', 'ru': 'Амазонка', 'fr': 'Amazone'},
   'torso_captainMarvel': {'es': 'Capitana', 'en': 'Captain', 'pt': 'Capitã', 'de': 'Kapitänin', 'ru': 'Капитан', 'fr': 'Capitaine'},
-  'torso_blackWidow': {'es': 'Viuda negra', 'en': 'Black widow', 'pt': 'Viúva negra', 'de': 'Schwarze Witwe', 'ru': 'Чёрная вдова', 'fr': 'Veuve noire'},
+  'torso_blackWidow': {'es': 'Espía', 'en': 'Spy', 'pt': 'Espiã', 'de': 'Spionin', 'ru': 'Шпионка', 'fr': 'Espionne'},
 
   // ── Guantes ───────────────────────────────────────────────────────────────
   'glove_none': {'es': 'Ninguno', 'en': 'None', 'pt': 'Nenhum', 'de': 'Keiner', 'ru': 'Нет', 'fr': 'Aucun'},

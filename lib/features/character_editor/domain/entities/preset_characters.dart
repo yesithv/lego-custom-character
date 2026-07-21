@@ -32,6 +32,8 @@ const List<PresetCharacter> presetCharacters = [
       skinTone: SkinTone.gold,
       eyes: EyeStyle.angry,
       mouth: MouthStyle.silent,
+      eyebrows: EyebrowStyle.angry,
+      facialExtra: FacialExtra.warPaint,
       headwearType: HeadwearType.helmet,
       helmetStyle: HelmetStyle.ninjaHood,
       torso: TorsoDesign.golden,
@@ -77,15 +79,19 @@ const List<PresetCharacter> presetCharacters = [
     appearance: CharacterAppearance(
       skinTone: SkinTone.gold,
       eyes: EyeStyle.angry,
-      mouth: MouthStyle.silent,
+      mouth: MouthStyle.teeth,
+      eyebrows: EyebrowStyle.angry,
+      facialExtra: FacialExtra.scar,
       headwearType: HeadwearType.helmet,
       helmetStyle: HelmetStyle.ninjaHood,
       torso: TorsoDesign.golden,
       legDesign: LegDesign.golden,
-      legType: LegType.pants,
+      legType: LegType.legArmor,
       shoes: ShoeType.military,
       accessories: CharacterAccessories(
         rightHand: 'katana',
+        back: 'katanas dobles',
+        shoulders: 'hombreras doradas',
         waist: 'faja ninja',
       ),
     ),
@@ -97,16 +103,20 @@ const List<PresetCharacter> presetCharacters = [
     type: CharacterType.hero,
     appearance: CharacterAppearance(
       skinTone: SkinTone.gold,
-      eyes: EyeStyle.angry,
+      eyes: EyeStyle.determined,
       mouth: MouthStyle.silent,
+      eyebrows: EyebrowStyle.normal,
+      facialExtra: FacialExtra.warPaint,
       headwearType: HeadwearType.helmet,
       helmetStyle: HelmetStyle.ninjaHood,
+      gloves: GloveType.boxing,
       torso: TorsoDesign.golden,
       legDesign: LegDesign.golden,
       legType: LegType.pants,
       shoes: ShoeType.military,
       accessories: CharacterAccessories(
         rightHand: 'bastón bo',
+        neck: 'bandana',
         waist: 'faja ninja',
       ),
     ),
@@ -141,14 +151,18 @@ const List<PresetCharacter> presetCharacters = [
       skinTone: SkinTone.gold,
       eyes: EyeStyle.robot,
       mouth: MouthStyle.silent,
+      eyebrows: EyebrowStyle.arched,
       headwearType: HeadwearType.helmet,
       helmetStyle: HelmetStyle.ninjaHood,
+      gloves: GloveType.energy,
       torso: TorsoDesign.golden,
       legDesign: LegDesign.golden,
       legType: LegType.pants,
       shoes: ShoeType.military,
       accessories: CharacterAccessories(
         rightHand: 'katana dorada',
+        face: 'ojo biónico',
+        neck: 'medallón',
         waist: 'faja ninja',
       ),
     ),
@@ -157,7 +171,7 @@ const List<PresetCharacter> presetCharacters = [
   // ── Colección: Superhéroes ─────────────────────────────────────────────────
   PresetCharacter(
     id: 'preset_capitan_america',
-    name: 'Capitán América',
+    name: 'Capitán Estrella',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -176,7 +190,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_iron_man',
-    name: 'Iron Man',
+    name: 'Titán Metálico',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -192,7 +206,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_superman',
-    name: 'Superman',
+    name: 'Guardián Celeste',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -209,7 +223,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_spiderman',
-    name: 'Spider-Man',
+    name: 'Aracno',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -225,7 +239,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_black_panther',
-    name: 'Black Panther',
+    name: 'Sombra Felina',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -242,7 +256,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_deadpool',
-    name: 'Deadpool',
+    name: 'Mercenario Rojo',
     collection: 'Superhéroes',
     type: CharacterType.neutral,
     appearance: CharacterAppearance(
@@ -263,7 +277,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_wolverine',
-    name: 'Wolverine',
+    name: 'Zarpa de Acero',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -280,7 +294,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_hulk',
-    name: 'Hulk',
+    name: 'Coloso Verde',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -296,7 +310,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_star_lord',
-    name: 'Star-Lord',
+    name: 'Capitán Cometa',
     collection: 'Superhéroes',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -317,7 +331,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_vision',
-    name: 'Vision',
+    name: 'Espectro Púrpura',
     collection: 'Superhéroes',
     type: CharacterType.mysterious,
     appearance: CharacterAppearance(
@@ -339,7 +353,7 @@ const List<PresetCharacter> presetCharacters = [
   // ── Colección: Heroínas ────────────────────────────────────────────────────
   PresetCharacter(
     id: 'preset_ghost_spider',
-    name: 'Ghost-Spider',
+    name: 'Aracna Espectral',
     collection: 'Heroínas',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -357,7 +371,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_captain_marvel',
-    name: 'Capitana Marvel',
+    name: 'Capitana Cósmica',
     collection: 'Heroínas',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -375,7 +389,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_black_widow',
-    name: 'Viuda Negra',
+    name: 'Agente Escarlata',
     collection: 'Heroínas',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -397,7 +411,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_wonder_woman',
-    name: 'Wonder Woman',
+    name: 'Amazona Dorada',
     collection: 'Heroínas',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
