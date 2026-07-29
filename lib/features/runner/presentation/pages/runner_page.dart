@@ -322,13 +322,9 @@ class _HudOverlayState extends State<_HudOverlay>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Fila 0: distancia centrada
-                Center(
-                  child: IgnorePointer(
-                    child: _DistancePill(meters: g.meters),
-                  ),
-                ),
-                const SizedBox(height: 8),
+                // Sin contador de metros: el avance por la pista ya lo cuenta la
+                // barra vertical de progreso de la derecha. Los metros finales
+                // se ven en el resumen de la carrera.
 
                 // Fila 1: pausa | monedas + combo + multiplicador | música
                 Row(
@@ -472,40 +468,6 @@ class _BossBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Píldora de distancia recorrida (arriba, centrada).
-class _DistancePill extends StatelessWidget {
-  final int meters;
-  const _DistancePill({required this.meters});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFF152238).withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('🏁', style: TextStyle(fontSize: 13)),
-          const SizedBox(width: 6),
-          Text(
-            '$meters m',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

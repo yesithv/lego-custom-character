@@ -156,6 +156,7 @@ La carpeta `android/` ya está en el repositorio y configurada:
 | **Nombre visible** | Run For Win |
 | **Orientación** | Vertical fija (el runner está diseñado en vertical) |
 | **compileSdk / targetSdk** | 36 (por defecto de Flutter) · **minSdk** 24 |
+| **Icono** | Icono clásico + **adaptativo** (Android 8+) y splash azul Brix. Se generan por código: `flutter test tool/gen_icon.dart` |
 | **versionName / versionCode** | Salen de `version:` en `pubspec.yaml` (`1.0.0+1` → `1.0.0` / `1`). **Sube el número tras el `+` en cada envío.** |
 
 ### Firma de release (una sola vez)
@@ -190,13 +191,12 @@ flutter build apk --release
 Lo que falta **no es código de la app**; está detallado en
 [`docs/publicacion/CHECKLIST-PUBLICACION.md`](docs/publicacion/CHECKLIST-PUBLICACION.md):
 
-1. **Icono y splash propios** — hoy se usa el icono por defecto de Flutter.
-2. **Dar de alta los productos IAP** en Play Console con los IDs exactos del
+1. **Dar de alta los productos IAP** en Play Console con los IDs exactos del
    catálogo (ver más abajo).
-3. **Política de privacidad en una URL pública** + formulario de **Data Safety**
+2. **Política de privacidad en una URL pública** + formulario de **Data Safety**
    (borradores en `docs/publicacion/`).
-4. **Diseñado para familias** y clasificación por edad (IARC).
-5. **Rediseño del _trade dress_** (aspecto de la minifigura) — es el riesgo de
+3. **Diseñado para familias** y clasificación por edad (IARC).
+4. **Rediseño del _trade dress_** (aspecto de la minifigura) — es el riesgo de
    propiedad intelectual señalado en las docs.
 
 ---
@@ -280,7 +280,7 @@ feature/
 | [`docs/JUGABILIDAD.md`](docs/JUGABILIDAD.md) | Mecánicas del runner: perspectiva, zonas, colisiones, puntuación, power-ups, economía, ruleta, cofres y misiones. |
 | [`docs/MONETIZACION.md`](docs/MONETIZACION.md) | Economía, gemas, VIP y desbloqueo de mundos. |
 | [`docs/DESARROLLO.md`](docs/DESARROLLO.md) | Guía para contribuir: cómo añadir features, adapters Hive a mano, convenciones y pruebas. |
-| [`docs/publicacion/`](docs/publicacion/) | Checklist de publicación, ficha de tienda, política de privacidad, términos y respuestas a los formularios. |
+| [`docs/publicacion/`](docs/publicacion/) | Checklist de publicación, ficha de tienda, política de privacidad, términos, respuestas a los formularios y el **icono 512²** para Play. |
 | [`docs/BACKEND-PAGOS.md`](docs/BACKEND-PAGOS.md) | **Post-MVP.** Diseño de un backend de validación de recibos. No aplica a esta versión. |
 
 ---

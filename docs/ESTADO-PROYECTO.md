@@ -97,6 +97,22 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
   título "RUN FOR WIN" en el Home → interruptor. Desbloquea todo (ruleta,
   accesorios, mundos), hace la pista muy corta (20 m) y el jefe débil (1 corazón).
 
+### Ritmo de partida y ajustes de juego
+- **Pistas un 20 % más cortas** (`worldTrackMeters`: 960 … 2000 m). Con ellas
+  bajaron un 20 % los **umbrales de zona** (400/1200) y los **objetivos de las
+  misiones de distancia** (160/400/800), para no romper el ritmo ni dejar
+  misiones imposibles en la pista inicial.
+  ⚠️ **Ojo con la aritmética:** como la velocidad sube con el tiempo, −20 % de
+  distancia son solo **−14 % de duración** (media 5,3 → 4,6 min por partida). Si
+  se quiere una partida de ~3 min hay que recortar hasta ~770 m **o** subir la
+  velocidad base (300 px/s con rampa +16/5 s daría ~1040 m en 3 min).
+- **HUD sin contador de metros**: el avance lo comunica la barra vertical de
+  progreso de la derecha; los metros se ven en el resumen final.
+- **Atajo del modo de prueba endurecido**: hay que mantener pulsado el título
+  10 s (antes 500 ms), sin pista visual.
+- **Icono propio** generado por código (`tool/gen_icon.dart`): clásico en 5
+  densidades + adaptativo (Android 8+) + 512² para la ficha; splash azul Brix.
+
 ### Pulido de juego (calidad, no monetización)
 - Atajo **"▶ Jugar"** en galería + **"Guardar y jugar"** (icono bandera) en el
   editor, llevando al selector de mundos con el corredor preseleccionado.

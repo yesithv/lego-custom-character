@@ -12,6 +12,10 @@ import 'package:flutter/foundation.dart';
 ///
 /// Es un interruptor global en memoria. Envuelve los widgets que deban
 /// reaccionar en vivo con un [ValueListenableBuilder] sobre [enabled].
+///
+/// **Cómo se abre:** manteniendo pulsado el título "RUN FOR WIN" del Home
+/// durante **10 segundos** seguidos, sin ninguna pista visual. Al desbloquear
+/// contenido de pago, el atajo tiene que ser difícil de encontrar por accidente.
 class TestMode {
   TestMode._();
 

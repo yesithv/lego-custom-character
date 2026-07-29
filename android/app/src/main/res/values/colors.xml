@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Azul Brix: fondo de la app y de la pantalla de arranque. -->
+    <color name="brix_blue">#063574</color>
+</resources>

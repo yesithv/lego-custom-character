@@ -17,9 +17,10 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
   `scenery_component.dart`, `appearance_colors.dart`.
 - [ ] 🔒 **Cumplimiento infantil** completo (documentos de esta carpeta +
   formularios de las tiendas).
-- [ ] 🧪 **Modo de prueba en release** — hoy un pulsado largo en el título del
-  Home desbloquea todo gratis (`core/test_mode/test_mode.dart`). Decidir si se
-  desactiva en builds de release antes de publicar con IAP. **(código)**
+- [ ] 🧪 **Modo de prueba en release** — el atajo ya exige **mantener pulsado 10
+  segundos** el título del Home, sin ninguna pista visual
+  (`core/test_mode/test_mode.dart`). Sigue existiendo en release: decidir si se
+  desactiva del todo antes de publicar con IAP. **(código)**
 
 ## 1. Cuentas y bases
 
@@ -38,7 +39,10 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
   plantilla `key.properties.example`; sin él, cae a claves de depuración.
 - [x] Verificado que la **build web sigue compilando** con el plugin de pagos
   importado (el adaptador real solo se instancia en móvil).
-- [ ] **Icono y splash propios** (hoy es el icono por defecto de Flutter).
+- [x] **Icono y splash propios**: icono clásico (5 densidades) + **adaptativo**
+  (Android 8+) y splash azul Brix. Generados por código con
+  `flutter test tool/gen_icon.dart`; dos variantes en `kVariant` (bloque, la que
+  se publica / cabeza de minifigura).
 - [ ] Crear el **keystore de subida** y rellenar `android/key.properties`
   (comandos en el README).
 - [ ] `flutter build appbundle --release` **verificado en local** (las sesiones
@@ -79,7 +83,8 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
 ## 6. Ficha de la tienda (`FICHA-DE-TIENDA.md`)
 
 - [ ] Nombre, descripción breve y descripción completa (ES + EN).
-- [ ] **Icono** 512² — con el trade dress ya rediseñado.
+- [x] **Icono** 512² → `docs/publicacion/icono-512.png` (revisarlo si se
+  rediseña el trade dress).
 - [ ] **Capturas** (mín. 2) y **gráfico destacado** (1024×500).
 - [ ] Categoría, precio (Gratis + IAP), "sin anuncios".
 
@@ -114,6 +119,6 @@ ruleta, cofres, misiones), tienda con **pagos reales de Google Play**, gemas,
 Hive, analítica first-party local, desbloqueo de mundos por monedas acumuladas,
 6 idiomas y plataforma Android configurada.
 
-**Lo que falta para publicar no es código de la app**, sino arte (icono,
-capturas, trade dress), trámites (cuenta, formularios, política de privacidad) y
-la configuración de los productos en Play Console.
+**Lo que falta para publicar no es código de la app**, sino arte (capturas,
+gráfico destacado, rediseño del trade dress), trámites (cuenta, formularios,
+política de privacidad) y la configuración de los productos en Play Console.

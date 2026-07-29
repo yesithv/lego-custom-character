@@ -101,15 +101,21 @@ WorldColors colorsFor(String worldId) =>
 /// Longitud de la pista de cada mundo, en metros. Es la distancia que hay que
 /// recorrer antes de que aparezca el jefe, y también lo que se anuncia en la
 /// tarjeta del mundo: única fuente de verdad para ambos.
+///
+/// Recortadas un **20 %** respecto a los valores originales (1200/1500/2000/
+/// 1800/2300/1600/2100/2500) para que cada partida se resuelva antes. Al tocar
+/// estos números hay que revisar dos cosas que dependen de ellos: los umbrales
+/// de zona en `BrixRunGame.currentZone` y los objetivos de las misiones de
+/// distancia (`mission_repository_impl.dart`).
 const worldTrackMeters = <String, int>{
-  'brix_city': 1200,
-  'medieval': 1500,
-  'galaxy': 2000,
-  'jungle': 1800,
-  'dark_city': 2300,
-  'ocean': 1600,
-  'tundra': 2100,
-  'robot_city': 2500,
+  'brix_city': 960,
+  'medieval': 1200,
+  'galaxy': 1600,
+  'jungle': 1440,
+  'dark_city': 1840,
+  'ocean': 1280,
+  'tundra': 1680,
+  'robot_city': 2000,
 };
 
-int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 1200;
+int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 960;

@@ -93,9 +93,13 @@ La dificultad aumenta según los metros recorridos (`meters`):
 
 | Zona | Rango | Bonus de velocidad | Extra |
 |------|-------|--------------------|-------|
-| `inicio` | 0–499 m | +0 | — |
-| `nucleo` | 500–1499 m | +60 | — |
-| `caos` | ≥ 1500 m | +160 | 20% de probabilidad de un segundo obstáculo en otro carril |
+| `inicio` | 0–399 m | +0 | — |
+| `nucleo` | 400–1199 m | +60 | — |
+| `caos` | ≥ 1200 m | +160 | 20% de probabilidad de un segundo obstáculo en otro carril |
+
+> Los umbrales bajaron un 20 % (antes 500 / 1500) junto con la longitud de las
+> pistas, para que la progresión caiga en el mismo punto relativo de la carrera.
+> Ver `worldTrackMeters` en `world_config.dart`.
 
 ### Velocidad y spawning
 
@@ -124,7 +128,9 @@ Detección manual por proximidad de profundidad (`_checkDepthCollisions`), no po
 score = (meters + coins*5 + obstacleStreak*2) * multiplier + bossBonusScore
 ```
 
-- `meters = distanciaRecorrida / 100`.
+- `meters = distanciaRecorrida / 100`. **No se muestran en el HUD durante la
+  carrera** (el avance lo indica la barra vertical de progreso de la derecha);
+  aparecen en el resumen de fin de carrera.
 - `bossBonusScore` acumula los bonus de la pelea: `+300` por cada embestida al jefe y `+1000` al vencerlo (ver [Peleas contra jefes](#peleas-contra-jefes)).
 - El **multiplicador** depende de la racha de obstáculos evadidos (`obstacleStreak`):
 
@@ -288,7 +294,7 @@ Tipos de misión (`MissionType`) y ejemplos de objetivo:
 | Tipo | Ejemplos (objetivo → recompensa) |
 |------|----------------------------------|
 | `collectCoins` | 10 → 50, 25 → 100, 50 → 200 monedas |
-| `runMeters` | 200 → 50, 500 → 100, 1000 → 200 |
+| `runMeters` | 160 → 50, 400 → 100, 800 → 200 |
 | `evadeObstacles` | 5 → 50, 10 → 100, 20 → 200 (seguidos) |
 | `surviveSeconds` | 30 → 75, 60 → 150 |
 | `useJump` | 5 → 50, 15 → 100 |
@@ -339,8 +345,10 @@ Interruptor global en memoria definido en `lib/core/test_mode/test_mode.dart`
 (`TestMode.instance`). Sirve para probar cualquier pantalla al instante.
 
 **Cómo activarlo:** en la pantalla de inicio, **mantén pulsado el título
-"RUN FOR WIN"**. Se abre una hoja inferior con el interruptor y el detalle de
-lo que desbloquea. Mientras está encendido aparece la banda "🧪 MODO PRUEBA
+"RUN FOR WIN" durante 10 segundos seguidos** (deliberadamente largo y sin
+ninguna pista visual: desbloquea contenido de pago, así que no debe encontrarse
+por accidente). Se abre una hoja inferior con el interruptor y el detalle de lo
+que desbloquea. Mientras está encendido aparece la banda "🧪 MODO PRUEBA
 ACTIVO" en el inicio.
 
 Con el modo de prueba encendido:

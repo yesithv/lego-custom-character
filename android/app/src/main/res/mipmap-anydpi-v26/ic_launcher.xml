@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono adaptativo (Android 8+): el launcher recorta el conjunto con la forma
+     que use el dispositivo (círculo, squircle, etc.). Por eso la figura del
+     primer plano se dibuja dentro del 66 % central. Ver tool/gen_icon.dart. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

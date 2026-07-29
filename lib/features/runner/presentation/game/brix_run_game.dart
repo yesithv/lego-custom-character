@@ -181,9 +181,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   static const String _overlayGameOver = 'gameOver';
   static const String _overlayVictory = 'victory';
 
+  /// Zona de dificultad según la distancia. Los umbrales bajaron un 20 % junto
+  /// con la longitud de las pistas (antes 500/1500), para que la progresión
+  /// inicio → núcleo → caos caiga en el mismo punto relativo de la carrera.
   RunnerZone get currentZone {
-    if (meters < 500) return RunnerZone.inicio;
-    if (meters < 1500) return RunnerZone.nucleo;
+    if (meters < 400) return RunnerZone.inicio;
+    if (meters < 1200) return RunnerZone.nucleo;
     return RunnerZone.caos;
   }
 
