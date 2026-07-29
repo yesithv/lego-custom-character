@@ -89,7 +89,6 @@ class _GalleryView extends StatelessWidget {
                       if (state.characters.isEmpty) {
                         return _EmptyState(
                           onCreateTap: () => _openNewEditor(context),
-                          onPresetsTap: () => context.goNamed('presets'),
                         );
                       }
 
@@ -590,8 +589,7 @@ class _PresetsButton extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final VoidCallback onCreateTap;
-  final VoidCallback onPresetsTap;
-  const _EmptyState({required this.onCreateTap, required this.onPresetsTap});
+  const _EmptyState({required this.onCreateTap});
 
   @override
   Widget build(BuildContext context) {
@@ -627,17 +625,6 @@ class _EmptyState extends StatelessWidget {
                 foregroundColor: const Color(0xFF3D2C00),
                 minimumSize: const Size(220, 52),
                 textStyle: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onPresetsTap,
-              icon: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700)),
-              label: Text(context.l10n.tr('view_presets')),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                minimumSize: const Size(220, 52),
-                side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
               ),
             ),
           ],
