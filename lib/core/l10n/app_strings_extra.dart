@@ -15,6 +15,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'eye_crying': {'es': 'Llorando', 'en': 'Crying', 'pt': 'Chorando', 'de': 'Weinend', 'ru': 'Плачущий', 'fr': 'Pleure'},
   'eye_starry': {'es': 'Estrellas', 'en': 'Starry', 'pt': 'Estrelas', 'de': 'Sterne', 'ru': 'Звёздные', 'fr': 'Étoilé'},
   'eye_determined': {'es': 'Decidido', 'en': 'Determined', 'pt': 'Decidido', 'de': 'Entschlossen', 'ru': 'Решительный', 'fr': 'Déterminé'},
+  'eye_emerald': {'es': 'Esmeralda', 'en': 'Emerald', 'pt': 'Esmeralda', 'de': 'Smaragd', 'ru': 'Изумрудные', 'fr': 'Émeraude'},
 
   // ── Cejas ─────────────────────────────────────────────────────────────────
   'eyebrow_normal': {'es': 'Normales', 'en': 'Normal', 'pt': 'Normais', 'de': 'Normal', 'ru': 'Обычные', 'fr': 'Normaux'},
@@ -62,6 +63,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'hair_longBlonde': {'es': 'Largo rubio', 'en': 'Long blonde', 'pt': 'Longo loiro', 'de': 'Lang blond', 'ru': 'Длинные светлые', 'fr': 'Longs blonds'},
   'hair_longBlack': {'es': 'Largo negro', 'en': 'Long black', 'pt': 'Longo preto', 'de': 'Lang schwarz', 'ru': 'Длинные чёрные', 'fr': 'Longs noirs'},
   'hair_wavyBob': {'es': 'Melena ondulada', 'en': 'Wavy bob', 'pt': 'Corte ondulado', 'de': 'Wellenbob', 'ru': 'Волнистое каре', 'fr': 'Carré ondulé'},
+  'hair_longCoral': {'es': 'Largo coral', 'en': 'Long coral', 'pt': 'Longo coral', 'de': 'Lang Koralle', 'ru': 'Длинные коралловые', 'fr': 'Longs corail'},
 
   // ── Casco ─────────────────────────────────────────────────────────────────
   'helmet_medieval': {'es': 'Medieval', 'en': 'Medieval', 'pt': 'Medieval', 'de': 'Mittelalter', 'ru': 'Средневековый', 'fr': 'Médiéval'},
@@ -116,6 +118,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'torso_wonderWoman': {'es': 'Amazona', 'en': 'Amazon', 'pt': 'Amazona', 'de': 'Amazone', 'ru': 'Амазонка', 'fr': 'Amazone'},
   'torso_captainMarvel': {'es': 'Capitana', 'en': 'Captain', 'pt': 'Capitã', 'de': 'Kapitänin', 'ru': 'Капитан', 'fr': 'Capitaine'},
   'torso_blackWidow': {'es': 'Espía', 'en': 'Spy', 'pt': 'Espiã', 'de': 'Spionin', 'ru': 'Шпионка', 'fr': 'Espionne'},
+  'torso_starPrincess': {'es': 'Princesa estelar', 'en': 'Star princess', 'pt': 'Princesa estelar', 'de': 'Sternenprinzessin', 'ru': 'Звёздная принцесса', 'fr': 'Princesse des étoiles'},
 
   // ── Guantes ───────────────────────────────────────────────────────────────
   'glove_none': {'es': 'Ninguno', 'en': 'None', 'pt': 'Nenhum', 'de': 'Keiner', 'ru': 'Нет', 'fr': 'Aucun'},
@@ -138,6 +141,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'legDesign_mechanic': {'es': 'Mecánico', 'en': 'Mechanic', 'pt': 'Mecânico', 'de': 'Mechaniker', 'ru': 'Механик', 'fr': 'Mécanicien'},
   'legDesign_urbanCamo': {'es': 'Camuflaje urbano', 'en': 'Urban camo', 'pt': 'Camuflagem urbana', 'de': 'Stadttarnung', 'ru': 'Городской камуфляж', 'fr': 'Camouflage urbain'},
   'legDesign_golden': {'es': 'Dorado', 'en': 'Golden', 'pt': 'Dourado', 'de': 'Golden', 'ru': 'Золотой', 'fr': 'Doré'},
+  'legDesign_cosmicStripes': {'es': 'Rayas cósmicas', 'en': 'Cosmic stripes', 'pt': 'Listras cósmicas', 'de': 'Kosmische Streifen', 'ru': 'Космические полосы', 'fr': 'Rayures cosmiques'},
 
   // ── Tipo de piernas ───────────────────────────────────────────────────────
   'legType_pants': {'es': 'Pantalón', 'en': 'Pants', 'pt': 'Calça', 'de': 'Hose', 'ru': 'Штаны', 'fr': 'Pantalon'},
@@ -157,6 +161,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'shoe_barefoot': {'es': 'Descalzo', 'en': 'Barefoot', 'pt': 'Descalço', 'de': 'Barfuß', 'ru': 'Босиком', 'fr': 'Pieds nus'},
   'shoe_heroBoots': {'es': 'Botas de héroe', 'en': 'Hero boots', 'pt': 'Botas de herói', 'de': 'Heldenstiefel', 'ru': 'Ботинки героя', 'fr': 'Bottes de héros'},
   'shoe_balletTeal': {'es': 'Zapatillas de ballet', 'en': 'Ballet shoes', 'pt': 'Sapatilhas de balé', 'de': 'Ballettschuhe', 'ru': 'Балетки', 'fr': 'Chaussons de ballet'},
+  'shoe_cosmicBoots': {'es': 'Botas cósmicas', 'en': 'Cosmic boots', 'pt': 'Botas cósmicas', 'de': 'Kosmische Stiefel', 'ru': 'Космические ботинки', 'fr': 'Bottes cosmiques'},
 
   // ── Misiones: títulos ─────────────────────────────────────────────────────
   'mission_title_collectCoins_10': {'es': 'Recolector', 'en': 'Collector', 'pt': 'Coletor', 'de': 'Sammler', 'ru': 'Собиратель', 'fr': 'Collecteur'},
@@ -289,6 +294,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'part_lazo dorado': {'es': 'Lazo de la verdad', 'en': 'Lasso of truth', 'pt': 'Laço da verdade', 'de': 'Lasso der Wahrheit', 'ru': 'Лассо истины', 'fr': 'Lasso de vérité'},
   'part_cuchillo': {'es': 'Cuchillo de combate', 'en': 'Combat knife', 'pt': 'Faca de combate', 'de': 'Kampfmesser', 'ru': 'Боевой нож', 'fr': 'Couteau de combat'},
   'part_garfio': {'es': 'Garfio dorado', 'en': 'Golden hook', 'pt': 'Gancho dourado', 'de': 'Goldener Haken', 'ru': 'Золотой крюк', 'fr': 'Grappin doré'},
+  'part_esfera estelar': {'es': 'Esfera estelar', 'en': 'Star orb', 'pt': 'Esfera estelar', 'de': 'Sternenkugel', 'ru': 'Звёздная сфера', 'fr': 'Sphère stellaire'},
   'part_bolso': {'es': 'Bolso', 'en': 'Bag', 'pt': 'Bolsa', 'de': 'Tasche', 'ru': 'Сумка', 'fr': 'Sac'},
   'part_linterna': {'es': 'Linterna', 'en': 'Flashlight', 'pt': 'Lanterna', 'de': 'Taschenlampe', 'ru': 'Фонарик', 'fr': 'Lampe torche'},
   'part_escudo': {'es': 'Escudo', 'en': 'Shield', 'pt': 'Escudo', 'de': 'Schild', 'ru': 'Щит', 'fr': 'Bouclier'},
@@ -300,6 +306,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'part_escudo capitán': {'es': 'Escudo del Capitán', 'en': 'Captain’s shield', 'pt': 'Escudo do Capitão', 'de': 'Kapitänsschild', 'ru': 'Щит Капитана', 'fr': 'Bouclier du Capitaine'},
   'part_escudo dragón': {'es': 'Escudo dragón dorado', 'en': 'Golden dragon shield', 'pt': 'Escudo dragão dourado', 'de': 'Goldener Drachenschild', 'ru': 'Золотой драконий щит', 'fr': 'Bouclier dragon doré'},
   'part_pistola bláster': {'es': 'Pistola bláster', 'en': 'Blaster', 'pt': 'Pistola blaster', 'de': 'Blaster', 'ru': 'Бластер', 'fr': 'Blaster'},
+  'part_orbe estelar': {'es': 'Orbe estelar', 'en': 'Star sphere', 'pt': 'Orbe estelar', 'de': 'Sternenorb', 'ru': 'Звёздный шар', 'fr': 'Orbe stellaire'},
   'part_capa corta': {'es': 'Capa corta', 'en': 'Short cape', 'pt': 'Capa curta', 'de': 'Kurzer Umhang', 'ru': 'Короткий плащ', 'fr': 'Cape courte'},
   'part_mochila': {'es': 'Mochila', 'en': 'Backpack', 'pt': 'Mochila', 'de': 'Rucksack', 'ru': 'Рюкзак', 'fr': 'Sac à dos'},
   'part_jetpack': {'es': 'Jetpack', 'en': 'Jetpack', 'pt': 'Jetpack', 'de': 'Jetpack', 'ru': 'Джетпак', 'fr': 'Jetpack'},

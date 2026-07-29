@@ -42,6 +42,7 @@ const partCatalog = <String, CatalogEntry>{
   'lazo dorado': CatalogEntry(id: 'lazo dorado', name: 'Lazo de la verdad', slot: 'rightHand', rarity: AccessoryRarity.common),
   'cuchillo': CatalogEntry(id: 'cuchillo', name: 'Cuchillo de combate', slot: 'rightHand', rarity: AccessoryRarity.common),
   'garfio': CatalogEntry(id: 'garfio', name: 'Garfio dorado', slot: 'rightHand', rarity: AccessoryRarity.common),
+  'esfera estelar': CatalogEntry(id: 'esfera estelar', name: 'Esfera estelar', slot: 'rightHand', rarity: AccessoryRarity.common),
 
   // ── Left hand ──────────────────────────────────────────────────────────────
   'bolso': CatalogEntry(id: 'bolso', name: 'Bolso', slot: 'leftHand', rarity: AccessoryRarity.common),
@@ -55,6 +56,7 @@ const partCatalog = <String, CatalogEntry>{
   'escudo capitán': CatalogEntry(id: 'escudo capitán', name: 'Escudo del Capitán', slot: 'leftHand', rarity: AccessoryRarity.common),
   'escudo dragón': CatalogEntry(id: 'escudo dragón', name: 'Escudo dragón dorado', slot: 'leftHand', rarity: AccessoryRarity.common),
   'pistola bláster': CatalogEntry(id: 'pistola bláster', name: 'Pistola bláster', slot: 'leftHand', rarity: AccessoryRarity.common),
+  'orbe estelar': CatalogEntry(id: 'orbe estelar', name: 'Orbe estelar', slot: 'leftHand', rarity: AccessoryRarity.common),
 
   // ── Back ───────────────────────────────────────────────────────────────────
   'capa corta': CatalogEntry(id: 'capa corta', name: 'Capa corta', slot: 'back', rarity: AccessoryRarity.common),

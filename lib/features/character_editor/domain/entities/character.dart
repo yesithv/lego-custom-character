@@ -13,7 +13,11 @@ enum SkinTone {
   blue, green, purple, orange, silver, gold  // fantastic
 }
 
-enum EyeStyle { happy, angry, surprised, sleepy, wink, laser, robot, crying, starry, determined }
+// New values are appended at the end: Hive stores enums by index.
+enum EyeStyle {
+  happy, angry, surprised, sleepy, wink, laser, robot, crying, starry,
+  determined, emerald,
+}
 enum MouthStyle { smile, frown, teeth, fangs, mustache, tongueOut, silent }
 enum EyebrowStyle { normal, arched, angry, friendly, absent }
 enum FacialExtra { none, freckles, blush, scar, tribalTattoo, warPaint, monocle }
@@ -21,7 +25,7 @@ enum FacialExtra { none, freckles, blush, scar, tribalTattoo, warPaint, monocle 
 // New values are appended at the end: Hive stores enums by index.
 enum HairStyle {
   straight, curly, afro, mohawk, ponytail, braids, shaved, bald, messy, swept,
-  fringe, longBlonde, longBlack, wavyBob,
+  fringe, longBlonde, longBlack, wavyBob, longCoral,
 }
 enum HeadwearType { none, hair, helmet, hat }
 // New values are appended at the end: Hive stores enums by index.
@@ -38,17 +42,21 @@ enum TorsoDesign {
   ninja, pirate, superhero, casual, medieval, futuristic, samurai,
   dinosaur, robot, monster, alien,
   tactical, tanktop, commando, golden,
-  spiderGwen, wonderWoman, captainMarvel, blackWidow,
+  spiderGwen, wonderWoman, captainMarvel, blackWidow, starPrincess,
 }
 
 // New values are appended at the end: Hive stores enums by index.
 enum GloveType { none, boxing, medieval, superhero, claws, energy, spiderWeb }
-enum LegDesign { plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo, mechanic, urbanCamo, golden }
+// New values are appended at the end: Hive stores enums by index.
+enum LegDesign {
+  plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo,
+  mechanic, urbanCamo, golden, cosmicStripes,
+}
 enum LegType { pants, shorts, skirt, legArmor, spacesuit }
 // New values are appended at the end: Hive stores enums by index.
 enum ShoeType {
   sneakers, military, cowboy, sandals, skates, flippers, witchBoots, barefoot,
-  heroBoots, balletTeal,
+  heroBoots, balletTeal, cosmicBoots,
 }
 
 // Accessory slots

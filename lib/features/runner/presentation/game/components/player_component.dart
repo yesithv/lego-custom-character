@@ -578,6 +578,24 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
               w * 0.06 + sway, h * (0.14 + drop * 0.6), w * 0.10, h * 0.14)
           ..close();
         drawShadedPath(canvas, mane, color);
+      case HairStyle.longCoral:
+        // Melena coral: más ancha que las demás y con las puntas separadas
+        _rr(canvas, Rect.fromLTWH(w * 0.04, -6, w * 0.92, h * 0.22), color, 9);
+        final coralSway = sin(_runAnimTimer * 6.0) * w * 0.045;
+        for (final side in [-1.0, 1.0]) {
+          final x = side < 0 ? w * 0.30 : w * 0.70;
+          final mass = Path()
+            ..moveTo(x - w * 0.26, h * 0.14)
+            ..lineTo(x + w * 0.26, h * 0.14)
+            ..quadraticBezierTo(x + w * 0.30 + coralSway * side, h * 0.44,
+                x + w * 0.18 + coralSway * side, h * 0.70)
+            ..quadraticBezierTo(x + coralSway * side, h * 0.80,
+                x - w * 0.18 + coralSway * side, h * 0.68)
+            ..quadraticBezierTo(
+                x - w * 0.30 + coralSway * side, h * 0.42, x - w * 0.26, h * 0.14)
+            ..close();
+          drawShadedPath(canvas, mass, color);
+        }
       case HairStyle.bald:
         break;
     }

@@ -1,3 +1,5 @@
+import 'dart:math' show cos, sin;
+
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/character.dart';
@@ -427,6 +429,22 @@ class _CharacterPainter extends CustomPainter {
                     rect.width * 0.22, rect.height * 0.6),
                 const Radius.circular(3)),
             Paint()..color = Colors.white);
+      case ShoeType.cosmicBoots:
+        // Bota violeta con caña plateada y disco de energía en el tobillo
+        _drawRoundRect(canvas, rect, const Color(0xFF7A34D6), 4);
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.top, rect.width, rect.height * 0.24),
+            Paint()..color = const Color(0xFFD7DBE0));
+        // Punta plateada en el empeine
+        final tipX = isLeft ? rect.left : rect.right - rect.width * 0.24;
+        canvas.drawRect(
+            Rect.fromLTWH(tipX, rect.top + rect.height * 0.24,
+                rect.width * 0.24, rect.height * 0.4),
+            Paint()..color = const Color(0xFFD7DBE0));
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.bottom - rect.height * 0.18,
+                rect.width, rect.height * 0.18),
+            Paint()..color = const Color(0xFF3B1470));
     }
   }
 
@@ -790,6 +808,59 @@ class _CharacterPainter extends CustomPainter {
           ..lineTo(cx, torsoTop + torsoH * 0.46)
           ..close();
         canvas.drawPath(hourglass, red);
+      case TorsoDesign.starPrincess:
+        // Traje violeta con peto plateado, gema verde al cuello y cintura
+        // descubierta cerrada por una hebilla ovalada.
+        const silver = Color(0xFFD7DBE0);
+        // Peto/cuello plateado en forma de "alas" sobre los hombros
+        final yoke = Path()
+          ..moveTo(torsoX, torsoTop)
+          ..lineTo(torsoX + torsoW * 0.30, torsoTop)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.30, torsoX + torsoW * 0.70,
+              torsoTop)
+          ..lineTo(torsoX + torsoW, torsoTop)
+          ..lineTo(torsoX + torsoW, torsoTop + torsoH * 0.26)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.46, torsoX,
+              torsoTop + torsoH * 0.26)
+          ..close();
+        drawShadedPath(canvas, yoke, silver);
+        // Gema verde con forma de gota, justo bajo el cuello
+        final gem = Path()
+          ..moveTo(cx, torsoTop + torsoH * 0.12)
+          ..quadraticBezierTo(cx + torsoW * 0.07, torsoTop + torsoH * 0.20, cx,
+              torsoTop + torsoH * 0.30)
+          ..quadraticBezierTo(cx - torsoW * 0.07, torsoTop + torsoH * 0.20, cx,
+              torsoTop + torsoH * 0.12)
+          ..close();
+        drawShadedPath(canvas, gem, const Color(0xFF7CE04B));
+        canvas.drawCircle(
+            Offset(cx - torsoW * 0.015, torsoTop + torsoH * 0.19),
+            torsoW * 0.016,
+            Paint()..color = Colors.white.withValues(alpha: 0.75));
+        // Cintura descubierta: banda de piel entre el top y el pantalón
+        canvas.drawRect(
+            Rect.fromLTWH(torsoX, torsoTop + torsoH * 0.60, torsoW, torsoH * 0.22),
+            Paint()..color = skin);
+        // Hebilla ovalada plateada sobre el ombligo
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(cx, torsoTop + torsoH * 0.71),
+                width: torsoW * 0.20,
+                height: torsoH * 0.20),
+            Paint()..color = silver);
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(cx, torsoTop + torsoH * 0.71),
+                width: torsoW * 0.20,
+                height: torsoH * 0.20),
+            outlinePaintFor(silver));
+        // Costados plateados del pantalón asomando bajo la cintura
+        for (final side in [torsoX, torsoX + torsoW * 0.82]) {
+          canvas.drawRect(
+              Rect.fromLTWH(side, torsoTop + torsoH * 0.82, torsoW * 0.18,
+                  torsoH * 0.18),
+              Paint()..color = silver);
+        }
     }
   }
 
@@ -1955,6 +2026,57 @@ class _CharacterPainter extends CustomPainter {
             Rect.fromLTWH(fist.dx - w * 0.02, fist.dy - fistR * 1.2,
                 w * 0.04, fistR * 1.35),
             body);
+      case 'esfera estelar':
+        _drawEnergyOrb(canvas, fist, spokes: true);
+      case 'orbe estelar':
+        _drawEnergyOrb(canvas, fist, spokes: false);
+    }
+  }
+
+  /// Disco de energía verde translúcido sujeto en el puño (pieza de "plástico
+  /// transparente": núcleo claro, halo suave y borde brillante).
+  void _drawEnergyOrb(Canvas canvas, Offset fist, {required bool spokes}) {
+    final c = Offset(fist.dx, fist.dy - fistR * 0.1);
+    final r = w * 0.072;
+    canvas.drawCircle(
+        c, r * 1.25, Paint()..color = const Color(0xFFB2FF59).withValues(alpha: 0.28));
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.3, -0.35),
+          colors: [
+            const Color(0xFFEEFFCB).withValues(alpha: 0.95),
+            const Color(0xFFB2FF59).withValues(alpha: 0.85),
+            const Color(0xFF64DD17).withValues(alpha: 0.75),
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(Rect.fromCircle(center: c, radius: r)),
+    );
+    canvas.drawCircle(
+        c,
+        r,
+        Paint()
+          ..color = const Color(0xFF33691E).withValues(alpha: 0.55)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2);
+    canvas.drawCircle(Offset(c.dx - r * 0.32, c.dy - r * 0.36), r * 0.22,
+        Paint()..color = Colors.white.withValues(alpha: 0.85));
+    if (spokes) {
+      // Destellos radiales: la esfera "carga" energía
+      final ray = Paint()
+        ..color = Colors.white.withValues(alpha: 0.45)
+        ..strokeWidth = 1.4
+        ..strokeCap = StrokeCap.round;
+      for (var i = 0; i < 4; i++) {
+        final a = 0.4 + i * 1.57;
+        canvas.drawLine(
+          Offset(c.dx + cos(a) * r * 0.45, c.dy + sin(a) * r * 0.45),
+          Offset(c.dx + cos(a) * r * 0.92, c.dy + sin(a) * r * 0.92),
+          ray,
+        );
+      }
     }
   }
 
@@ -2076,6 +2198,50 @@ class _CharacterPainter extends CustomPainter {
       case HairStyle.longBlack:
       case HairStyle.wavyBob:
         _drawLongHairFront(canvas, hx, hy, hs, color);
+      case HairStyle.longCoral:
+        // Melena coral con mucho volumen: la masa crece hacia los lados de la
+        // cabeza (no hacia arriba, que se saldría del encuadre) y baja en
+        // ondas por delante de las orejas.
+        final crown = Path()
+          ..moveTo(hx - hs * 0.20, hy + hs * 0.32)
+          ..quadraticBezierTo(
+              hx - hs * 0.26, hy - hs * 0.02, hx + hs * 0.22, hy - hs * 0.11)
+          ..quadraticBezierTo(
+              hx + hs * 0.78, hy - hs * 0.16, hx + hs * 1.26, hy + hs * 0.02)
+          ..quadraticBezierTo(hx + hs * 1.22, hy + hs * 0.18,
+              hx + hs * 1.14, hy + hs * 0.32)
+          ..quadraticBezierTo(hx + hs * 0.90, hy + hs * 0.06,
+              hx + hs * 0.50, hy + hs * 0.10)
+          ..quadraticBezierTo(
+              hx + hs * 0.10, hy + hs * 0.14, hx - hs * 0.20, hy + hs * 0.32)
+          ..close();
+        drawShadedPath(canvas, crown, color);
+        // Ondas del flequillo abriéndose desde la raya central
+        final parting = Paint()
+          ..color = darkenColor(color, 0.16).withValues(alpha: 0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6;
+        for (final side in [-1.0, 1.0]) {
+          canvas.drawPath(
+            Path()
+              ..moveTo(hx + hs * 0.5, hy - hs * 0.06)
+              ..quadraticBezierTo(hx + hs * (0.5 + side * 0.26), hy - hs * 0.02,
+                  hx + hs * (0.5 + side * 0.54), hy + hs * 0.14),
+            parting,
+          );
+        }
+        // Mechones laterales por delante de las orejas
+        for (final side in [-1.0, 1.0]) {
+          final anchor = side < 0 ? hx : hx + hs;
+          final lock = Path()
+            ..moveTo(anchor - side * hs * 0.06, hy + hs * 0.06)
+            ..quadraticBezierTo(anchor + side * hs * 0.18, hy + hs * 0.34,
+                anchor + side * hs * 0.02, hy + hs * 0.72)
+            ..quadraticBezierTo(anchor - side * hs * 0.16, hy + hs * 0.38,
+                anchor - side * hs * 0.16, hy + hs * 0.06)
+            ..close();
+          drawShadedPath(canvas, lock, color);
+        }
       case HairStyle.bald:
         break;
     }
@@ -2174,6 +2340,33 @@ class _CharacterPainter extends CustomPainter {
             ..color = Colors.white.withValues(alpha: 0.18)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.0,
+        );
+      }
+    } else if (style == HairStyle.longCoral) {
+      final color = hairColorFor(HairStyle.longCoral);
+      // Dos masas anchas que caen hasta la cintura, con la punta hacia fuera
+      for (final side in [-1.0, 1.0]) {
+        final anchor = side < 0 ? hx : hx + hs;
+        final mane = Path()
+          ..moveTo(anchor - side * hs * 0.14, hy + hs * 0.30)
+          ..quadraticBezierTo(anchor + side * hs * 0.26, hy + hs * 0.90,
+              anchor + side * hs * 0.14, hy + hs * 1.58)
+          ..quadraticBezierTo(anchor + side * hs * 0.08, hy + hs * 1.76,
+              anchor - side * hs * 0.10, hy + hs * 1.60)
+          ..quadraticBezierTo(anchor - side * hs * 0.20, hy + hs * 1.00,
+              anchor - side * hs * 0.18, hy + hs * 0.30)
+          ..close();
+        drawShadedPath(canvas, mane, color);
+        // Brillo siguiendo la onda
+        canvas.drawPath(
+          Path()
+            ..moveTo(anchor + side * hs * 0.00, hy + hs * 0.46)
+            ..quadraticBezierTo(anchor + side * hs * 0.16, hy + hs * 0.96,
+                anchor + side * hs * 0.06, hy + hs * 1.44),
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.22)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.4,
         );
       }
     } else if (style == HairStyle.braids) {
@@ -2520,6 +2713,36 @@ class _CharacterPainter extends CustomPainter {
       canvas.drawCircle(Offset(eyeRX, eyeY), eyeR * 1.5, Paint()..color = Colors.yellow.withValues(alpha: 0.5));
       pupil(Offset(eyeLX, eyeY), eyeR);
       pupil(Offset(eyeRX, eyeY), eyeR);
+    } else if (appearance.eyes == EyeStyle.emerald) {
+      // Ojos verde esmeralda con sombra a juego y pestaña en el extremo:
+      // la mirada alienígena de la Princesa Estelar.
+      for (final (x, dir) in [(eyeLX, -1.0), (eyeRX, 1.0)]) {
+        // Sombra de ojos verde sobre el párpado
+        canvas.drawOval(
+            Rect.fromCenter(
+                center: Offset(x, eyeY - eyeR * 0.55),
+                width: eyeR * 3.0,
+                height: eyeR * 1.5),
+            Paint()..color = const Color(0xFF7CE04B).withValues(alpha: 0.75));
+        // Iris almendrado verde con contorno oscuro
+        final iris = Rect.fromCenter(
+            center: Offset(x, eyeY), width: eyeR * 2.4, height: eyeR * 1.9);
+        canvas.drawOval(iris, Paint()..color = const Color(0xFF35C23A));
+        canvas.drawOval(
+            iris,
+            Paint()
+              ..color = Colors.black87
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.4);
+        canvas.drawCircle(Offset(x - eyeR * 0.25, eyeY - eyeR * 0.28),
+            eyeR * 0.30, Paint()..color = Colors.white.withValues(alpha: 0.9));
+        // Pestaña en el ángulo externo
+        canvas.drawLine(
+          Offset(x + dir * eyeR * 1.2, eyeY - eyeR * 0.5),
+          Offset(x + dir * eyeR * 2.0, eyeY - eyeR * 1.1),
+          strokePaint,
+        );
+      }
     } else if (appearance.eyes == EyeStyle.surprised) {
       pupil(Offset(eyeLX, eyeY), eyeR * 1.5);
       pupil(Offset(eyeRX, eyeY), eyeR * 1.5);
