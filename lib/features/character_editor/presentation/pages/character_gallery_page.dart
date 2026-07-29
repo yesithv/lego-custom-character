@@ -220,7 +220,6 @@ class _CharacterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeColor = _typeColor(character.type);
     return GestureDetector(
       onTap: onEdit,
       child: Container(
@@ -260,7 +259,12 @@ class _CharacterCard extends StatelessWidget {
                 // Figura sobre una plataforma tenue
                 Expanded(
                   child: Center(
-                    child: _CharacterStand(appearance: character.appearance),
+                    // Si la tarjeta queda corta (pantallas pequeñas) la figura
+                    // se reduce en vez de recortarse por la cabeza.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: _CharacterStand(appearance: character.appearance),
+                    ),
                   ),
                 ),
                 // Nombre
@@ -280,11 +284,6 @@ class _CharacterCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 6),
-                // Badge de tipo
-                _TypeBadge(
-                    label: context.l10n.characterType(character.type),
-                    color: typeColor),
                 const SizedBox(height: 10),
                 // CTA principal: jugar con este personaje
                 _PlayCardButton(onTap: onPlay),
@@ -430,33 +429,6 @@ class _PlayCardButton extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TypeBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _TypeBadge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.20),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.5),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
         ),
       ),
     );
@@ -676,13 +648,6 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-Color _typeColor(CharacterType type) => switch (type) {
-      CharacterType.hero => const Color(0xFF4A90E2),
-      CharacterType.villain => const Color(0xFFEC407A),
-      CharacterType.neutral => const Color(0xFF2ECC71),
-      CharacterType.mysterious => const Color(0xFFB07CE8),
-    };
 
 /// Patrón de puntos sutil sobre el fondo azul (igual que el home).
 class _DotsPainter extends CustomPainter {
