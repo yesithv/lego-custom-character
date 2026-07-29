@@ -11,9 +11,12 @@ import '../datasources/store_local_datasource.dart';
 import '../models/entitlements_model.dart';
 
 /// Implementación **real** de la tienda con `in_app_purchase`
-/// (Google Play Billing / Apple StoreKit). Sustituye a `StubStoreRepository`
-/// cuando el proyecto tenga plataformas nativas y productos dados de alta en
-/// las consolas, con los mismos IDs que [storeCatalog].
+/// (Google Play Billing / Apple StoreKit). Es la que se registra en móvil
+/// (ver `core/di/injection.dart`); en la demo web se usa `StubStoreRepository`
+/// porque el plugin no tiene implementación para web.
+///
+/// Los productos deben estar dados de alta en la consola de la tienda con los
+/// mismos IDs que [storeCatalog].
 ///
 /// Diseño:
 /// - Las **compras** y la **restauración** pasan por la tienda (dinero real).
@@ -23,15 +26,18 @@ import '../models/entitlements_model.dart';
 /// - Los métodos que **no** implican dinero (`entitlementsSync`, `spendGems`,
 ///   `claimVipDaily`) son locales (idénticos al stub).
 ///
-/// ⚠️ Requiere `flutter pub get` y **solo funciona en iOS/Android**. No se
-/// registra por defecto para no afectar a la web (ver `core/di/injection.dart`).
-///
-/// Limitaciones conocidas (aptas para v1; endurecer luego):
-/// - **Sin validación de recibos en servidor.** El estado se concede en el
-///   cliente; para producción robusta, valida el recibo en un backend.
+/// Limitaciones asumidas en el MVP v1 (app autónoma, sin servidor propio):
+/// - **Sin validación de recibos en servidor.** El beneficio se concede en el
+///   cliente cuando la tienda confirma la compra. Es aceptable para un juego de
+///   cosméticos: el riesgo es que un dispositivo manipulado se autoconceda
+///   gemas, y eso no afecta a otros jugadores (no hay ranking en línea).
 /// - **Suscripción sin control de vencimiento.** Se marca `subscriptionActive`
-///   al comprar/restaurar; no se rastrea la fecha de expiración (requiere
-///   backend o la App Store Server API / Play Developer API).
+///   al comprar o restaurar, y no se rastrea la fecha de caducidad: al
+///   cancelarse, el VIP sigue activo en el dispositivo. Resolverlo requiere
+///   servidor (Play Developer API / App Store Server API) → fuera del MVP.
+/// - **Estado solo local.** Si el usuario reinstala, debe usar "Restaurar
+///   compras" para recuperar lo no consumible; las gemas ya gastadas no se
+///   recuperan.
 /// - **"Pedir permiso" (Ask to Buy):** una compra puede quedar en
 ///   [PurchaseStatus.pending] a la espera de aprobación parental; la UI debería
 ///   contemplar ese estado (aquí simplemente no se resuelve hasta que llega el

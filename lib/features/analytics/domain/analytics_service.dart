@@ -3,11 +3,11 @@ import 'entities/analytics_summary.dart';
 
 /// Servicio de analítica **agnóstico del proveedor**.
 ///
-/// La implementación actual ([LocalAnalyticsService]) guarda los eventos en
-/// local (Hive), sin SDKs de terceros — requisito para la categoría Kids de
-/// Apple. Para enviar los eventos a un backend propio, se añade un *sink*
-/// remoto en la implementación (o se envuelve con un decorador) sin tocar la
-/// instrumentación de las pantallas.
+/// La implementación del MVP v1 ([LocalAnalyticsService]) guarda los eventos
+/// **solo en el dispositivo** (Hive), sin SDKs de terceros y sin red: es lo que
+/// permite declarar en Google Play que la app no recoge ni comparte datos, y
+/// cumple la categoría Kids de Apple. Sirve para QA e instrumentación, no para
+/// métricas de negocio agregadas.
 abstract class AnalyticsService {
   /// Marca el arranque de la app: inicia sesión, fija el primer uso y registra
   /// el día activo. No lanza excepciones.

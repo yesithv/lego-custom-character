@@ -1,0 +1,18 @@
+# Plantilla de credenciales de firma para Google Play.
+#
+# 1. Genera el almacén de claves (una sola vez; guárdalo fuera del repo y haz
+#    copia de seguridad: si lo pierdes, no puedes actualizar la app en Play):
+#
+#    keytool -genkey -v -keystore ~/run-for-win-upload.jks \
+#      -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# 2. Copia este archivo a `android/key.properties` y rellena los valores.
+#    `android/key.properties` está en .gitignore: NUNCA se sube al repositorio.
+#
+# 3. `flutter build appbundle --release` ya firmará con estas claves.
+
+storePassword=
+keyPassword=
+keyAlias=upload
+# Ruta absoluta al .jks (o relativa a android/app/)
+storeFile=/ruta/absoluta/a/run-for-win-upload.jks

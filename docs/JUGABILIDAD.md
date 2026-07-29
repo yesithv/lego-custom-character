@@ -301,7 +301,7 @@ Al terminar una carrera, `advanceMissions(MissionRunData)` suma el progreso corr
 
 Puntuaciones locales por mundo (caja `scores`, `ScoreModel`). Al terminar una carrera se registra la puntuación bajo el `worldId` correspondiente. La pantalla `/ranking/:worldId` muestra la tabla de ese mundo.
 
-> El repositorio de ranking está detrás de la interfaz `ScoreRepository`. Para pasar a un ranking online (p. ej. Firebase) basta con sustituir `ScoreLocalRepository` por otra implementación en `injection.dart`.
+> En el **MVP v1 el ranking es local por dispositivo**: la app no habla con ningún servidor. El repositorio está detrás de la interfaz `ScoreRepository`, así que un ranking global sería otra implementación registrada en `injection.dart` — fuera del alcance de esta versión.
 
 ---
 

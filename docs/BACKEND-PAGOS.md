@@ -1,15 +1,31 @@
 # Backend de validación de pagos
 
-Estado: **diseño / propuesta**. Aún no existe backend; hoy la Tienda usa
-`StubStoreRepository` (compras simuladas en local) y los *entitlements* viven
-solo en Hive dentro del dispositivo. Este documento define **cómo debería ser**
-el backend para validar pagos reales cuando se publiquen las apps nativas, cómo
-encaja con la arquitectura actual, y qué **más** debería incluir.
+> ## ⛔ FUERA DEL ALCANCE DEL MVP v1 — documento archivado
+>
+> **Decisión del proyecto:** el MVP v1 que se publica en Google Play es una app
+> **totalmente autónoma**, sin backend, sin API y sin peticiones de red. Los
+> pagos se cobran con **Google Play Billing** y el estado se concede en el
+> cliente. Nada de lo descrito aquí está construido ni empezado, y **no hace
+> falta para lanzar**. Ver *Alcance del MVP v1* en el
+> [`README.md`](../README.md).
+>
+> Este documento se conserva **solo como diseño de referencia** para el día que
+> se quiera dar el salto a servidor (validación de recibos, control de
+> vencimiento de la suscripción, ranking global, analítica agregada). Al
+> retomarlo, revisa versiones y precios: quedó escrito antes del lanzamiento.
+>
+> Las limitaciones que se asumen por no tener servidor están documentadas en el
+> README y en `in_app_purchase_store_repository.dart`.
 
-> **Decisión de stack (firme):** el backend será un **repositorio aparte** sobre
+Estado: **diseño / propuesta, aparcado**. Este documento define **cómo debería
+ser** un backend para validar pagos reales, cómo encajaría con la arquitectura
+actual, y qué **más** debería incluir.
+
+> **Nota sobre el stack propuesto:** se planteó un **repositorio aparte** sobre
 > **Firebase Cloud Functions + Firestore + Firebase Auth anónimo**. Repo cliente:
 > `run-for-win` (esta app). Repo backend: nuevo, p. ej. `run-for-win-backend`.
-> Los requerimientos técnicos completos están en **§11**.
+> Los requerimientos técnicos completos están en **§11**. Es una propuesta, no
+> un compromiso: nada de esto está contratado ni creado.
 
 > Contexto obligatorio antes de leer: **público niños (<13)** → COPPA / GDPR-K /
 > reglas Kids de las tiendas; **monetización solo IAP, sin anuncios**; analítica
