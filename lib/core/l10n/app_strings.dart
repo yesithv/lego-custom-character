@@ -977,6 +977,10 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Guardar y jugar', 'en': 'Save and play', 'pt': 'Salvar e jogar',
     'de': 'Speichern und spielen', 'ru': 'Сохранить и играть', 'fr': 'Enregistrer et jouer',
   },
+  'editor_save': {
+    'es': 'Guardar', 'en': 'Save', 'pt': 'Salvar',
+    'de': 'Speichern', 'ru': 'Сохранить', 'fr': 'Enregistrer',
+  },
   'editor_saved': {
     'es': '¡Personaje guardado!', 'en': 'Character saved!', 'pt': 'Personagem salvo!',
     'de': 'Figur gespeichert!', 'ru': 'Персонаж сохранён!', 'fr': 'Personnage enregistré !',

@@ -167,9 +167,6 @@ class _PreRunPageState extends State<PreRunPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      _CharacterTypeBadge(type: widget.character.type),
-
                       const SizedBox(height: 20),
 
                       // Misiones activas (en paralelo, compacto)
@@ -664,35 +661,3 @@ class _CircleIconButton extends StatelessWidget {
   }
 }
 
-class _CharacterTypeBadge extends StatelessWidget {
-  final CharacterType type;
-  const _CharacterTypeBadge({required this.type});
-
-  static const _labels = {
-    CharacterType.hero: ('Héroe', Colors.blue),
-    CharacterType.villain: ('Villano', Colors.red),
-    CharacterType.neutral: ('Neutral', Colors.grey),
-    CharacterType.mysterious: ('Misterioso', Colors.purple),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final (_, color) = _labels[type]!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.5),
-      ),
-      child: Text(
-        context.l10n.characterType(type),
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-}

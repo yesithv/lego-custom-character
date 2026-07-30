@@ -708,8 +708,6 @@ class _ActiveCharacterCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              _CharacterTypeBadge(type: character.type),
             ],
           ),
         );
@@ -777,29 +775,3 @@ class _CharacterStage extends StatelessWidget {
   }
 }
 
-/// Badge con el tipo de personaje (Héroe / Villano / …).
-class _CharacterTypeBadge extends StatelessWidget {
-  final CharacterType type;
-
-  const _CharacterTypeBadge({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white38, width: 1.5),
-      ),
-      child: Text(
-        context.l10n.characterType(type),
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-}

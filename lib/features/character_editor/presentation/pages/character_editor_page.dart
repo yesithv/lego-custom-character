@@ -17,6 +17,11 @@ import '../bloc/character_editor_event.dart';
 import '../bloc/character_editor_state.dart';
 import '../widgets/character_preview.dart';
 
+/// Largo máximo del nombre de un personaje. Cubre los presets más largos
+/// (17 caracteres, p. ej. "Capitán Estrella") con un carácter de margen y
+/// mantiene el título del editor corto para dar espacio a los botones.
+const int kMaxCharacterNameLength = 18;
+
 class CharacterEditorPage extends StatelessWidget {
   final String? characterId;
   final PresetCharacter? preset;
@@ -96,6 +101,9 @@ class _EditorViewState extends State<_EditorView> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF1466C8),
           elevation: 0,
+          // Menos espacio a la izquierda para dejar más ancho a los botones
+          // de acción (guardar / guardar y jugar) sin que el nombre los apriete.
+          titleSpacing: 0,
           leading: BackButton(
             color: Colors.white,
             onPressed: () => context.goNamed('gallery'),
@@ -106,54 +114,45 @@ class _EditorViewState extends State<_EditorView> {
               state.currentCharacter?.name.isEmpty ?? true
                   ? context.l10n.tr('editor_new_character')
                   : state.currentCharacter!.name,
+              // El nombre nunca empuja los botones: se recorta con puntos
+              // suspensivos si es largo (el límite real es maxLength en el campo).
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
+                fontSize: 18,
               ),
             ),
           ),
           actions: [
-            // Guardar y correr de una vez con este personaje.
-            IconButton(
+            // Guardar y correr de una vez con este personaje (botón verde).
+            _EditorActionButton(
               tooltip: context.l10n.tr('editor_save_and_play'),
-              onPressed: () {
+              background: const Color(0xFF43A047),
+              icon: Icons.sports_score_rounded,
+              iconColor: Colors.white,
+              onTap: () {
                 _playAfterSave = true;
                 context
                     .read<CharacterEditorBloc>()
                     .add(const SaveCurrentCharacter());
               },
-              icon: const Icon(Icons.sports_score_rounded,
-                  color: Color(0xFF43A047), size: 30),
             ),
+            // Guardar personaje (botón amarillo, con estado de guardado).
             BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
-              builder: (context, state) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Material(
-                  color: const Color(0xFFFFD700),
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => context
-                        .read<CharacterEditorBloc>()
-                        .add(const SaveCurrentCharacter()),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: state.status == EditorStatus.saving
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black87,
-                              ),
-                            )
-                          : const Icon(Icons.save_rounded,
-                              color: Colors.black87, size: 22),
-                    ),
-                  ),
-                ),
+              builder: (context, state) => _EditorActionButton(
+                tooltip: context.l10n.tr('editor_save'),
+                background: const Color(0xFFFFD700),
+                icon: Icons.save_rounded,
+                iconColor: Colors.black87,
+                isBusy: state.status == EditorStatus.saving,
+                onTap: () => context
+                    .read<CharacterEditorBloc>()
+                    .add(const SaveCurrentCharacter()),
               ),
             ),
+            const SizedBox(width: 8),
           ],
         ),
         body: BlocBuilder<CharacterEditorBloc, CharacterEditorState>(
@@ -252,6 +251,9 @@ class _PreviewSectionState extends State<_PreviewSection> {
                 const SizedBox(height: 6),
                 TextField(
                   controller: _nameController,
+                  // Límite de nombre: mantiene el título del editor corto para
+                  // que los botones de acción tengan más espacio y sean grandes.
+                  maxLength: kMaxCharacterNameLength,
                   onChanged: (v) =>
                       context.read<CharacterEditorBloc>().add(UpdateName(v)),
                   decoration: InputDecoration(
@@ -259,6 +261,8 @@ class _PreviewSectionState extends State<_PreviewSection> {
                     filled: true,
                     fillColor: Colors.white,
                     isDense: true,
+                    // Oculta el contador "0/18" para no ensuciar el campo.
+                    counterText: '',
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     border: OutlineInputBorder(
@@ -309,6 +313,59 @@ class _WalletPill extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón de acción del AppBar del editor (guardar / guardar y jugar).
+///
+/// Cuadrado redondeado grande y con buen área táctil para dedos de niños.
+/// Reemplaza a los iconos pequeños anteriores: ~20 % más grande.
+class _EditorActionButton extends StatelessWidget {
+  final String tooltip;
+  final Color background;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onTap;
+  final bool isBusy;
+
+  const _EditorActionButton({
+    required this.tooltip,
+    required this.background,
+    required this.icon,
+    required this.iconColor,
+    required this.onTap,
+    this.isBusy = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: background,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: isBusy ? null : onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: isBusy
+                  ? SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: iconColor,
+                      ),
+                    )
+                  : Icon(icon, color: iconColor, size: 28),
+            ),
+          ),
         ),
       ),
     );
