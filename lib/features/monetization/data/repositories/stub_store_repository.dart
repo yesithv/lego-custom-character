@@ -37,6 +37,12 @@ class StubStoreRepository implements StoreRepository {
   }
 
   @override
+  Future<Map<String, String>> loadPrices(Set<String> ids) async {
+    // No hay tienda real: la UI cae al `priceLabel` de relleno del catálogo.
+    return const {};
+  }
+
+  @override
   Future<PurchaseResult> buy(StoreProduct product) async {
     // Simula la latencia de la tienda.
     await Future<void>.delayed(const Duration(milliseconds: 600));

@@ -6,12 +6,19 @@ class PurchaseResult {
   final bool success;
   final Entitlements entitlements;
 
-  /// Motivo del fallo/cancelación (null si tuvo éxito).
+  /// La compra quedó **pendiente** de una acción externa (típicamente la
+  /// aprobación de un adulto vía "Pedir permiso" / Ask to Buy). No es un éxito
+  /// ni un fallo: el beneficio se concederá más tarde, cuando la tienda
+  /// confirme la compra, y se reflejará al recargar la Tienda.
+  final bool pending;
+
+  /// Motivo del fallo/cancelación (null si tuvo éxito o quedó pendiente).
   final String? error;
 
   const PurchaseResult({
     required this.success,
     required this.entitlements,
+    this.pending = false,
     this.error,
   });
 }
@@ -34,6 +41,13 @@ abstract class StoreRepository {
   /// Reclama el regalo diario VIP si procede. Devuelve el estado actualizado y
   /// cuántas gemas se otorgaron (0 si no era VIP o ya se reclamó hoy).
   Future<({Entitlements entitlements, int gemsGranted})> claimVipDaily();
+
+  /// Precios reales y **localizados** (moneda del usuario, ya formateados por
+  /// la tienda) de los productos [ids]. La clave es el id del producto; el
+  /// valor, el precio a mostrar. Los ids que la tienda no devuelva se omiten
+  /// del mapa: la UI debe caer al `priceLabel` de relleno del catálogo. En web
+  /// (stub) el mapa va vacío porque no hay tienda real.
+  Future<Map<String, String>> loadPrices(Set<String> ids);
 
   /// Intenta comprar [product]. La **compuerta parental** es responsabilidad
   /// de la capa de presentación: llámala antes de invocar esto.
