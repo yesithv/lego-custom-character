@@ -460,6 +460,31 @@ const List<PresetCharacter> presetCharacters = [
       ),
     ),
   ),
+  PresetCharacter(
+    id: 'preset_leila_princess',
+    name: 'Princesa Leila',
+    collection: 'Heroínas',
+    type: CharacterType.hero,
+    appearance: CharacterAppearance(
+      skinTone: SkinTone.light,
+      eyes: EyeStyle.determined,
+      mouth: MouthStyle.smile,
+      eyebrows: EyebrowStyle.arched,
+      // Peinado icónico: raya al medio y dos grandes rodetes a los lados
+      headwearType: HeadwearType.hair,
+      hairStyle: HairStyle.sideBuns,
+      // Túnica ceremonial blanca con cuello en capucha
+      torso: TorsoDesign.princessLeia,
+      // Vestido largo blanco (falda) que cae hasta los pies
+      legDesign: LegDesign.whiteGown,
+      legType: LegType.skirt,
+      shoes: ShoeType.sandals,
+      accessories: CharacterAccessories(
+        // Cinturón de cadena plateada, el detalle metálico de la túnica
+        waist: 'cinturón plateado',
+      ),
+    ),
+  ),
 ];
 
 List<String> get presetCollections {

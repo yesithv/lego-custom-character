@@ -64,6 +64,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'hair_longBlack': {'es': 'Largo negro', 'en': 'Long black', 'pt': 'Longo preto', 'de': 'Lang schwarz', 'ru': 'Длинные чёрные', 'fr': 'Longs noirs'},
   'hair_wavyBob': {'es': 'Melena ondulada', 'en': 'Wavy bob', 'pt': 'Corte ondulado', 'de': 'Wellenbob', 'ru': 'Волнистое каре', 'fr': 'Carré ondulé'},
   'hair_longCoral': {'es': 'Largo coral', 'en': 'Long coral', 'pt': 'Longo coral', 'de': 'Lang Koralle', 'ru': 'Длинные коралловые', 'fr': 'Longs corail'},
+  'hair_sideBuns': {'es': 'Rodetes laterales', 'en': 'Side buns', 'pt': 'Coques laterais', 'de': 'Seitliche Dutts', 'ru': 'Боковые пучки', 'fr': 'Macarons'},
 
   // ── Casco ─────────────────────────────────────────────────────────────────
   'helmet_medieval': {'es': 'Medieval', 'en': 'Medieval', 'pt': 'Medieval', 'de': 'Mittelalter', 'ru': 'Средневековый', 'fr': 'Médiéval'},
@@ -119,6 +120,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'torso_captainMarvel': {'es': 'Capitana', 'en': 'Captain', 'pt': 'Capitã', 'de': 'Kapitänin', 'ru': 'Капитан', 'fr': 'Capitaine'},
   'torso_blackWidow': {'es': 'Espía', 'en': 'Spy', 'pt': 'Espiã', 'de': 'Spionin', 'ru': 'Шпионка', 'fr': 'Espionne'},
   'torso_starPrincess': {'es': 'Princesa estelar', 'en': 'Star princess', 'pt': 'Princesa estelar', 'de': 'Sternenprinzessin', 'ru': 'Звёздная принцесса', 'fr': 'Princesse des étoiles'},
+  'torso_princessLeia': {'es': 'Túnica de princesa', 'en': 'Princess robe', 'pt': 'Túnica de princesa', 'de': 'Prinzessinnengewand', 'ru': 'Мантия принцессы', 'fr': 'Robe de princesse'},
 
   // ── Guantes ───────────────────────────────────────────────────────────────
   'glove_none': {'es': 'Ninguno', 'en': 'None', 'pt': 'Nenhum', 'de': 'Keiner', 'ru': 'Нет', 'fr': 'Aucun'},
@@ -142,6 +144,7 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'legDesign_urbanCamo': {'es': 'Camuflaje urbano', 'en': 'Urban camo', 'pt': 'Camuflagem urbana', 'de': 'Stadttarnung', 'ru': 'Городской камуфляж', 'fr': 'Camouflage urbain'},
   'legDesign_golden': {'es': 'Dorado', 'en': 'Golden', 'pt': 'Dourado', 'de': 'Golden', 'ru': 'Золотой', 'fr': 'Doré'},
   'legDesign_cosmicStripes': {'es': 'Rayas cósmicas', 'en': 'Cosmic stripes', 'pt': 'Listras cósmicas', 'de': 'Kosmische Streifen', 'ru': 'Космические полосы', 'fr': 'Rayures cosmiques'},
+  'legDesign_whiteGown': {'es': 'Vestido blanco', 'en': 'White gown', 'pt': 'Vestido branco', 'de': 'Weißes Kleid', 'ru': 'Белое платье', 'fr': 'Robe blanche'},
 
   // ── Tipo de piernas ───────────────────────────────────────────────────────
   'legType_pants': {'es': 'Pantalón', 'en': 'Pants', 'pt': 'Calça', 'de': 'Hose', 'ru': 'Штаны', 'fr': 'Pantalon'},

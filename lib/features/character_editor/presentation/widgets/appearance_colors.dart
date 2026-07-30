@@ -46,6 +46,7 @@ Color torsoColorFor(TorsoDesign design) => switch (design) {
       TorsoDesign.captainMarvel => const Color(0xFF1A237E),
       TorsoDesign.blackWidow => const Color(0xFF212121),
       TorsoDesign.starPrincess => const Color(0xFF6A2BBE),
+      TorsoDesign.princessLeia => const Color(0xFFF3F1EA),
     };
 
 Color legColorFor(LegDesign design) => switch (design) {
@@ -61,6 +62,7 @@ Color legColorFor(LegDesign design) => switch (design) {
       LegDesign.urbanCamo => const Color(0xFF3A3F44),
       LegDesign.golden => const Color(0xFFD4AF37),
       LegDesign.cosmicStripes => const Color(0xFF6A2BBE),
+      LegDesign.whiteGown => const Color(0xFFF3F1EA),
     };
 
 /// [skin] se usa para sandalias y pies descalzos.
@@ -94,6 +96,7 @@ Color hairColorFor(HairStyle style) => switch (style) {
       HairStyle.longBlack => const Color(0xFF141414),
       HairStyle.wavyBob => const Color(0xFFC85A1B),
       HairStyle.longCoral => const Color(0xFFF2645F),
+      HairStyle.sideBuns => const Color(0xFF5A3A1E),
     };
 
 Color helmetColorFor(HelmetStyle style) => switch (style) {
@@ -142,6 +145,9 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
   switch (design) {
     case LegDesign.plain:
     case LegDesign.golden:
+    case LegDesign.whiteGown:
+      // El vestido largo se dibuja como falda en la vista previa; la pierna
+      // debajo queda lisa (el pliegue del vestido lo pinta la falda).
       break;
     case LegDesign.camouflage:
       final blotch = Paint()..color = Colors.green.shade900;

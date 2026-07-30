@@ -861,6 +861,42 @@ class _CharacterPainter extends CustomPainter {
                   torsoH * 0.18),
               Paint()..color = silver);
         }
+      case TorsoDesign.princessLeia:
+        // Túnica ceremonial blanca: cuello en capucha caído sobre los hombros
+        // y pliegues verticales que caen desde el pecho.
+        final shade = darkenColor(const Color(0xFFF3F1EA), 0.10);
+        // Capucha/cuello drapeado sobre los hombros
+        final hood = Path()
+          ..moveTo(torsoX, torsoTop)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.02,
+              torsoX + torsoW, torsoTop)
+          ..lineTo(torsoX + torsoW, torsoTop + torsoH * 0.22)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.40, torsoX,
+              torsoTop + torsoH * 0.22)
+          ..close();
+        drawShadedPath(canvas, hood, const Color(0xFFEDEAE0));
+        // Escote en V de la túnica
+        final vNeck = Path()
+          ..moveTo(cx - torsoW * 0.16, torsoTop + torsoH * 0.06)
+          ..lineTo(cx, torsoTop + torsoH * 0.34)
+          ..lineTo(cx + torsoW * 0.16, torsoTop + torsoH * 0.06);
+        canvas.drawPath(
+            vNeck,
+            Paint()
+              ..color = shade.withValues(alpha: 0.6)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.6);
+        // Pliegues verticales de la túnica
+        final fold = Paint()
+          ..color = shade.withValues(alpha: 0.5)
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke;
+        for (final fx in [0.30, 0.5, 0.70]) {
+          canvas.drawLine(
+              Offset(torsoX + torsoW * fx, torsoTop + torsoH * 0.44),
+              Offset(torsoX + torsoW * fx, torsoTop + torsoH * 0.96),
+              fold);
+        }
     }
   }
 
@@ -1311,6 +1347,36 @@ class _CharacterPainter extends CustomPainter {
                 width: hipW * 0.14,
                 height: beltRect.height * 0.8),
             Paint()..color = const Color(0xFFFFD700));
+      case 'cinturón plateado':
+        // Cinturón de eslabones plateados con una cadena que cuelga en V,
+        // el detalle metálico de la túnica de la princesa.
+        const silver = Color(0xFFCED2D8);
+        final linkRect = Rect.fromLTWH(
+            (w - hipW) / 2, hipTop + hipH * 0.15, hipW, hipH * 0.42);
+        canvas.drawRect(linkRect, metalPaint(linkRect));
+        canvas.drawRect(linkRect, outlinePaintFor(silver, width: 1.2));
+        // Eslabones marcados a lo largo del cinturón
+        final link = Paint()
+          ..color = darkenColor(silver, 0.22).withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.1;
+        for (var i = 1; i < 6; i++) {
+          final lx = linkRect.left + linkRect.width * i / 6;
+          canvas.drawLine(Offset(lx, linkRect.top),
+              Offset(lx, linkRect.bottom), link);
+        }
+        // Cadena colgante en V al frente
+        final chain = Paint()
+          ..color = silver
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2
+          ..strokeCap = StrokeCap.round;
+        final apex = Offset(w / 2, linkRect.bottom + hipH * 0.9);
+        canvas.drawLine(
+            Offset(linkRect.left + hipW * 0.24, linkRect.bottom), apex, chain);
+        canvas.drawLine(
+            Offset(linkRect.right - hipW * 0.24, linkRect.bottom), apex, chain);
+        drawPlasticSphere(canvas, apex, hipH * 0.16, silver);
       case 'tutú':
         // Tutú de bailarina: falda de tul rosa con volantes
         final pink = Colors.pink.shade300;
@@ -2241,6 +2307,41 @@ class _CharacterPainter extends CustomPainter {
                 anchor - side * hs * 0.16, hy + hs * 0.06)
             ..close();
           drawShadedPath(canvas, lock, color);
+        }
+      case HairStyle.sideBuns:
+        // Peinado de la princesa: raya al medio, casquete liso y dos grandes
+        // rodetes ("caracoles") a los lados, a la altura de las orejas.
+        _drawRoundRect(canvas,
+            Rect.fromLTWH(hx - 3, hy - hs * 0.14, hs + 6, hs * 0.30), color, 8);
+        // Raya central marcada
+        canvas.drawLine(
+            Offset(hx + hs * 0.5, hy - hs * 0.12),
+            Offset(hx + hs * 0.5, hy + hs * 0.05),
+            Paint()
+              ..color = darkenColor(color, 0.18).withValues(alpha: 0.65)
+              ..strokeWidth = 1.4
+              ..style = PaintingStyle.stroke);
+        // Patillas que enmarcan la cara hacia los rodetes
+        for (final side in [-1.0, 1.0]) {
+          final edgeX = side < 0 ? hx - 2 : hx + hs - hs * 0.12 + 2;
+          _drawRoundRect(
+              canvas,
+              Rect.fromLTWH(edgeX, hy + hs * 0.04, hs * 0.12, hs * 0.30),
+              color,
+              3);
+        }
+        // Dos rodetes esféricos con espiral interior
+        for (final side in [-1.0, 1.0]) {
+          final bx = side < 0 ? hx - hs * 0.05 : hx + hs + hs * 0.05;
+          final by = hy + hs * 0.34;
+          drawPlasticSphere(canvas, Offset(bx, by), hs * 0.23, color);
+          canvas.drawCircle(
+              Offset(bx, by),
+              hs * 0.12,
+              Paint()
+                ..color = darkenColor(color, 0.16).withValues(alpha: 0.7)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.3);
         }
       case HairStyle.bald:
         break;
