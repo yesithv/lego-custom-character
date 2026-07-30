@@ -920,12 +920,12 @@ const Map<String, Map<String, String>> kStrings = {
     'de': 'Noch keine Ereignisse.', 'ru': 'Событий пока нет.', 'fr': 'Aucun événement pour l’instant.',
   },
   'analytics_footer': {
-    'es': 'Datos solo de este dispositivo (first-party). Para métricas agregadas de negocio se enviarán a un backend propio.',
-    'en': 'Data from this device only (first-party). Aggregate business metrics will go to our own backend.',
-    'pt': 'Dados apenas deste dispositivo (first-party). Métricas de negócio agregadas irão para um backend próprio.',
-    'de': 'Daten nur von diesem Gerät (First-Party). Aggregierte Business-Metriken gehen an ein eigenes Backend.',
-    'ru': 'Данные только с этого устройства (first-party). Сводные бизнес-метрики уйдут на собственный бэкенд.',
-    'fr': 'Données de cet appareil uniquement (first-party). Les métriques agrégées iront vers notre propre backend.',
+    'es': 'Datos solo de este dispositivo. No se envía nada a internet.',
+    'en': 'Data from this device only. Nothing is sent over the internet.',
+    'pt': 'Dados apenas deste dispositivo. Nada é enviado para a internet.',
+    'de': 'Daten nur von diesem Gerät. Es wird nichts ins Internet gesendet.',
+    'ru': 'Данные только с этого устройства. Ничего не отправляется в интернет.',
+    'fr': 'Données de cet appareil uniquement. Rien n’est envoyé sur internet.',
   },
   'analytics_sessions': {
     'es': 'Sesiones', 'en': 'Sessions', 'pt': 'Sessões',

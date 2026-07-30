@@ -1,9 +1,13 @@
 # Checklist de publicación — Run For Win
 
-Lista maestra para llevar el juego de "web demo con tienda simulada" a
-**publicado y cobrando** en Google Play y App Store. Marca `[x]` a medida que
-avances. Los que dicen **(código)** los puede hacer Claude; el resto son
-acciones tuyas (cuentas, trámites, arte).
+Lista maestra para llevar el juego a **publicado y cobrando**. El objetivo
+inmediato es el **MVP v1 en Google Play**: app autónoma (sin backend ni API) con
+pagos reales. Marca `[x]` a medida que avances. Los que dicen **(código)** los
+puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
+
+> **Alcance:** Google Play primero. iOS queda para después (la carpeta `ios/` aún
+> no existe). El backend de validación de recibos está **descartado en el MVP**
+> (ver `docs/BACKEND-PAGOS.md`, archivado).
 
 ## Bloqueadores duros (resolver sí o sí antes de lanzar)
 
@@ -13,85 +17,108 @@ acciones tuyas (cuentas, trámites, arte).
   `scenery_component.dart`, `appearance_colors.dart`.
 - [ ] 🔒 **Cumplimiento infantil** completo (documentos de esta carpeta +
   formularios de las tiendas).
+- [ ] 🧪 **Modo de prueba en release** — el atajo ya exige **mantener pulsado 10
+  segundos** el título del Home, sin ninguna pista visual
+  (`core/test_mode/test_mode.dart`). Sigue existiendo en release: decidir si se
+  desactiva del todo antes de publicar con IAP. **(código)**
 
 ## 1. Cuentas y bases
 
 - [ ] Cuenta **Google Play Console** (25 USD, pago único).
-- [ ] Cuenta **Apple Developer** (99 USD/año).
-- [ ] Datos fiscales y bancarios para recibir pagos (ambas consolas).
-- [ ] Decidir **bundle id / applicationId** (p. ej. `com.[empresa].runforwin`).
+- [ ] Datos fiscales y bancarios para recibir pagos.
+- [x] **applicationId decidido:** `com.yesithv.runforwin` — ⚠️ inamovible una vez
+  publicada la app.
+- [ ] Cuenta **Apple Developer** (99 USD/año) — solo cuando se aborde iOS.
 
 ## 2. Proyecto nativo **(código + tú)**
 
-- [ ] `flutter create .` para generar las carpetas `android/` e `ios/`.
-- [ ] Configurar **nombre de app**, **bundle id**, **icono** y **splash**.
-- [ ] Verificar que la build web sigue funcionando (los plugins de pago se aíslan
-  por plataforma).
+- [x] Carpeta `android/` generada y en el repositorio.
+- [x] **Nombre de app** ("Run For Win"), **applicationId**, orientación vertical
+  fija, compileSdk/targetSdk 36, minSdk 24.
+- [x] **Config de firma** que lee `android/key.properties` (ignorado por git) con
+  plantilla `key.properties.example`; sin él, cae a claves de depuración.
+- [x] Verificado que la **build web sigue compilando** con el plugin de pagos
+  importado (el adaptador real solo se instancia en móvil).
+- [x] **Icono y splash propios**: icono clásico (5 densidades) + **adaptativo**
+  (Android 8+) y splash azul Brix. Generados por código con
+  `flutter test tool/gen_icon.dart`; dos variantes en `kVariant` (bloque, la que
+  se publica / cabeza de minifigura).
+- [ ] Crear el **keystore de subida** y rellenar `android/key.properties`
+  (comandos en el README).
+- [ ] `flutter build appbundle --release` **verificado en local** (las sesiones
+  remotas no tienen Android SDK).
+- [ ] `ios/` — más adelante.
 
 ## 3. Compras integradas (IAP) **(código)**
 
-- [ ] Añadir el plugin `in_app_purchase` (aislado para no romper web).
-- [ ] Implementar `InAppPurchaseStoreRepository implements StoreRepository`.
-- [ ] Cambiar **una línea** en `core/di/injection.dart` (stub → real).
-- [ ] Mantener la **compuerta parental** antes de cada compra (ya existe).
-- [ ] Manejar: stream de compras, completar/reconocer compra, **restaurar
-  compras** (botón ya existe).
-- [ ] (Recomendado) **Validación de recibos** en un backend mínimo.
+- [x] Plugin `in_app_purchase` en el proyecto (aislado por plataforma).
+- [x] `InAppPurchaseStoreRepository implements StoreRepository`.
+- [x] Registrado en `core/di/injection.dart`: **real en móvil, stub en web**.
+- [x] **Compuerta parental** antes de cada compra.
+- [x] Stream de compras, completar/reconocer compra y **restaurar compras**.
+- [ ] ~~Validación de recibos en un backend~~ → **fuera del MVP v1** (a cambio se
+  asumen las limitaciones documentadas en el README).
 
-## 4. Productos en las consolas
+## 4. Productos en Play Console
 
 - [ ] Crear los IAP con los **mismos IDs** del catálogo
-  (`store_product.dart`): `vip_monthly` (suscripción), `gems_small`,
-  `gems_medium` (consumibles), `bundle_starter` (no consumible), etc.
+  (`store_product.dart`): `vip_monthly` (suscripción), `gems_small` y
+  `gems_medium` (consumibles), `bundle_starter` (no consumible).
 - [ ] Fijar precios por región.
-- [ ] Configurar el grupo de **suscripción** VIP (Apple/Google).
+- [ ] Configurar el grupo de **suscripción** VIP.
+- [ ] Añadir **testers de licencia** para probar compras sin cobro real.
 
 ## 5. Documentación y cumplimiento (esta carpeta)
 
 - [ ] **Política de privacidad** publicada en una **URL pública** →
   `POLITICA-DE-PRIVACIDAD.md`.
 - [ ] **Términos de uso** (opcional pero recomendado) → `TERMINOS-DE-USO.md`.
-- [ ] **Google Data Safety** rellenado → `FORMULARIOS-TIENDAS.md`.
-- [ ] **Apple App Privacy** ("Data Not Collected") → `FORMULARIOS-TIENDAS.md`.
-- [ ] **Clasificación por edad** (cuestionario IARC / Apple) → `FORMULARIOS-TIENDAS.md`.
+- [ ] **Google Data Safety** rellenado → `FORMULARIOS-TIENDAS.md`. Con el MVP v1
+  la respuesta es **"no se recopilan ni comparten datos"**: la app no hace
+  ninguna petición de red.
+- [ ] **Clasificación por edad** (cuestionario IARC) → `FORMULARIOS-TIENDAS.md`.
 - [ ] **Google "Diseñado para familias"** activado.
-- [ ] **Apple categoría Kids** + banda de edad elegida.
 - [ ] **URL / correo de soporte** configurado.
 
 ## 6. Ficha de la tienda (`FICHA-DE-TIENDA.md`)
 
-- [ ] Nombre, subtítulo/descripción breve, descripción completa (ES + EN).
-- [ ] Palabras clave (App Store).
-- [ ] **Icono** (512² Google / 1024² Apple) — con el trade dress ya rediseñado.
-- [ ] **Capturas** (mín. 2 Google / 3 Apple) y gráfico destacado (Google).
+- [ ] Nombre, descripción breve y descripción completa (ES + EN).
+- [x] **Icono** 512² → `docs/publicacion/icono-512.png` (revisarlo si se
+  rediseña el trade dress).
+- [ ] **Capturas** (mín. 2) y **gráfico destacado** (1024×500).
 - [ ] Categoría, precio (Gratis + IAP), "sin anuncios".
 
 ## 7. Build de lanzamiento
 
-- [ ] Android: generar **AAB firmado** (keystore) y subir a Play Console.
-- [ ] iOS: build en **Xcode** y subir a **App Store Connect** vía TestFlight.
-- [ ] Probar las **compras reales** en modo sandbox/prueba antes de publicar.
+- [ ] `flutter build appbundle --release` → **AAB firmado** con el keystore de
+  subida.
+- [ ] Subir a **Play Console** → pista de **pruebas internas** primero.
+- [ ] Probar las **compras reales** con testers de licencia antes de publicar.
 
 ## 8. Revisión y publicación
 
-- [ ] Enviar a revisión (Apple: días; Google: horas-días; **apps infantiles =
-  escrutinio extra**).
+- [ ] Enviar a revisión (**apps infantiles = escrutinio extra**).
 - [ ] Responder a posibles rechazos (motivos frecuentes: privacidad, compuerta
   parental, contenido, claridad de la suscripción).
-- [ ] Publicar (recomendado: **lanzamiento por fases** en Google Play).
+- [ ] Publicar con **lanzamiento por fases**.
 
 ## 9. Post-lanzamiento
 
-- [ ] Vigilar la **analítica** (hoy local; considerar un backend para métricas
-  agregadas).
-- [ ] Recoger reseñas y planear la siguiente actualización (VIP, pase de
-  temporada, más mundos).
+- [ ] Vigilar reseñas y fallos (Play Console → Android vitals).
+- [ ] Planear la siguiente actualización (más mundos, pase de temporada, iOS).
+- [ ] Valorar un backend **solo si el negocio lo justifica** (validación de
+  recibos, vencimiento de la suscripción, ranking global).
 
 ---
 
-### Estado del código de monetización (referencia)
+### Estado del código (referencia)
 
-Ya construido y funcionando con **stub**: Tienda, gemas, **Club VIP** (gemas
-diarias + monedas ×1.5), compuerta parental, entitlements en Hive, analítica
-first-party, desbloqueo de mundos por monedas acumuladas. Lo único que falta en
-código para cobrar es el **adaptador `in_app_purchase` real** (paso 3).
+**Listo y cableado:** editor de personajes, runner con jefes, economía (monedas,
+ruleta, cofres, misiones), tienda con **pagos reales de Google Play**, gemas,
+**Club VIP** (gemas diarias + monedas ×1.5), compuerta parental, entitlements en
+Hive, analítica first-party local, desbloqueo de mundos por monedas acumuladas,
+6 idiomas y plataforma Android configurada.
+
+**Lo que falta para publicar no es código de la app**, sino arte (capturas,
+gráfico destacado, rediseño del trade dress), trámites (cuenta, formularios,
+política de privacidad) y la configuración de los productos en Play Console.

@@ -2,9 +2,9 @@ import 'analytics_event.dart';
 
 /// Resumen agregado del funnel, calculado a partir de los eventos locales.
 ///
-/// ⚠️ **Solo por dispositivo.** Sin backend, estas cifras miden este
-/// dispositivo (útil para QA e instrumentación). Para métricas de negocio
-/// agregadas hará falta enviar los eventos a un *sink* remoto propio.
+/// ⚠️ **Solo por dispositivo.** Los eventos nunca salen del móvil, así que
+/// estas cifras miden este dispositivo: son para QA e instrumentación, no para
+/// métricas de negocio agregadas.
 class AnalyticsSummary {
   final int totalEvents;
   final int sessions;

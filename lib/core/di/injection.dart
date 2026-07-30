@@ -120,6 +120,17 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => RankingBloc(repository: sl()));
 
   // ── Monetización ──────────────────────────────────────────────────────────
+  // Pagos REALES en móvil (Google Play Billing / StoreKit) y simulados en web.
+  //
+  // El adaptador de `in_app_purchase` solo existe en iOS/Android, así que en la
+  // demo web se sigue usando el stub: la tienda se puede recorrer y probar sin
+  // cobrar nada. Requisito en móvil: tener los productos dados de alta en la
+  // consola con los mismos IDs que `storeCatalog` (`vip_monthly`, `gems_small`,
+  // `gems_medium`, `bundle_starter`); si falta uno, la compra devuelve
+  // "producto no encontrado" en lugar de romper la app.
+  //
+  // El estado (gemas, VIP, poseídos) se guarda SOLO en el dispositivo: la app
+  // es autónoma, no hay servidor que valide recibos. Ver README (MVP v1).
   sl.registerLazySingleton<StoreLocalDatasource>(
     () => StoreLocalDatasourceImpl(Hive.box('entitlements')),
   );

@@ -1,8 +1,9 @@
 /// Catálogo de productos de la tienda (monetización).
 ///
 /// Es **agnóstico del proveedor**: aquí solo se describen los productos. La
-/// compra real la resuelve un [StoreRepository] (hoy un stub simulado; mañana
-/// un adaptador de `in_app_purchase` / suscripciones de las tiendas).
+/// compra la resuelve un [StoreRepository]: en móvil,
+/// `InAppPurchaseStoreRepository` (Google Play Billing / StoreKit); en la demo
+/// web, `StubStoreRepository` (simulada, sin cobrar).
 ///
 /// ⚠️ Producto **para niños**: todos los productos son cosméticos, de
 /// conveniencia o quitar-anuncios. Nada de pago-para-ganar ni cajas de botín
@@ -27,8 +28,10 @@ enum ProductKind {
 /// Tipo de compra a efectos de la tienda nativa.
 enum ProductType { consumable, nonConsumable, subscription }
 
-/// Un producto de la tienda. El `id` es el SKU que se configurará igual en
-/// Google Play Console y App Store Connect cuando se conecte el pago real.
+/// Un producto de la tienda. El `id` **es** el SKU: tiene que existir con
+/// exactamente el mismo identificador en Google Play Console (y en App Store
+/// Connect cuando se publique en iOS), o la compra fallará con "producto no
+/// encontrado".
 class StoreProduct {
   final String id;
   final String title;

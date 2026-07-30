@@ -45,6 +45,7 @@ Color torsoColorFor(TorsoDesign design) => switch (design) {
       TorsoDesign.wonderWoman => const Color(0xFFB71C1C),
       TorsoDesign.captainMarvel => const Color(0xFF1A237E),
       TorsoDesign.blackWidow => const Color(0xFF212121),
+      TorsoDesign.starPrincess => const Color(0xFF6A2BBE),
     };
 
 Color legColorFor(LegDesign design) => switch (design) {
@@ -59,6 +60,7 @@ Color legColorFor(LegDesign design) => switch (design) {
       LegDesign.mechanic => const Color(0xFF212121),
       LegDesign.urbanCamo => const Color(0xFF3A3F44),
       LegDesign.golden => const Color(0xFFD4AF37),
+      LegDesign.cosmicStripes => const Color(0xFF6A2BBE),
     };
 
 /// [skin] se usa para sandalias y pies descalzos.
@@ -73,6 +75,7 @@ Color shoeColorFor(ShoeType shoe, Color skin) => switch (shoe) {
       ShoeType.barefoot => skin,
       ShoeType.heroBoots => const Color(0xFFC62828),
       ShoeType.balletTeal => const Color(0xFF1DE9B6),
+      ShoeType.cosmicBoots => const Color(0xFF7A34D6),
     };
 
 Color hairColorFor(HairStyle style) => switch (style) {
@@ -90,6 +93,7 @@ Color hairColorFor(HairStyle style) => switch (style) {
       HairStyle.longBlonde => const Color(0xFFE6C55A),
       HairStyle.longBlack => const Color(0xFF141414),
       HairStyle.wavyBob => const Color(0xFFC85A1B),
+      HairStyle.longCoral => const Color(0xFFF2645F),
     };
 
 Color helmetColorFor(HelmetStyle style) => switch (style) {
@@ -301,6 +305,28 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
       canvas.drawPath(p1, patchA);
       canvas.drawPath(p2, patchB);
       canvas.drawPath(p3, patchA);
+    case LegDesign.cosmicStripes:
+      // Malla estelar: franja de piel bronce en el muslo y aros plateados
+      // repartidos por la pierna (traje de la Princesa Estelar).
+      canvas.drawRect(
+          Rect.fromLTWH(rect.left, rect.top + rect.height * 0.06,
+              rect.width, rect.height * 0.16),
+          Paint()..color = const Color(0xFFC79A6B));
+      final ring = Paint()..color = const Color(0xFFD7DBE0);
+      for (final f in [0.26, 0.66]) {
+        canvas.drawRect(
+            Rect.fromLTWH(rect.left, rect.top + rect.height * f, rect.width,
+                rect.height * 0.07),
+            ring);
+      }
+      // Rombo plateado en la rodilla
+      final diamond = Path()
+        ..moveTo(rect.center.dx, rect.top + rect.height * 0.40)
+        ..lineTo(rect.left + rect.width * 0.74, rect.top + rect.height * 0.48)
+        ..lineTo(rect.center.dx, rect.top + rect.height * 0.56)
+        ..lineTo(rect.left + rect.width * 0.26, rect.top + rect.height * 0.48)
+        ..close();
+      canvas.drawPath(diamond, ring);
   }
   canvas.restore();
 }

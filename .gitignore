@@ -41,3 +41,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firma de release (Google Play) — nunca subir credenciales ni almacenes de claves
+/android/key.properties
+*.jks
+*.keystore

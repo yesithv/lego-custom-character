@@ -4,8 +4,10 @@ import '../../domain/entities/score.dart';
 import '../../domain/repositories/score_repository.dart';
 import '../models/score_model.dart';
 
-// To migrate to Firebase: create FirebaseScoreRepository implementing ScoreRepository,
-// then replace this class with the Firebase one in injection.dart.
+// Ranking local por diseño (MVP v1): la app es autónoma y no habla con ningún
+// servidor, así que la tabla vive en Hive y es la de este dispositivo. Si algún
+// día se quiere un ranking global, basta con otra implementación de
+// ScoreRepository y cambiar el registro en injection.dart.
 class ScoreLocalRepository implements ScoreRepository {
   final Box<ScoreModel> _box;
   static const _maxPerWorld = 20;

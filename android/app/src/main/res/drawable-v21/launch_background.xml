@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pantalla de arranque: azul Brix, igual que el fondo de la app, para que no
+     haya un fogonazo blanco antes del primer frame de Flutter. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/brix_blue" />
+</layer-list>

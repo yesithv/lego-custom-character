@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -99,10 +101,10 @@ class _HomeView extends StatelessWidget {
 
                   const Spacer(flex: 2),
 
-                  // Título compacto tipo píldora. Mantén pulsado para abrir el
-                  // interruptor del modo de prueba.
+                  // Título compacto tipo píldora. Mantener pulsado 10 s abre el
+                  // interruptor del modo de prueba (atajo interno).
                   _TitlePill(
-                    onLongPress: () => _openTestModeSheet(context),
+                    onSecretHold: () => _openTestModeSheet(context),
                   ),
                   const Spacer(flex: 2),
 
@@ -265,15 +267,49 @@ class _PlayButtonState extends State<_PlayButton> {
 
 /// Píldora de título con bandera a cuadros, como en el diseño.
 ///
-/// Mantén pulsado para abrir el interruptor del modo de prueba ([onLongPress]).
-class _TitlePill extends StatelessWidget {
-  final VoidCallback? onLongPress;
-  const _TitlePill({this.onLongPress});
+/// Esconde el atajo al modo de prueba: hay que **mantener pulsado 10 segundos
+/// seguidos** para que se dispare [onSecretHold]. Es deliberadamente largo y sin
+/// ninguna pista visual para que un niño no lo encuentre por accidente (el modo
+/// de prueba desbloquea todo el contenido de pago).
+class _TitlePill extends StatefulWidget {
+  final VoidCallback? onSecretHold;
+  const _TitlePill({this.onSecretHold});
+
+  @override
+  State<_TitlePill> createState() => _TitlePillState();
+}
+
+class _TitlePillState extends State<_TitlePill> {
+  static const _holdDuration = Duration(seconds: 10);
+  Timer? _timer;
+
+  void _startHold() {
+    _timer?.cancel();
+    _timer = Timer(_holdDuration, () {
+      _timer = null;
+      widget.onSecretHold?.call();
+    });
+  }
+
+  void _cancelHold() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: onLongPress,
+    // Listener (y no GestureDetector.onLongPress, que salta a los 500 ms) para
+    // poder exigir una pulsación mucho más larga.
+    return Listener(
+      onPointerDown: (_) => _startHold(),
+      onPointerUp: (_) => _cancelHold(),
+      onPointerCancel: (_) => _cancelHold(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
         decoration: BoxDecoration(

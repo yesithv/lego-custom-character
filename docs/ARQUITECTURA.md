@@ -33,7 +33,7 @@ presentation  ──►  domain  ◄──  data
 - **`data`** implementa los contratos de `domain` usando Hive.
 - **`presentation`** consume `domain` (usecases/entidades) mediante BLoCs.
 
-Esto permite, por ejemplo, cambiar el backend del ranking de local a remoto tocando **una sola línea** en `injection.dart` (ver comentario en el código: *"Swap ScoreLocalRepository → FirebaseScoreRepository here to go online"*).
+Esto es lo que permite que la **misma UI** funcione con pagos reales en móvil y simulados en web: `injection.dart` registra `InAppPurchaseStoreRepository` o `StubStoreRepository` según la plataforma, y ninguna pantalla se entera. El mismo mecanismo dejaría abierto un ranking en línea el día que se quiera (otra implementación de `ScoreRepository`), aunque **en el MVP v1 todo es local**.
 
 ---
 
