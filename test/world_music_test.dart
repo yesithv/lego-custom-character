@@ -5,17 +5,16 @@ import 'package:run_for_win/features/runner/domain/entities/world_music.dart';
 
 void main() {
   group('Catálogo de música por mundo', () {
-    test('cada mundo ofrece entre 3 y 4 pistas', () {
+    test('cada mundo ofrece exactamente 2 pistas', () {
       for (final entry in worldMusicCatalog.entries) {
-        expect(entry.value.length, inInclusiveRange(3, 4),
-            reason: 'mundo ${entry.key}');
+        expect(entry.value.length, 2, reason: 'mundo ${entry.key}');
       }
     });
 
-    test('cada pista tiene su propio fichero .wav existente en disco', () {
+    test('cada pista tiene su propio fichero .mp3 existente en disco', () {
       for (final entry in worldMusicCatalog.entries) {
         for (final track in entry.value) {
-          expect(track.asset, endsWith('.wav'),
+          expect(track.asset, endsWith('.mp3'),
               reason: '${entry.key} → ${track.name}');
           // AudioService reproduce con AssetSource('audio/$asset').
           final file = File('assets/audio/${track.asset}');

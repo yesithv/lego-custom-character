@@ -145,6 +145,14 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Icono propio** generado por código (`tool/gen_icon.dart`): clásico en 5
   densidades + adaptativo (Android 8+) + 512² para la ficha; splash azul Brix.
 
+### Música por mundo
+- **2 pistas por mundo en `.mp3`** (16 en total), elegibles antes de correr:
+  una enérgica (`_1`) y una tranquila (`_2`). Catálogo en
+  `features/runner/domain/entities/world_music.dart`; reproducción en bucle
+  (`AudioService.playMusic`). Se migró de `.wav` sintetizados a `.mp3` generados
+  con **Suno** + REAPER. **Flujo de producción, ajustes de exportación y los
+  prompts (v1 en uso + v2 guardados) en `docs/MUSICA.md`.**
+
 ### Pulido de juego (calidad, no monetización)
 - Atajo **"▶ Jugar"** en galería + **"Guardar y jugar"** (icono bandera) en el
   editor, llevando al selector de mundos con el corredor preseleccionado.
@@ -182,6 +190,14 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Cosméticos _legendary_ comprables con monedas** (techo a la progresión gratis).
 - **Backend** (validación de recibos, vencimiento de suscripción, ranking global,
   analítica agregada) → `docs/BACKEND-PAGOS.md`, archivado.
+
+### v2 (planificado, no tocar en el MVP)
+- **API de validación de pagos** (hoy el MVP es autónomo; cobra Google Play).
+  Diseño en `docs/BACKEND-PAGOS.md`.
+- **Volver a 4 pistas de música por mundo** (añadir `_3` y `_4`; hoy hay 2). Los
+  **16 prompts nuevos ya están guardados** en `docs/MUSICA.md` §6, junto con los
+  pasos de código (ampliar `world_music.dart` y ajustar `world_music_test.dart`
+  de 2 a 4).
 
 _Hecho recientemente:_ producto "Quitar anuncios" retirado del catálogo (ya no
 hay anuncios; `adsRemoved` se conserva por estabilidad de esquema). **Beneficios
