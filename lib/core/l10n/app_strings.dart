@@ -687,6 +687,50 @@ const Map<String, Map<String, String>> kStrings = {
     'pt': 'Trocar gemas por prêmios', 'de': 'Edelsteine gegen Preise tauschen',
     'ru': 'Обменять кристаллы на призы', 'fr': 'Échanger des gemmes contre des prix',
   },
+  // ── Ganchos de compra de gemas ────────────────────────────────────────────
+  'get_more_gems': {
+    'es': 'Conseguir más gemas', 'en': 'Get more gems',
+    'pt': 'Conseguir mais gemas', 'de': 'Mehr Edelsteine holen',
+    'ru': 'Получить больше кристаллов', 'fr': 'Obtenir plus de gemmes',
+  },
+  'get_more_gems_sub': {
+    'es': 'Consíguelas en la Tienda 💎', 'en': 'Grab them in the Store 💎',
+    'pt': 'Pegue-as na Loja 💎', 'de': 'Hol sie im Shop 💎',
+    'ru': 'Возьми их в магазине 💎', 'fr': 'Prends-les dans la Boutique 💎',
+  },
+  'need_more_gems_go_store': {
+    'es': 'Te faltan gemas. ¡Consíguelas en la Tienda!',
+    'en': 'Not enough gems. Get more in the Store!',
+    'pt': 'Faltam gemas. Consiga mais na Loja!',
+    'de': 'Nicht genug Edelsteine. Hol mehr im Shop!',
+    'ru': 'Мало кристаллов. Возьми ещё в магазине!',
+    'fr': 'Pas assez de gemmes. Prends-en dans la Boutique !',
+  },
+  'welcome_offer_title': {
+    'es': '🎁 ¡Regalo de bienvenida!', 'en': '🎁 Welcome gift!',
+    'pt': '🎁 Presente de boas-vindas!', 'de': '🎁 Willkommensgeschenk!',
+    'ru': '🎁 Подарок на старт!', 'fr': '🎁 Cadeau de bienvenue !',
+  },
+  'welcome_offer_body': {
+    'es': 'Llévate la capa vampiro EXCLUSIVA + 150 💎 + 1000 🪙. Solo la primera vez.',
+    'en': 'Get the EXCLUSIVE vampire cape + 150 💎 + 1000 🪙. First time only.',
+    'pt': 'Leve a capa vampiro EXCLUSIVA + 150 💎 + 1000 🪙. Só a primeira vez.',
+    'de': 'Hol dir das EXKLUSIVE Vampircape + 150 💎 + 1000 🪙. Nur beim ersten Mal.',
+    'ru': 'Забери ЭКСКЛЮЗИВНЫЙ плащ вампира + 150 💎 + 1000 🪙. Только один раз.',
+    'fr': 'Prends la cape de vampire EXCLUSIVE + 150 💎 + 1000 🪙. Une seule fois.',
+  },
+  'welcome_offer_cta': {
+    'es': 'Ver oferta', 'en': 'See offer', 'pt': 'Ver oferta',
+    'de': 'Angebot ansehen', 'ru': 'Смотреть', 'fr': 'Voir l’offre',
+  },
+  'welcome_offer_later': {
+    'es': 'Ahora no', 'en': 'Not now', 'pt': 'Agora não',
+    'de': 'Nicht jetzt', 'ru': 'Не сейчас', 'fr': 'Pas maintenant',
+  },
+  'run_shop_cta': {
+    'es': 'Ir a la Tienda', 'en': 'Go to the Store', 'pt': 'Ir à Loja',
+    'de': 'Zum Shop', 'ru': 'В магазин', 'fr': 'Aller à la Boutique',
+  },
   'vip_daily_title': {
     'es': 'Regalo diario VIP', 'en': 'Daily VIP gift', 'pt': 'Presente diário VIP',
     'de': 'Tägliches VIP-Geschenk', 'ru': 'Ежедневный VIP-подарок', 'fr': 'Cadeau VIP quotidien',

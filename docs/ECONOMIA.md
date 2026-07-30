@@ -69,6 +69,82 @@
 >     (Hive): dos cajas distintas, pero la entrega es local y no puede fallar
 >     parcialmente en la práctica.
 
+> ## 🎯 Motivación de compra de gemas (2026-07-30, sesión posterior)
+>
+> Implementación de la capa de **impulso a la compra/adquisición de gemas**. La
+> auditoría anterior concluyó que la economía tenía la base bien montada pero el
+> *funnel* estaba oculto: se motiva poco al usuario y no hay caminos claros de
+> "quiero esto → me faltan gemas → las consigo". Se corrige **sin cambiar ningún
+> número de la economía** (faucets, precios y sinks intactos): solo se añade
+> **visibilidad y rutas de conversión**. Así se crea la necesidad de gemas sin
+> inflar la oferta gratuita (que rompería la razón para comprar).
+>
+> **Cambios (todos aditivos, kid-safe, la compra sigue tras compuerta parental):**
+>
+> 1. **Gemas visibles en el Home** (`home_page.dart`, `_HomeGemChip`). Chip en la
+>    barra superior con el saldo 💎 y un "+"; toca → canjería. La billetera del
+>    Home sigue siendo ilustrativa (sin cifras) por diseño; el chip es la pieza
+>    que da *awareness* de la moneda dura. Se rebuildea con el `WalletBloc` para
+>    reflejar las gemas ganadas por misiones al volver de una carrera.
+> 2. **Oferta de bienvenida** (`home_page.dart`, `_FirstRunOffer`). Una vez por
+>    sesión, si no se posee `bundle_starter`, un diálogo propone la oferta única
+>    (capa EXCLUSIVA + 150💎 + 1000🪙) → Tienda. Es el disparador de **primera
+>    compra**. No es intrusivo: se descarta con "Ahora no" y no reaparece en la
+>    sesión.
+> 3. **Nudge post-carrera** (`runner_page.dart`, `_ShopNudge`). Enlace discreto
+>    "🛍️ Ir a la Tienda" en las overlays de **victoria y derrota**: aprovecha el
+>    pico de interés al terminar sin presionar (es un `TextButton` secundario).
+> 4. **Puente canjería → Tienda** (`gem_store_page.dart`, `_GetMoreGemsCard` +
+>    `_promptBuyGems`). Cierra el bucle clave: desde donde el jugador **gasta**
+>    gemas, un CTA dorado "Conseguir más gemas" lleva a **comprarlas**. Además, al
+>    intentar canjear sin saldo, en vez de un aviso muerto se ofrece un
+>    SnackBar con acción directa a la Tienda.
+> 5. **Faucet de gemas visible** (`runner_page.dart`, `_CompletedMissionCard`).
+>    El +1💎 por misión (que ya se acreditaba) ahora **se muestra** junto al +🪙
+>    en la tarjeta de misión completada. Ver que las gemas gotean al jugar las
+>    vuelve deseables (aspiracional), reforzando la compra sin regalar de más.
+>
+> **Análisis de impacto en la economía (sumas/restas/multiplicaciones validadas
+> por trazado; los importes no cambian):**
+>
+> | Flujo | Operación | Persistencia | ¿Cambió con esta sesión? |
+> |---|---|---|---|
+> | Recoger moneda en carrera | `coins += 1/2 × (VIP?1.5:1)` | `wallet` | No (multiplicador ×1.5 intacto) |
+> | Bonus de victoria | `coins += 200` | `wallet` (vía run) | No |
+> | Misiones (monedas) | `coins += Σ rewardCoins` | `wallet` | No |
+> | Misiones (gemas, faucet) | `gems += 1×n`, `totalGemsEarned += 1×n` | `entitlements` | Solo se **muestra** ahora |
+> | Ruleta / cofre | `coins += premio` (o pieza) | `wallet` | No |
+> | Comprar pack de gemas (IAP) | `gems += g`, `totalGemsEarned += g` | `entitlements` | No |
+> | Pack de bienvenida (IAP) | `gems += 150`, `coins += 1000`, +capa | ambas cajas | No |
+> | VIP diario | `gems += 25`, `totalGemsEarned += 25` | `entitlements` | No |
+> | Canjear gemas → monedas | `gems -= precio` → `coins += monedas` | ambas cajas | No |
+> | Canjear gemas → cosmético | `gems -= precio` → `unlockPart(cost:0)` | ambas cajas | **Guarda anti doble-canje** (sesión previa) |
+> | Comprar cosmético con monedas | `coins -= cost` (si `coins≥cost`) | `wallet` | No |
+>
+> **Identidades verificadas:**
+> - Monedas: `gastado = ganado − saldo`, con `ganado = max(totalCoinsEarned, coins)`.
+> - Gemas: `gastado = ganado − saldo`, con `ganado = max(totalGemsEarned, gems)`.
+>   Se sostiene porque `spendGems` **solo** baja `gems` y nunca toca
+>   `totalGemsEarned` → todo lo ganado o queda en saldo o se gastó. La
+>   **billetera** (`/wallet`, `_EconomyCard`) muestra ambas columnas 🪙/💎 con
+>   ganado ▲ / gastado ▼ / saldo =, así que **las gemas compradas suman al
+>   "ganado" y las canjeadas suman al "gastado"** — reflejo correcto pedido.
+> - Guardas contra negativos: `spendCoins`/`unlockPart` exigen saldo suficiente;
+>   `spendGems` devuelve `success:false` si falta; los getters de billetera
+>   fuerzan `≥ 0`.
+>
+> **Deliberadamente NO tocado (para no arriesgar sin poder compilar/probar aquí):**
+> - **Tramo de gemas en la ruleta** y **+10💎 al desbloquear mundo**: son faucets
+>   extra recomendados, pero el primero exige reescalar la geometría de la rueda
+>   animada (8 segmentos) y el segundo, nueva persistencia (qué mundos ya
+>   premiaron). Quedan como mejora futura a validar en dispositivo. El faucet de
+>   misiones (+1💎, ahora visible) cubre el goteo gratuito mientras tanto.
+> - **Importes/precios**: sin cambios; el objetivo era el *funnel*, no el balance.
+>
+> ⚠️ **Verificación de build pendiente en local:** este entorno remoto no trae
+> toolchain Flutter (y el Android SDK está bloqueado por red), así que
+> `flutter analyze`/tests se corren en local. Revisión manual de los diffs: OK.
+
 Este documento tiene cuatro partes:
 
 1. **Estado actual** — todos los números tal como están hoy en el código.

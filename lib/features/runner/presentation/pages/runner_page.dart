@@ -120,10 +120,6 @@ class _RunnerPageState extends State<RunnerPage> {
     }
   }
 
-  /// Gemas gratis por cada misión completada (faucet). Hace que las gemas sean
-  /// alcanzables jugando, sin regalar tantas que nadie compre. Ver ECONOMIA.md.
-  static const int _gemsPerCompletedMission = 1;
-
   /// Paga las recompensas de las misiones recién completadas: monedas (que hasta
   /// ahora se mostraban pero NUNCA se acreditaban) y un pequeño faucet de gemas.
   void _rewardCompletedMissions(List<Mission> completed) {
@@ -132,7 +128,7 @@ class _RunnerPageState extends State<RunnerPage> {
     if (coins > 0) {
       context.read<WalletBloc>().add(EarnCoinsEvent(coins));
     }
-    final gems = completed.length * _gemsPerCompletedMission;
+    final gems = completed.length * kGemsPerCompletedMission;
     if (gems > 0) {
       // Fire-and-forget: incrementa el saldo de gemas (entitlements) en local.
       sl<StoreRepository>().grantGems(gems);
@@ -1210,9 +1206,31 @@ class _GameOverOverlay extends StatelessWidget {
                     ),
                   ),
                 ),
+                const _ShopNudge(),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Enlace discreto a la Tienda que aparece al terminar una carrera (victoria o
+/// derrota): aprovecha el pico de interés para acercar la compra sin presionar.
+class _ShopNudge extends StatelessWidget {
+  const _ShopNudge();
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () => context.pushNamed('store'),
+      child: Text(
+        '🛍️  ${context.l10n.tr('run_shop_cta')}',
+        style: const TextStyle(
+          color: Colors.white54,
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
         ),
       ),
     );
@@ -1385,6 +1403,7 @@ class _VictoryOverlay extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const _ShopNudge(),
                       ],
                     )
                   : _GoldActionButton(
@@ -1399,6 +1418,10 @@ class _VictoryOverlay extends StatelessWidget {
     );
   }
 }
+
+/// Gemas gratis por cada misión completada (faucet). Hace que las gemas sean
+/// alcanzables jugando, sin regalar tantas que nadie compre. Ver ECONOMIA.md.
+const int kGemsPerCompletedMission = 1;
 
 /// Tarjeta verde de misión completada: check, nombre + descripción y premio.
 class _CompletedMissionCard extends StatelessWidget {
@@ -1454,19 +1477,41 @@ class _CompletedMissionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Row(
+          Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '+${mission.rewardCoins}',
-                style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '+${mission.rewardCoins}',
+                    style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('🪙', style: TextStyle(fontSize: 13)),
+                ],
               ),
-              const SizedBox(width: 4),
-              const Text('🪙', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '+$kGemsPerCompletedMission',
+                    style: const TextStyle(
+                      color: Color(0xFF7FD6FF),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('💎', style: TextStyle(fontSize: 11)),
+                ],
+              ),
             ],
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -70,7 +71,9 @@ class _GemStorePageState extends State<GemStorePage> {
     }
 
     if (_ent.gems < product.gemPrice) {
-      _snack(context.l10n.tr('not_enough_gems_store'));
+      // Saldo insuficiente: en vez de un simple aviso, se ofrece el camino a
+      // la Tienda para conseguir gemas (puente canje → compra).
+      _promptBuyGems();
       return;
     }
 
@@ -155,6 +158,32 @@ class _GemStorePageState extends State<GemStorePage> {
     showGameSnackBar(context, msg);
   }
 
+  /// Lleva a la Tienda de dinero real (donde se compran gemas) y, al volver,
+  /// refresca el saldo. Es el puente clave: "quiero esto → me faltan gemas →
+  /// consigo gemas → compro".
+  Future<void> _goToStore() async {
+    await context.pushNamed('store');
+    if (mounted) _load();
+  }
+
+  /// Aviso de saldo insuficiente que ofrece ir a la Tienda a por gemas.
+  void _promptBuyGems() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF0A4A9E),
+        behavior: SnackBarBehavior.floating,
+        content: Text(context.l10n.tr('need_more_gems_go_store'),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        action: SnackBarAction(
+          label: context.l10n.tr('get_more_gems'),
+          textColor: const Color(0xFFFFD700),
+          onPressed: _goToStore,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,6 +217,8 @@ class _GemStorePageState extends State<GemStorePage> {
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       children: [
                         _GemBalance(gems: _ent.gems),
+                        const SizedBox(height: 12),
+                        _GetMoreGemsCard(onTap: _goToStore),
                         const SizedBox(height: 12),
                         ...products.map((p) => _GemProductCard(
                               product: p,
@@ -235,6 +266,75 @@ class _GemBalance extends StatelessWidget {
           Text(context.l10n.tr('gems_available'),
               style: const TextStyle(color: Colors.white60, fontSize: 13)),
         ],
+      ),
+    );
+  }
+}
+
+/// CTA destacado que lleva a la Tienda a comprar gemas. Es el puente de
+/// conversión: desde donde el jugador *gasta* gemas, un camino claro a *conseguir*
+/// más. Dorado llamativo, coherente con los botones de compra.
+class _GetMoreGemsCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _GetMoreGemsCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFFFFD700).withValues(alpha: 0.22),
+                const Color(0xFFFF8A00).withValues(alpha: 0.16),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                    child: Text('💎', style: TextStyle(fontSize: 22))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.tr('get_more_gems'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.tr('get_more_gems_sub'),
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFFFFD700)),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -16,6 +16,7 @@ import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../../economy/presentation/widgets/wallet_icon.dart';
+import '../../../monetization/domain/repositories/store_repository.dart';
 import '../widgets/roulette_button.dart';
 import '../../../runner/presentation/pages/world_selection_page.dart';
 
@@ -73,7 +74,9 @@ class _HomeView extends StatelessWidget {
                 valueListenable: TestMode.instance.enabled,
                 builder: (context, testOn, _) => Column(
                 children: [
-                  // Barra superior: monedas + ruleta diaria
+                  // Oferta de bienvenida (una vez por sesión, si no se posee).
+                  const _FirstRunOffer(),
+                  // Barra superior: monedas + gemas + tienda + ruleta diaria
                   Padding(
                     padding: const EdgeInsets.only(top: 32, bottom: 8),
                     child: Row(
@@ -81,6 +84,14 @@ class _HomeView extends StatelessWidget {
                       children: [
                         _HomeCoinBadge(),
                         const Spacer(),
+                        // El saldo de gemas cambia al ganar misiones en carrera;
+                        // se rebuildea con el wallet para reflejarlo al volver.
+                        BlocBuilder<WalletBloc, WalletState>(
+                          // Sin `const`: fuerza el rebuild del chip cuando cambia
+                          // el wallet (p. ej. tras ganar gemas por misiones).
+                          builder: (context, _) => _HomeGemChip(),
+                        ),
+                        const SizedBox(width: 12),
                         _StoreButton(onTap: () => context.pushNamed('store')),
                         const SizedBox(width: 18),
                         BlocBuilder<WalletBloc, WalletState>(
@@ -587,6 +598,147 @@ class _HomeCoinBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Chip de gemas de la barra superior: muestra el saldo y un "+" que invita a
+/// conseguir más. Tocarlo abre la canjería de gemas (donde, si faltan, hay un
+/// puente directo a la Tienda). Da visibilidad a la moneda dura para crear el
+/// deseo de tener más.
+class _HomeGemChip extends StatefulWidget {
+  const _HomeGemChip();
+
+  @override
+  State<_HomeGemChip> createState() => _HomeGemChipState();
+}
+
+class _HomeGemChipState extends State<_HomeGemChip> {
+  int get _gems => sl<StoreRepository>().entitlementsSync().gems;
+
+  Future<void> _open() async {
+    await context.pushNamed('gems');
+    if (mounted) setState(() {}); // refresca el saldo al volver
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(16);
+    return Material(
+      color: const Color(0xFF063574).withValues(alpha: 0.6),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: const BorderSide(color: Color(0xFF7FD6FF), width: 2),
+      ),
+      child: InkWell(
+        borderRadius: radius,
+        onTap: _open,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('💎', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 5),
+              Text(
+                '$_gems',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF7FD6FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_rounded,
+                    color: Color(0xFF063574), size: 15),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Oferta de bienvenida: la primera vez que se ve el Home en una sesión (y si
+/// aún no se posee el pack de bienvenida), propone la oferta única que dispara
+/// la primera compra. No renderiza nada; solo lanza el diálogo tras el frame.
+/// La compra en sí sigue pasando por la compuerta parental en la Tienda.
+class _FirstRunOffer extends StatefulWidget {
+  const _FirstRunOffer();
+
+  @override
+  State<_FirstRunOffer> createState() => _FirstRunOfferState();
+}
+
+class _FirstRunOfferState extends State<_FirstRunOffer> {
+  /// Se muestra una sola vez por ejecución de la app (no en cada rebuild).
+  static bool _shownThisSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShow());
+  }
+
+  void _maybeShow() {
+    if (_shownThisSession || !mounted) return;
+    final ent = sl<StoreRepository>().entitlementsSync();
+    if (ent.owns('bundle_starter')) return; // ya lo compró: no molestar
+    _shownThisSession = true;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          context.l10n.tr('welcome_offer_title'),
+          style: const TextStyle(
+            color: Color(0xFFFFD700),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          context.l10n.tr('welcome_offer_body'),
+          style: const TextStyle(color: Colors.white70, height: 1.35),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              context.l10n.tr('welcome_offer_later'),
+              style: const TextStyle(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: const Color(0xFF3D2C00),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.pushNamed('store');
+            },
+            child: Text(
+              context.l10n.tr('welcome_offer_cta'),
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _ActiveCharacterCard extends StatelessWidget {

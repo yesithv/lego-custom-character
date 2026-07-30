@@ -4,9 +4,13 @@
 > **decisiones firmes**, lo **construido** y lo **pendiente**. Mantenerlo al día
 > al cerrar cada bloque de trabajo.
 
-_Última actualización: rama `claude/game-pre-deployment-fixes-r1zovq` (mergeada
-a `main`, PR #39): **revisión de economía + pantalla Billetera** y arreglos de
-UI previos al despliegue. Ver `docs/ECONOMIA.md` para el detalle económico._
+_Última actualización: rama `claude/game-economy-purchase-motivation-gjp7pt`:
+**motivación de compra de gemas** (chip de gemas en Home, oferta de bienvenida,
+nudge post-carrera, puente canjería→Tienda, faucet de misiones visible) +
+canjería ordenada de menor a mayor y arreglo del doble-canje de cosméticos. No
+cambia ningún importe de la economía: solo visibilidad y rutas de conversión.
+Detalle e impacto en `docs/ECONOMIA.md`. Antes: `claude/game-pre-deployment-fixes-r1zovq`
+(PR #39): revisión de economía + pantalla Billetera._
 
 ## 1. Qué es el proyecto
 
