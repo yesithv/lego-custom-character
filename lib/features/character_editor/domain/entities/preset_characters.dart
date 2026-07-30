@@ -229,22 +229,6 @@ const List<PresetCharacter> presetCharacters = [
     ),
   ),
   PresetCharacter(
-    id: 'preset_spiderman',
-    name: 'Aracno',
-    collection: 'Superhéroes',
-    type: CharacterType.hero,
-    appearance: CharacterAppearance(
-      skinTone: SkinTone.light,
-      eyes: EyeStyle.surprised,
-      mouth: MouthStyle.silent,
-      headwearType: HeadwearType.helmet,
-      helmetStyle: HelmetStyle.spiderMan,
-      torso: TorsoDesign.superhero,
-      legDesign: LegDesign.plain,
-      shoes: ShoeType.sneakers,
-    ),
-  ),
-  PresetCharacter(
     id: 'preset_black_panther',
     name: 'Sombra Felina',
     collection: 'Superhéroes',
@@ -256,44 +240,6 @@ const List<PresetCharacter> presetCharacters = [
       headwearType: HeadwearType.helmet,
       helmetStyle: HelmetStyle.blackPanther,
       torso: TorsoDesign.ninja,
-      gloves: GloveType.claws,
-      legDesign: LegDesign.plain,
-      shoes: ShoeType.military,
-    ),
-  ),
-  PresetCharacter(
-    id: 'preset_deadpool',
-    name: 'Mercenario Rojo',
-    collection: 'Superhéroes',
-    type: CharacterType.neutral,
-    appearance: CharacterAppearance(
-      skinTone: SkinTone.light,
-      eyes: EyeStyle.angry,
-      mouth: MouthStyle.silent,
-      headwearType: HeadwearType.helmet,
-      helmetStyle: HelmetStyle.deadpool,
-      torso: TorsoDesign.plain,
-      legDesign: LegDesign.plain,
-      shoes: ShoeType.military,
-      accessories: CharacterAccessories(
-        rightHand: 'katana',
-        back: 'katanas dobles',
-        leftHand: 'pistola bláster',
-      ),
-    ),
-  ),
-  PresetCharacter(
-    id: 'preset_wolverine',
-    name: 'Zarpa de Acero',
-    collection: 'Superhéroes',
-    type: CharacterType.hero,
-    appearance: CharacterAppearance(
-      skinTone: SkinTone.light,
-      eyes: EyeStyle.angry,
-      mouth: MouthStyle.teeth,
-      headwearType: HeadwearType.helmet,
-      helmetStyle: HelmetStyle.wolverine,
-      torso: TorsoDesign.superhero,
       gloves: GloveType.claws,
       legDesign: LegDesign.plain,
       shoes: ShoeType.military,
@@ -313,27 +259,6 @@ const List<PresetCharacter> presetCharacters = [
       torso: TorsoDesign.monster,
       legDesign: LegDesign.stripes,
       shoes: ShoeType.barefoot,
-    ),
-  ),
-  PresetCharacter(
-    id: 'preset_star_lord',
-    name: 'Capitán Cometa',
-    collection: 'Superhéroes',
-    type: CharacterType.hero,
-    appearance: CharacterAppearance(
-      skinTone: SkinTone.light,
-      eyes: EyeStyle.happy,
-      mouth: MouthStyle.smile,
-      headwearType: HeadwearType.hair,
-      hairStyle: HairStyle.straight,
-      torso: TorsoDesign.futuristic,
-      legDesign: LegDesign.plain,
-      shoes: ShoeType.military,
-      accessories: CharacterAccessories(
-        rightHand: 'pistola',
-        leftHand: 'pistola bláster',
-        face: 'gafas piloto',
-      ),
     ),
   ),
   PresetCharacter(
@@ -462,7 +387,7 @@ const List<PresetCharacter> presetCharacters = [
   ),
   PresetCharacter(
     id: 'preset_leila_princess',
-    name: 'Princesa Leila',
+    name: 'Princesa Rebelde',
     collection: 'Heroínas',
     type: CharacterType.hero,
     appearance: CharacterAppearance(
@@ -482,6 +407,8 @@ const List<PresetCharacter> presetCharacters = [
       accessories: CharacterAccessories(
         // Cinturón de cadena plateada, el detalle metálico de la túnica
         waist: 'cinturón plateado',
+        // Bláster defensivo en la mano
+        leftHand: 'pistola bláster',
       ),
     ),
   ),
