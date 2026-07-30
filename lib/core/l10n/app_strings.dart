@@ -977,6 +977,10 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Guardar y jugar', 'en': 'Save and play', 'pt': 'Salvar e jogar',
     'de': 'Speichern und spielen', 'ru': 'Сохранить и играть', 'fr': 'Enregistrer et jouer',
   },
+  'editor_save': {
+    'es': 'Guardar', 'en': 'Save', 'pt': 'Salvar',
+    'de': 'Speichern', 'ru': 'Сохранить', 'fr': 'Enregistrer',
+  },
   'editor_saved': {
     'es': '¡Personaje guardado!', 'en': 'Character saved!', 'pt': 'Personagem salvo!',
     'de': 'Figur gespeichert!', 'ru': 'Персонаж сохранён!', 'fr': 'Personnage enregistré !',
@@ -1084,6 +1088,84 @@ const Map<String, Map<String, String>> kStrings = {
   'unlock_action': {
     'es': 'Desbloquear', 'en': 'Unlock', 'pt': 'Desbloquear',
     'de': 'Freischalten', 'ru': 'Открыть', 'fr': 'Débloquer',
+  },
+  'premium_title': {
+    'es': 'Exclusivo de la Tienda',
+    'en': 'Store exclusive',
+    'pt': 'Exclusivo da Loja',
+    'de': 'Shop-exklusiv',
+    'ru': 'Только в магазине',
+    'fr': 'Exclusivité Boutique',
+  },
+  'premium_body': {
+    'es': 'Este cosmético no se compra con monedas. Consíguelo con 💎 gemas en la Tienda.',
+    'en': 'This cosmetic can’t be bought with coins. Get it with 💎 gems in the Store.',
+    'pt': 'Este cosmético não se compra com moedas. Consiga-o com 💎 gemas na Loja.',
+    'de': 'Dieses Kosmetik gibt es nicht für Münzen. Hol es dir mit 💎 im Shop.',
+    'ru': 'Этот предмет нельзя купить за монеты. Возьми его за 💎 в магазине.',
+    'fr': 'Ce cosmétique ne s’achète pas avec des pièces. Obtiens-le avec 💎 en Boutique.',
+  },
+  'premium_go_store': {
+    'es': 'Ir a la Tienda', 'en': 'Go to Store', 'pt': 'Ir à Loja',
+    'de': 'Zum Shop', 'ru': 'В магазин', 'fr': 'Aller à la Boutique',
+  },
+  // ── Billetera ──────────────────────────────────────────────────────────────
+  'wallet_title': {
+    'es': 'Mi Billetera', 'en': 'My Wallet', 'pt': 'Minha Carteira',
+    'de': 'Mein Geldbeutel', 'ru': 'Мой кошелёк', 'fr': 'Mon Porte-monnaie',
+  },
+  'wallet_coins': {
+    'es': 'Monedas', 'en': 'Coins', 'pt': 'Moedas',
+    'de': 'Münzen', 'ru': 'Монеты', 'fr': 'Pièces',
+  },
+  'wallet_gems': {
+    'es': 'Gemas', 'en': 'Gems', 'pt': 'Gemas',
+    'de': 'Edelsteine', 'ru': 'Кристаллы', 'fr': 'Gemmes',
+  },
+  'wallet_economy': {
+    'es': 'Tu economía', 'en': 'Your economy', 'pt': 'Sua economia',
+    'de': 'Deine Wirtschaft', 'ru': 'Твоя экономика', 'fr': 'Ton économie',
+  },
+  'wallet_earned': {
+    'es': 'Has ganado', 'en': 'Earned', 'pt': 'Você ganhou',
+    'de': 'Verdient', 'ru': 'Заработано', 'fr': 'Gagné',
+  },
+  'wallet_spent': {
+    'es': 'Has gastado', 'en': 'Spent', 'pt': 'Você gastou',
+    'de': 'Ausgegeben', 'ru': 'Потрачено', 'fr': 'Dépensé',
+  },
+  'wallet_balance': {
+    'es': 'Te quedan', 'en': 'You have', 'pt': 'Você tem',
+    'de': 'Übrig', 'ru': 'Осталось', 'fr': 'Il te reste',
+  },
+  'wallet_achievements': {
+    'es': 'Lo que has conseguido', 'en': 'What you\'ve earned',
+    'pt': 'O que você conquistou', 'de': 'Was du erreicht hast',
+    'ru': 'Чего ты добился', 'fr': 'Ce que tu as obtenu',
+  },
+  'wallet_parts': {
+    'es': 'Piezas', 'en': 'Parts', 'pt': 'Peças',
+    'de': 'Teile', 'ru': 'Детали', 'fr': 'Pièces',
+  },
+  'wallet_worlds': {
+    'es': 'Mundos', 'en': 'Worlds', 'pt': 'Mundos',
+    'de': 'Welten', 'ru': 'Миры', 'fr': 'Mondes',
+  },
+  'wallet_streak': {
+    'es': 'Días de racha', 'en': 'Day streak', 'pt': 'Dias seguidos',
+    'de': 'Tage in Folge', 'ru': 'Дней подряд', 'fr': 'Jours d’affilée',
+  },
+  'wallet_vip': {
+    'es': 'Club VIP', 'en': 'VIP Club', 'pt': 'Clube VIP',
+    'de': 'VIP-Club', 'ru': 'VIP-клуб', 'fr': 'Club VIP',
+  },
+  'wallet_vip_on': {
+    'es': 'VIP activo', 'en': 'VIP active', 'pt': 'VIP ativo',
+    'de': 'VIP aktiv', 'ru': 'VIP активен', 'fr': 'VIP actif',
+  },
+  'wallet_vip_off': {
+    'es': 'Hazte VIP', 'en': 'Get VIP', 'pt': 'Seja VIP',
+    'de': 'VIP holen', 'ru': 'Стать VIP', 'fr': 'Devenir VIP',
   },
   'coins_amount': {
     'es': '{n} monedas', 'en': '{n} coins', 'pt': '{n} moedas',

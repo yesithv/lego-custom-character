@@ -571,32 +571,37 @@ class _HomeCoinBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
-      builder: (context, state) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF063574).withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+      // Tocar las monedas abre "Mi Billetera" (resumen de la economía).
+      builder: (context, state) => InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: () => context.pushNamed('wallet'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF063574).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: const Color(0xFFFFD700), width: 2),
+              ),
+              child: _coin(),
             ),
-            child: _coin(),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${state.wallet.coins}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 15,
-              shadows: [
-                Shadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              '${state.wallet.coins}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                shadows: [
+                  Shadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -708,8 +713,6 @@ class _ActiveCharacterCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              _CharacterTypeBadge(type: character.type),
             ],
           ),
         );
@@ -777,29 +780,3 @@ class _CharacterStage extends StatelessWidget {
   }
 }
 
-/// Badge con el tipo de personaje (Héroe / Villano / …).
-class _CharacterTypeBadge extends StatelessWidget {
-  final CharacterType type;
-
-  const _CharacterTypeBadge({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white38, width: 1.5),
-      ),
-      child: Text(
-        context.l10n.characterType(type),
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-}

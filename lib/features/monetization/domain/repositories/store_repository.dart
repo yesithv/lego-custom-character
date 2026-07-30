@@ -46,4 +46,10 @@ abstract class StoreRepository {
   /// actualizado y si tuvo éxito. La entrega del premio (monedas/cosméticos)
   /// la orquesta la capa de presentación sobre el wallet.
   Future<({Entitlements entitlements, bool success})> spendGems(int amount);
+
+  /// Regala [amount] gemas al jugador (faucet gratuito: recompensa por
+  /// completar misiones, hitos, etc.). No implica dinero real. Devuelve el
+  /// estado actualizado. Da a las gemas una vía de obtención jugando, para que
+  /// no sean una moneda inalcanzable para quien no paga.
+  Future<Entitlements> grantGems(int amount);
 }

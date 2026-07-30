@@ -6,6 +6,11 @@ class Entitlements {
   /// Saldo de moneda dura (gemas).
   final int gems;
 
+  /// Total de gemas obtenidas de por vida (compras, VIP diario, faucet de
+  /// misiones…). Solo sube. Permite mostrar en la billetera cuántas gemas se
+  /// han ganado y, por diferencia con [gems], cuántas se han gastado.
+  final int totalGemsEarned;
+
   /// El jugador compró "quitar anuncios". (Vestigial: el producto ya no se
   /// vende porque no hay anuncios; se conserva por estabilidad del esquema.)
   final bool adsRemoved;
@@ -22,11 +27,16 @@ class Entitlements {
 
   const Entitlements({
     this.gems = 0,
+    this.totalGemsEarned = 0,
     this.adsRemoved = false,
     this.subscriptionActive = false,
     this.ownedProductIds = const [],
     this.lastVipClaim,
   });
+
+  /// Gemas gastadas de por vida (derivado). Nunca negativo.
+  int get gemsSpent =>
+      (totalGemsEarned - gems) < 0 ? 0 : totalGemsEarned - gems;
 
   /// No se deben mostrar anuncios si se compraron sin anuncios o hay VIP.
   bool get adsDisabled => adsRemoved || subscriptionActive;
@@ -45,6 +55,7 @@ class Entitlements {
 
   Entitlements copyWith({
     int? gems,
+    int? totalGemsEarned,
     bool? adsRemoved,
     bool? subscriptionActive,
     List<String>? ownedProductIds,
@@ -52,6 +63,7 @@ class Entitlements {
   }) =>
       Entitlements(
         gems: gems ?? this.gems,
+        totalGemsEarned: totalGemsEarned ?? this.totalGemsEarned,
         adsRemoved: adsRemoved ?? this.adsRemoved,
         subscriptionActive: subscriptionActive ?? this.subscriptionActive,
         ownedProductIds: ownedProductIds ?? this.ownedProductIds,

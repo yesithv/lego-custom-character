@@ -29,6 +29,7 @@ class StubStoreRepository implements StoreRepository {
     if (!e.canClaimVipDaily) return (entitlements: e, gemsGranted: 0);
     e = e.copyWith(
       gems: e.gems + VipPerks.dailyGems,
+      totalGemsEarned: e.totalGemsEarned + VipPerks.dailyGems,
       lastVipClaim: DateTime.now(),
     );
     await _ds.save(EntitlementsModel.fromEntity(e));
@@ -54,15 +55,24 @@ class StubStoreRepository implements StoreRepository {
 
     switch (product.kind) {
       case ProductKind.gems:
-        e = e.copyWith(gems: e.gems + product.gemAmount);
+        e = e.copyWith(
+          gems: e.gems + product.gemAmount,
+          totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+        );
       case ProductKind.removeAds:
         e = e.copyWith(adsRemoved: true);
       case ProductKind.subscription:
         e = e.copyWith(subscriptionActive: true);
       case ProductKind.cosmeticBundle:
-        // El desbloqueo de accesorios lo aplica la UI sobre el wallet; aquí
-        // solo se registra la posesión del pack.
-        break;
+        // El desbloqueo de accesorios y la entrega de monedas los aplica la UI
+        // sobre el wallet; aquí solo concedemos las gemas del pack y se registra
+        // la posesión.
+        if (product.gemAmount > 0) {
+          e = e.copyWith(
+            gems: e.gems + product.gemAmount,
+            totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+          );
+        }
     }
 
     if (!e.owns(product.id)) {
@@ -84,5 +94,17 @@ class StubStoreRepository implements StoreRepository {
     e = e.copyWith(gems: e.gems - amount);
     await _ds.save(EntitlementsModel.fromEntity(e));
     return (entitlements: e, success: true);
+  }
+
+  @override
+  Future<Entitlements> grantGems(int amount) async {
+    var e = _ds.get().toEntity();
+    if (amount <= 0) return e;
+    e = e.copyWith(
+      gems: e.gems + amount,
+      totalGemsEarned: e.totalGemsEarned + amount,
+    );
+    await _ds.save(EntitlementsModel.fromEntity(e));
+    return e;
   }
 }

@@ -17,15 +17,18 @@ class EntitlementsModelAdapter extends TypeAdapter<EntitlementsModel> {
       adsRemoved: fields[1] as bool,
       subscriptionActive: fields[2] as bool,
       ownedProductIds: (fields[3] as List).cast<String>(),
-      // Campo añadido después: los datos antiguos no lo tienen → null.
+      // Campos añadidos después: los datos antiguos no los tienen → default.
       lastVipClaimMs: fields[4] as int?,
+      // Si un registro antiguo no trae el total, se asume que se ha ganado al
+      // menos el saldo actual (gemas que ya tiene) → gastado 0, no negativo.
+      totalGemsEarned: fields[5] as int? ?? (fields[0] as int? ?? 0),
     );
   }
 
   @override
   void write(BinaryWriter writer, EntitlementsModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.gems)
       ..writeByte(1)
@@ -35,7 +38,9 @@ class EntitlementsModelAdapter extends TypeAdapter<EntitlementsModel> {
       ..writeByte(3)
       ..write(obj.ownedProductIds)
       ..writeByte(4)
-      ..write(obj.lastVipClaimMs);
+      ..write(obj.lastVipClaimMs)
+      ..writeByte(5)
+      ..write(obj.totalGemsEarned);
   }
 
   @override
