@@ -128,6 +128,14 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Efecto de derrota del jefe**: estallido de escombros + ondas + desvanecido.
 - **Sacudida de pantalla** (embestida y K.O.).
 - **Movimiento del jefe en pelea**: respiración, embestida al atacar, inclinación.
+- **Orientación vertical forzada** (`core/orientation/portrait_lock.dart`): en
+  nativo se bloquea con `SystemChrome` + el manifest de Android; en web la PWA
+  la declara en `manifest.json` e `index.html` intenta
+  `screen.orientation.lock('portrait')`. En una pestaña normal del navegador
+  móvil (donde no se puede rotar por código) `PortraitGate` tapa el juego con un
+  aviso de "gira tu teléfono" y pausa la partida en curso hasta volver a
+  vertical. Si algún día se genera `ios/`, dejar solo las orientaciones portrait
+  en `Info.plist` (`UISupportedInterfaceOrientations`).
 
 ## 5. Pendiente
 

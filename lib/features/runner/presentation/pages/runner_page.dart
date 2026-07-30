@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/orientation/portrait_lock.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
@@ -92,6 +93,23 @@ class _RunnerPageState extends State<RunnerPage> {
     } else {
       AudioService.instance.stopMusic();
     }
+    // En la web móvil el navegador puede quedarse en horizontal: mientras el
+    // aviso de "gira tu teléfono" tapa la partida, el motor se pausa para que
+    // el jugador no muera a ciegas.
+    landscapeBlocked.addListener(_onLandscapeBlockedChanged);
+  }
+
+  void _onLandscapeBlockedChanged() {
+    if (landscapeBlocked.value) {
+      _game.pauseEngine();
+      return;
+    }
+    // Al volver a vertical solo se reanuda si la partida sigue viva y el
+    // jugador no la había pausado a mano.
+    final runOver = !_game.isAlive || _game.phase == GamePhase.victory;
+    if (!_isPaused && !runOver) {
+      _game.resumeEngine();
+    }
   }
 
   void _onRunComplete(int coins) {
@@ -135,6 +153,7 @@ class _RunnerPageState extends State<RunnerPage> {
 
   @override
   void dispose() {
+    landscapeBlocked.removeListener(_onLandscapeBlockedChanged);
     AudioService.instance.stopMusic();
     _game.dispose();
     super.dispose();

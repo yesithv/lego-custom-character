@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/injection.dart';
 import 'core/l10n/app_localizations.dart';
+import 'core/orientation/portrait_lock.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/analytics/domain/analytics_service.dart';
@@ -15,6 +16,9 @@ import 'features/ranking/presentation/bloc/ranking_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // El juego se juega en vertical: si el teléfono está en horizontal al abrir,
+  // la pantalla se fuerza a vertical antes de mostrar el primer frame.
+  await lockPortraitOrientation();
   await initDependencies();
   // Registra el arranque (sesión + primer uso + día activo).
   sl<AnalyticsService>().startSession();
@@ -38,6 +42,10 @@ class BrixRunApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         routerConfig: AppRouter.router,
         debugShowCheckedModeBanner: false,
+        // En la web móvil el navegador ignora el bloqueo de orientación, así
+        // que ahí se tapa el juego con un aviso de "gira el teléfono".
+        builder: (context, child) =>
+            PortraitGate(child: child ?? const SizedBox.shrink()),
         // Internacionalización: detecta el idioma del dispositivo y carga uno
         // de los soportados; si no hay coincidencia, cae a español.
         localizationsDelegates: const [
