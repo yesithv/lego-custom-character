@@ -133,6 +133,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   static const double _scenerySpawnInterval = 0.55;
 
+  /// Profundidad a la que un obstáculo cruza el plano del corredor. La colisión
+  /// se decide en este único punto (no en una ventana), para que saltar o
+  /// deslizarse justo cuando el obstáculo llega baste para librarlo.
+  static const double _collisionDepth = 1.0;
+
   late PlayerComponent _player;
   final Random _rng = Random();
 
@@ -419,24 +424,22 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   }
 
   void _checkBossAttacks() {
-    const hitMin = 0.87;
-    const hitMax = 1.11;
     const pastPlayer = 1.16;
     final playerLane = _player.currentLane;
 
+    // Mismo criterio que los obstáculos: el golpe se decide en un único punto
+    // (cuando el ataque cruza el plano del jugador, depth ≈ 1.0), no en una
+    // ventana ancha. Así saltar/deslizarse justo cuando llega el ataque basta
+    // para librarlo. La carga de la embestida sigue disparándose al pasar de
+    // largo (pastPlayer).
     for (final atk in children.whereType<BossAttackComponent>().toList()) {
       if (atk.collided) continue;
 
-      if (!atk.dodged && atk.depth >= pastPlayer) {
-        atk.dodged = true;
-        onAttackDodged();
-        continue;
-      }
-
-      if (!atk.dodged && atk.depth >= hitMin && atk.depth <= hitMax) {
+      if (!atk.resolved && atk.depth >= _collisionDepth) {
+        atk.resolved = true;
         final jumping = _player.isJumping &&
-            _player.jumpProgress > 0.14 &&
-            _player.jumpProgress < 0.88;
+            _player.jumpProgress > 0.10 &&
+            _player.jumpProgress < 0.90;
         final bool hits = switch (atk.kind) {
           // Proyectil: golpea en su carril salvo que estés en el aire
           BossAttackKind.projectile => atk.lane == playerLane && !jumping,
@@ -450,6 +453,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
           hitObstacle();
           return;
         }
+      }
+
+      // Ataque evitado que ya pasó de largo: carga la embestida.
+      if (!atk.dodged && atk.depth >= pastPlayer) {
+        atk.dodged = true;
+        onAttackDodged();
       }
     }
   }
@@ -530,35 +539,40 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     const pastPlayer = 1.16;
     final playerLane = _player.currentLane;
 
+    // Cada obstáculo se resuelve UNA sola vez, en el momento en que cruza el
+    // plano del jugador (depth ≈ 1.0, donde el personaje está de verdad). Antes
+    // se exigía que el jugador estuviera a salvo en *cada* frame de una ventana
+    // ancha [0.87, 1.11]; como el obstáculo tarda más en cruzarla que lo que
+    // dura el salto en el aire, era imposible librarlo aunque saltaras a tiempo
+    // (y el golpe se veía con el obstáculo aún por delante del corredor).
     for (final obs in children.whereType<ObstacleComponent>().toList()) {
-      if (obs.collided) continue;
+      if (obs.collided || obs.evaded) continue;
+      if (obs.depth < _collisionDepth) continue; // aún no llega al corredor
 
-      if (!obs.evaded && obs.depth >= pastPlayer) {
+      // Otro carril: pasa de largo, cuenta como esquivado.
+      if (obs.lane != playerLane) {
         obs.evaded = true;
         evadedObstacle();
+        continue;
       }
 
-      if (!obs.evaded && obs.depth >= hitMin && obs.depth <= hitMax &&
-          obs.lane == playerLane) {
-        // Mid-jump clears all obstacles
-        if (_player.isJumping &&
-            _player.jumpProgress > 0.14 &&
-            _player.jumpProgress < 0.88) {
-          continue;
-        }
-        // Sliding clears barriers (duck under them)
-        if (_player.isSliding && obs.type == ObstacleType.barrier) continue;
-
-        // El turbo arrasa con los obstáculos sin recibir daño.
-        if (boostActive) {
-          obs.collided = true;
-          continue;
-        }
-
-        obs.collided = true;
-        hitObstacle();
-        return;
+      // Mismo carril: ¿lo está librando el jugador en este instante?
+      final jumpingClear = _player.isJumping &&
+          _player.jumpProgress > 0.10 &&
+          _player.jumpProgress < 0.90;
+      // Deslizarse pasa por debajo de las barreras.
+      final slidingClear = _player.isSliding && obs.type == ObstacleType.barrier;
+      // El turbo arrasa con cualquier obstáculo sin recibir daño.
+      if (jumpingClear || slidingClear || boostActive) {
+        obs.evaded = true;
+        if (boostActive) obs.collided = true; // efecto de arrasado
+        evadedObstacle();
+        continue;
       }
+
+      obs.collided = true;
+      hitObstacle();
+      return;
     }
 
     for (final coin in children.whereType<CoinComponent>().toList()) {
