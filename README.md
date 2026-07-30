@@ -91,10 +91,15 @@ está detrás de una interfaz y se cambia en `core/di/injection.dart`.
 | 💰 **Economía** | Monedas, ruleta diaria, cofres común/VIP, desbloqueo de piezas por rareza. |
 | 🎯 **Misiones** | 3 misiones activas rotativas con recompensas en monedas. |
 | 🏆 **Ranking** | Tabla de puntuaciones local por mundo. |
-| 🛒 **Tienda (IAP)** | Gemas, **Club VIP** (gemas diarias + monedas ×1.5) y packs cosméticos, con **compuerta parental** obligatoria antes de pagar. |
-| 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** en bucle por mundo. |
-| 🌍 **Mundos** | 8 mundos temáticos con paletas y jefes propios; se desbloquean acumulando monedas. |
-| 🌐 **Idiomas** | 6 idiomas (es, en, pt, de, ru, fr) detectados del dispositivo. |
+| 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** en bucle seleccionable por personaje. |
+| 🌍 **Mundos** | 8 mundos temáticos con paletas y jefes propios (2 disponibles, resto bloqueados). |
+| 💎 **Monetización** | Compras opcionales con dinero real: gemas (consumible), pack cosmético (no consumible) y suscripción **Club VIP**. Sin anuncios, sin cajas de botín y sin azar: precios deterministas y compuerta parental antes de comprar. Ver [`docs/COMPRAS_REALES.md`](docs/COMPRAS_REALES.md). |
+| 📈 **Analítica** | *First-party* y **local** (Hive): sesiones, días activos, retención D1/D7 y eventos. Sin SDK de terceros y sin salir del dispositivo, por el requisito de iOS Kids. |
+
+> **Nota sobre el cobro real:** en web la tienda es **simulada** (`StubStoreRepository`),
+> así que en la demo nadie paga nada. El cobro real (`InAppPurchaseStoreRepository`)
+> se activa solo en Android e iOS, y requiere proyecto nativo y los productos dados
+> de alta en las consolas.
 
 ---
 

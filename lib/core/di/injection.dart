@@ -134,8 +134,23 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<StoreLocalDatasource>(
     () => StoreLocalDatasourceImpl(Hive.box('entitlements')),
   );
+
+  // Pago real en móvil, simulado en web.
+  //
+  // `in_app_purchase` solo tiene implementación en iOS y Android: en web no
+  // existe `InAppPurchase.instance`, así que el adaptador real ni se instancia
+  // y la demo web sigue funcionando con el stub. La compuerta es kIsWeb, no un
+  // import condicional, porque el paquete se resuelve igual en todas las
+  // plataformas y lo único que hay que evitar es *usarlo* en el navegador.
+  //
+  // Para que las compras funcionen de verdad hacen falta, además de este
+  // registro: proyecto nativo Android/iOS, y los productos dados de alta en
+  // Google Play Console y App Store Connect con los MISMOS ids que
+  // `storeCatalog` (ver docs/COMPRAS_REALES.md).
   sl.registerLazySingleton<StoreRepository>(
-    () => kIsWeb ? StubStoreRepository(sl()) : InAppPurchaseStoreRepository(sl()),
+    () => kIsWeb
+        ? StubStoreRepository(sl())
+        : InAppPurchaseStoreRepository(sl()),
   );
 
   // ── Analítica (first-party, local) ────────────────────────────────────────
