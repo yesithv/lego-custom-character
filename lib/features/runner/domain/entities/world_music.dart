@@ -5,9 +5,11 @@
 /// decide, justo antes de correr, si quiere música y cuál de las pistas del
 /// mundo suena de fondo.
 ///
-/// Cada pista tiene su propio fichero de audio, sintetizado a medida con un
-/// estilo chiptune acorde al mundo (ver `tool/gen_music.py`). El mundo define
-/// la escala/tonalidad y cada pista un estilo (tempo, timbre, percusión).
+/// Cada pista tiene su propio fichero de audio `.mp3` en `assets/audio/music/`,
+/// con un estilo acorde al mundo. Cada mundo ofrece **dos** pistas contrastadas
+/// (una enérgica y otra más tranquila) para que el jugador elija antes de correr.
+/// Los ficheros se reproducen en bucle (ver `AudioService.playMusic`), así que
+/// conviene que estén recortados para buclear sin corte perceptible.
 class WorldTrack {
   final String name;
   final String description;
@@ -29,27 +31,15 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
   'brix_city': [
     WorldTrack(
       name: 'Ritmo de Ciudad',
-      description: 'Groove urbano de calles de bloques',
+      description: 'Groove urbano alegre de calles de bloques',
       emoji: '🏙️',
-      asset: 'music/brix_city_1.wav',
-    ),
-    WorldTrack(
-      name: 'Hora Punta',
-      description: 'Energía acelerada entre semáforos',
-      emoji: '🚦',
-      asset: 'music/brix_city_2.wav',
-    ),
-    WorldTrack(
-      name: 'Arcade del Centro',
-      description: 'Chiptune alegre de plaza Brix',
-      emoji: '🎮',
-      asset: 'music/brix_city_3.wav',
+      asset: 'music/brix_city_1.mp3',
     ),
     WorldTrack(
       name: 'Atardecer en la Avenida',
       description: 'Lo-fi tranquilo al caer la tarde',
       emoji: '🌇',
-      asset: 'music/brix_city_4.wav',
+      asset: 'music/brix_city_2.mp3',
     ),
   ],
   'medieval': [
@@ -57,25 +47,13 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
       name: 'Marcha del Castillo',
       description: 'Fanfarria épica de torres y murallas',
       emoji: '🏰',
-      asset: 'music/medieval_1.wav',
-    ),
-    WorldTrack(
-      name: 'Justa del Torneo',
-      description: 'Galope frenético hacia la catapulta',
-      emoji: '⚔️',
-      asset: 'music/medieval_2.wav',
+      asset: 'music/medieval_1.mp3',
     ),
     WorldTrack(
       name: 'Taberna del Reino',
       description: 'Melodía juglar de laúd 8-bit',
       emoji: '🍺',
-      asset: 'music/medieval_3.wav',
-    ),
-    WorldTrack(
-      name: 'Bosque Encantado',
-      description: 'Calma mística junto al foso',
-      emoji: '🌲',
-      asset: 'music/medieval_4.wav',
+      asset: 'music/medieval_2.mp3',
     ),
   ],
   'galaxy': [
@@ -83,19 +61,13 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
       name: 'Órbita Estelar',
       description: 'Synthwave cósmico entre asteroides',
       emoji: '🌌',
-      asset: 'music/galaxy_1.wav',
+      asset: 'music/galaxy_1.mp3',
     ),
     WorldTrack(
       name: 'Salto Hiperespacial',
       description: 'Pulso veloz a la velocidad de la luz',
       emoji: '🚀',
-      asset: 'music/galaxy_2.wav',
-    ),
-    WorldTrack(
-      name: 'Consola de la Estación',
-      description: 'Bleeps arcade de la nave nodriza',
-      emoji: '🛸',
-      asset: 'music/galaxy_3.wav',
+      asset: 'music/galaxy_2.mp3',
     ),
   ],
   'jungle': [
@@ -103,79 +75,55 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
       name: 'Corazón de la Selva',
       description: 'Ritmo tribal entre lianas',
       emoji: '🥁',
-      asset: 'music/jungle_1.wav',
-    ),
-    WorldTrack(
-      name: 'Río de Bloques',
-      description: 'Lo-fi húmedo bajo la fronda',
-      emoji: '🌿',
-      asset: 'music/jungle_2.wav',
+      asset: 'music/jungle_1.mp3',
     ),
     WorldTrack(
       name: 'Templo Perdido',
       description: 'Aventura chiptune entre ruinas',
       emoji: '🗿',
-      asset: 'music/jungle_3.wav',
+      asset: 'music/jungle_2.mp3',
     ),
   ],
   'dark_city': [
     WorldTrack(
-      name: 'Niebla del Cementerio',
-      description: 'Synth oscuro y espectral',
-      emoji: '🕸️',
-      asset: 'music/dark_city_1.wav',
-    ),
-    WorldTrack(
       name: 'Carrera Embrujada',
       description: 'Persecución frenética de sombras',
       emoji: '👻',
-      asset: 'music/dark_city_2.wav',
+      asset: 'music/dark_city_1.mp3',
     ),
     WorldTrack(
       name: 'Casa Encantada 8-bit',
-      description: 'Chiptune tétrico de Halloween',
+      description: 'Chiptune travieso de Halloween',
       emoji: '🎃',
-      asset: 'music/dark_city_3.wav',
+      asset: 'music/dark_city_2.mp3',
     ),
   ],
   'ocean': [
     WorldTrack(
-      name: 'Corrientes Profundas',
-      description: 'Lo-fi flotante entre burbujas',
-      emoji: '🫧',
-      asset: 'music/ocean_1.wav',
-    ),
-    WorldTrack(
       name: 'Arrecife de Neón',
       description: 'Synth submarino y luminoso',
       emoji: '🐠',
-      asset: 'music/ocean_2.wav',
+      asset: 'music/ocean_1.mp3',
     ),
     WorldTrack(
-      name: 'Fiesta del Coral',
-      description: 'Chiptune burbujeante y alegre',
-      emoji: '🐙',
-      asset: 'music/ocean_3.wav',
+      name: 'Corrientes Profundas',
+      description: 'Lo-fi flotante entre burbujas',
+      emoji: '🫧',
+      asset: 'music/ocean_2.mp3',
     ),
   ],
   'tundra': [
     WorldTrack(
-      name: 'Viento Polar',
-      description: 'Synth gélido y cristalino',
-      emoji: '❄️',
-      asset: 'music/tundra_1.wav',
-    ),
-    WorldTrack(
       name: 'Ventisca Veloz',
       description: 'Carrera trepidante sobre el hielo',
       emoji: '🌨️',
-      asset: 'music/tundra_2.wav',
+      asset: 'music/tundra_1.mp3',
     ),
     WorldTrack(
-      name: 'Refugio Nevado',
-      description: 'Lo-fi cálido entre témpanos',
-      emoji: '🏔️',
-      asset: 'music/tundra_3.wav',
+      name: 'Viento Polar',
+      description: 'Synth gélido y cristalino',
+      emoji: '❄️',
+      asset: 'music/tundra_2.mp3',
     ),
   ],
   'robot_city': [
@@ -183,19 +131,13 @@ const worldMusicCatalog = <String, List<WorldTrack>>{
       name: 'Circuito Sintético',
       description: 'Synthwave metálico de fábrica',
       emoji: '🤖',
-      asset: 'music/robot_city_1.wav',
+      asset: 'music/robot_city_1.mp3',
     ),
     WorldTrack(
       name: 'Sobrecarga',
       description: 'Techno-pop a máxima revolución',
       emoji: '⚡',
-      asset: 'music/robot_city_2.wav',
-    ),
-    WorldTrack(
-      name: 'Núcleo de Datos',
-      description: 'Chiptune de engranajes y pantallas',
-      emoji: '💾',
-      asset: 'music/robot_city_3.wav',
+      asset: 'music/robot_city_2.mp3',
     ),
   ],
 };
