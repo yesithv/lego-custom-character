@@ -492,6 +492,18 @@ const Map<String, Map<String, String>> kStrings = {
     'es': '¡DERROTADO!', 'en': 'DEFEATED!', 'pt': 'DERROTADO!',
     'de': 'BESIEGT!', 'ru': 'ПОБЕЖДЁН!', 'fr': 'VAINCU !',
   },
+  'powerup_magnet': {
+    'es': '¡IMÁN!', 'en': 'MAGNET!', 'pt': 'ÍMÃ!',
+    'de': 'MAGNET!', 'ru': 'МАГНИТ!', 'fr': 'AIMANT !',
+  },
+  'shield_block': {
+    'es': '¡ESCUDO!', 'en': 'SHIELD!', 'pt': 'ESCUDO!',
+    'de': 'SCHILD!', 'ru': 'ЩИТ!', 'fr': 'BOUCLIER !',
+  },
+  'powerup_boost': {
+    'es': '¡TURBO!', 'en': 'BOOST!', 'pt': 'TURBO!',
+    'de': 'TURBO!', 'ru': 'УСКОРЕНИЕ!', 'fr': 'TURBO !',
+  },
   'combo': {
     'es': 'combo', 'en': 'combo', 'pt': 'combo',
     'de': 'Combo', 'ru': 'комбо', 'fr': 'combo',

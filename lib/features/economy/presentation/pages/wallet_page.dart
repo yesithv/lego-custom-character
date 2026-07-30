@@ -10,6 +10,7 @@ import '../../../runner/presentation/pages/world_selection_page.dart'
     show worlds, WorldStatus;
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_state.dart';
+import '../widgets/wallet_icon.dart';
 
 /// "Mi Billetera": resumen sencillo de la economía del jugador.
 ///
@@ -48,8 +49,14 @@ class _WalletPageState extends State<WalletPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
-        title: Text('👛 ${context.l10n.tr('wallet_title')}',
-            style: const TextStyle(fontWeight: FontWeight.w900)),
+        title: Row(
+          children: [
+            const WalletIcon(size: 52),
+            const SizedBox(width: 10),
+            Text(context.l10n.tr('wallet_title'),
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+          ],
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(
