@@ -157,7 +157,7 @@ La carpeta `android/` ya está en el repositorio y configurada:
 
 | Ajuste | Valor |
 |--------|-------|
-| **applicationId** | `com.yesithv.runforwin` — **no se puede cambiar** una vez publicada la app |
+| **applicationId** | `com.iron_coding.runforwin` — **no se puede cambiar** una vez publicada la app |
 | **Nombre visible** | Run For Win |
 | **Orientación** | Vertical fija (el runner está diseñado en vertical) |
 | **compileSdk / targetSdk** | 36 (por defecto de Flutter) · **minSdk** 24 |

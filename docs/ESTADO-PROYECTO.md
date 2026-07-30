@@ -63,7 +63,7 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 ## 4. Qué está construido
 
 ### Plataforma Android (MVP v1)
-- **`android/` generado y configurado**: applicationId **`com.yesithv.runforwin`**
+- **`android/` generado y configurado**: applicationId **`com.iron_coding.runforwin`**
   (inamovible tras publicar), etiqueta "Run For Win", **orientación vertical
   fija**, compileSdk/targetSdk 36, minSdk 24.
 - **Firma de release** leída de `android/key.properties` (ignorado por git, con
