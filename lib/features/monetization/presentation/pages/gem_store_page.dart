@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/game_snackbar.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
+import '../../../economy/domain/entities/wallet.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
+import '../../../economy/presentation/bloc/wallet_state.dart';
 import '../../domain/entities/entitlements.dart';
 import '../../domain/entities/gem_product.dart';
 import '../../domain/repositories/store_repository.dart';
@@ -46,11 +49,31 @@ class _GemStorePageState extends State<GemStorePage> {
     });
   }
 
+  /// Un cosmético ya está en poder del jugador si todas sus piezas están
+  /// desbloqueadas en el wallet. Sirve para no cobrar gemas por algo que ya
+  /// se tiene (p. ej. la capa que vino en el pack de bienvenida).
+  bool _alreadyOwned(GemProduct product, Wallet wallet) =>
+      product.kind == GemRewardKind.cosmetic &&
+      product.grantPartIds.isNotEmpty &&
+      product.grantPartIds.every(wallet.unlockedParts.contains);
+
   Future<void> _redeem(GemProduct product) async {
     if (_busy) return;
 
+    // Guarda anti doble-canje: los cosméticos son de un solo uso. Sin esto, el
+    // jugador podría gastar gemas en una pieza que ya posee (la entrega en el
+    // wallet es idempotente, así que perdería las gemas a cambio de nada).
+    if (_alreadyOwned(product, context.read<WalletBloc>().state.wallet)) {
+      _snack(context.l10n.trp('already_owned', {
+        'title': context.l10n.storeProductTitle(product.id, product.title),
+      }));
+      return;
+    }
+
     if (_ent.gems < product.gemPrice) {
-      _snack(context.l10n.tr('not_enough_gems_store'));
+      // Saldo insuficiente: en vez de un simple aviso, se ofrece el camino a
+      // la Tienda para conseguir gemas (puente canje → compra).
+      _promptBuyGems();
       return;
     }
 
@@ -135,6 +158,32 @@ class _GemStorePageState extends State<GemStorePage> {
     showGameSnackBar(context, msg);
   }
 
+  /// Lleva a la Tienda de dinero real (donde se compran gemas) y, al volver,
+  /// refresca el saldo. Es el puente clave: "quiero esto → me faltan gemas →
+  /// consigo gemas → compro".
+  Future<void> _goToStore() async {
+    await context.pushNamed('store');
+    if (mounted) _load();
+  }
+
+  /// Aviso de saldo insuficiente que ofrece ir a la Tienda a por gemas.
+  void _promptBuyGems() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF0A4A9E),
+        behavior: SnackBarBehavior.floating,
+        content: Text(context.l10n.tr('need_more_gems_go_store'),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        action: SnackBarAction(
+          label: context.l10n.tr('get_more_gems'),
+          textColor: const Color(0xFFFFD700),
+          onPressed: _goToStore,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,18 +208,28 @@ class _GemStorePageState extends State<GemStorePage> {
           child: _loading
               ? const Center(
                   child: CircularProgressIndicator(color: Colors.white54))
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  children: [
-                    _GemBalance(gems: _ent.gems),
-                    const SizedBox(height: 12),
-                    ...gemStoreCatalog.map((p) => _GemProductCard(
-                          product: p,
-                          affordable: _ent.gems >= p.gemPrice,
-                          busy: _busy,
-                          onRedeem: () => _redeem(p),
-                        )),
-                  ],
+              : BlocBuilder<WalletBloc, WalletState>(
+                  builder: (context, walletState) {
+                    // Se listan de menor a mayor precio en gemas.
+                    final products = [...gemStoreCatalog]
+                      ..sort((a, b) => a.gemPrice.compareTo(b.gemPrice));
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      children: [
+                        _GemBalance(gems: _ent.gems),
+                        const SizedBox(height: 12),
+                        _GetMoreGemsCard(onTap: _goToStore),
+                        const SizedBox(height: 12),
+                        ...products.map((p) => _GemProductCard(
+                              product: p,
+                              affordable: _ent.gems >= p.gemPrice,
+                              owned: _alreadyOwned(p, walletState.wallet),
+                              busy: _busy,
+                              onRedeem: () => _redeem(p),
+                            )),
+                      ],
+                    );
+                  },
                 ),
         ),
       ),
@@ -212,15 +271,86 @@ class _GemBalance extends StatelessWidget {
   }
 }
 
+/// CTA destacado que lleva a la Tienda a comprar gemas. Es el puente de
+/// conversión: desde donde el jugador *gasta* gemas, un camino claro a *conseguir*
+/// más. Dorado llamativo, coherente con los botones de compra.
+class _GetMoreGemsCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _GetMoreGemsCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFFFFD700).withValues(alpha: 0.22),
+                const Color(0xFFFF8A00).withValues(alpha: 0.16),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                    child: Text('💎', style: TextStyle(fontSize: 22))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.tr('get_more_gems'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.tr('get_more_gems_sub'),
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFFFFD700)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GemProductCard extends StatelessWidget {
   final GemProduct product;
   final bool affordable;
+  final bool owned;
   final bool busy;
   final VoidCallback onRedeem;
 
   const _GemProductCard({
     required this.product,
     required this.affordable,
+    required this.owned,
     required this.busy,
     required this.onRedeem,
   });
@@ -271,23 +401,38 @@ class _GemProductCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  affordable ? const Color(0xFFFFD700) : Colors.white24,
-              foregroundColor:
-                  affordable ? const Color(0xFF3D2C00) : Colors.white54,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          if (owned)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF43A047),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(context.l10n.tr('owned'),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12)),
+            )
+          else
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    affordable ? const Color(0xFFFFD700) : Colors.white24,
+                foregroundColor:
+                    affordable ? const Color(0xFF3D2C00) : Colors.white54,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              onPressed: (busy || !affordable) ? null : onRedeem,
+              child: Text(
+                '💎 ${product.gemPrice}',
+                style:
+                    const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+              ),
             ),
-            onPressed: (busy || !affordable) ? null : onRedeem,
-            child: Text(
-              '💎 ${product.gemPrice}',
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-            ),
-          ),
         ],
       ),
     );
