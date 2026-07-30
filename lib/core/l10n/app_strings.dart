@@ -1135,4 +1135,22 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Pies', 'en': 'Feet', 'pt': 'Pés',
     'de': 'Füße', 'ru': 'Ноги', 'fr': 'Pieds',
   },
+
+  // ── Orientación vertical (aviso de girar el dispositivo) ──────────────────
+  'rotate_device_title': {
+    'es': '¡Gira tu teléfono!',
+    'en': 'Turn your phone!',
+    'pt': 'Gire o seu telefone!',
+    'de': 'Dreh dein Handy!',
+    'ru': 'Поверни телефон!',
+    'fr': 'Tourne ton téléphone !',
+  },
+  'rotate_device_hint': {
+    'es': 'Run For Win se juega en vertical.',
+    'en': 'Run For Win is played in portrait.',
+    'pt': 'Run For Win joga-se na vertical.',
+    'de': 'Run For Win spielt man im Hochformat.',
+    'ru': 'В Run For Win играют вертикально.',
+    'fr': 'Run For Win se joue à la verticale.',
+  },
 };
