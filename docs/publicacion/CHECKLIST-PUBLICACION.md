@@ -26,7 +26,7 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
 
 - [ ] Cuenta **Google Play Console** (25 USD, pago único).
 - [ ] Datos fiscales y bancarios para recibir pagos.
-- [x] **applicationId decidido:** `com.yesithv.runforwin` — ⚠️ inamovible una vez
+- [x] **applicationId decidido:** `com.iron_coding.runforwin` — ⚠️ inamovible una vez
   publicada la app.
 - [ ] Cuenta **Apple Developer** (99 USD/año) — solo cuando se aborde iOS.
 

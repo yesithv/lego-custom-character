@@ -4,8 +4,9 @@
 > **decisiones firmes**, lo **construido** y lo **pendiente**. Mantenerlo al día
 > al cerrar cada bloque de trabajo.
 
-_Última actualización: rama `claude/gallery-duplicate-button-2gew4c`
-(preparación del MVP v1 para Google Play)._
+_Última actualización: rama `claude/game-pre-deployment-fixes-r1zovq` (mergeada
+a `main`, PR #39): **revisión de economía + pantalla Billetera** y arreglos de
+UI previos al despliegue. Ver `docs/ECONOMIA.md` para el detalle económico._
 
 ## 1. Qué es el proyecto
 
@@ -48,18 +49,21 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Hive escrito a mano** (NO `hive_generator`/`build_runner`). `typeId` usados:
   `0` CharacterModel · `1` CharacterAppearanceModel · `2` WalletModel ·
   `3` ScoreModel · `4` EntitlementsModel · `5` AnalyticsEventModel.
-  **Próximo typeId libre: `6`.**
+  **Próximo typeId libre: `6`.** (EntitlementsModel typeId 4 añadió el **campo**
+  `HiveField(5) totalGemsEarned`, retrocompatible: los registros viejos asumen
+  ganado = saldo actual. Añadir un campo no consume un typeId nuevo.)
 - **Cajas Hive:** `characters`, `wallet`, `missions`, `scores`, `entitlements`,
   `analytics_events`, `analytics_meta`.
 - **Rutas (`go_router`, `core/router/app_router.dart`):** `home`, `gallery`,
   `editor-new`/`editor-edit`, `presets`, `worlds` (acepta `?character=<id>`),
-  `roulette`, `store` (`/store`), `gems` (`/gems`), `analytics-debug`
-  (`/debug/analytics`), `pre-run`, `runner`, `ranking`.
+  `roulette`, `wallet` (`/wallet`, billetera), `store` (`/store`), `gems`
+  (`/gems`), `analytics-debug` (`/debug/analytics`), `pre-run`, `runner`,
+  `ranking`.
 
 ## 4. Qué está construido
 
 ### Plataforma Android (MVP v1)
-- **`android/` generado y configurado**: applicationId **`com.yesithv.runforwin`**
+- **`android/` generado y configurado**: applicationId **`com.iron_coding.runforwin`**
   (inamovible tras publicar), etiqueta "Run For Win", **orientación vertical
   fija**, compileSdk/targetSdk 36, minSdk 24.
 - **Firma de release** leída de `android/key.properties` (ignorado por git, con
@@ -72,14 +76,34 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
   `InAppPurchaseStoreRepository`; en web sigue el stub. Verificado que la build
   web sigue compilando con el adaptador importado.
 - **Rebrand LEGO → Brix** (visible + interno: ids, paquete, assets).
-- **Tienda** (`features/monetization`, `/store`) con catálogo (packs de gemas,
-  suscripción VIP, pack cosmético). SKUs: `vip_monthly`, `gems_small`,
-  `gems_medium`, `bundle_starter` — **hay que darlos de alta en Play Console con
-  esos mismos IDs**.
+- **Tienda** (`features/monetization`, `/store`) con catálogo. SKUs:
+  `bundle_starter`, `vip_monthly`, `vip_yearly`, `gems_small`, `gems_medium`,
+  `gems_large` — **hay que darlos de alta en Play Console con esos mismos IDs**
+  (`vip_yearly` y `gems_large` son nuevos).
 - **Compuerta parental** (`ParentalGate`) obligatoria antes de comprar.
-- **Entitlements** en Hive (gemas, `adsRemoved`, `subscriptionActive`, poseídos).
-- **Canjería de gemas** (`/gems`): precio fijo y determinista (kid-safe), gemas →
-  monedas o cosméticos, entregados sobre el wallet existente.
+- **Entitlements** en Hive (gemas, `totalGemsEarned`, `subscriptionActive`,
+  poseídos, `adsRemoved` vestigial).
+- **Canjería de gemas** (`/gems`): precio fijo y determinista (kid-safe). Vende
+  **cosméticos exclusivos** (piezas `premium`, no comprables con monedas) y
+  paquetes de monedas; entregados sobre el wallet existente.
+
+### Revisión de economía + Billetera (última sesión — ver `docs/ECONOMIA.md`)
+- **Misiones ahora pagan de verdad**: al completarse acreditan sus monedas
+  (`EarnCoinsEvent`) y regalan **+1 💎** (faucet gratuito). Antes se mostraban
+  pero nunca se otorgaban.
+- **Bonus de victoria 500 → 200** (freno a la inflación de monedas).
+- **Cosméticos premium exclusivos** (`CatalogEntry.premium`): `capa vampiro` y
+  `botas propulsión` solo por gemas; en el editor salen con 💎 → Tienda.
+- **Escalera de gemas** con bonus creciente (200/1.99 · 550/4.99 · 1200/9.99) +
+  **pack de bienvenida** ($2.99: skin exclusivo + 150💎 + 1000🪙) + **VIP anual**
+  ($29.99). Tarjetas con etiquetas de marketing (`StoreProduct.badge`).
+- **Seguimiento de gemas ganadas** (`Entitlements.totalGemsEarned`, +
+  `StoreRepository.grantGems`) para el desglose de la billetera.
+- **Pantalla Billetera** (`/wallet`, en `features/economy`): se abre al tocar las
+  monedas en Home; muestra saldos, ganado/gastado/saldo de monedas **y** gemas,
+  y logros (piezas, mundos, racha, VIP).
+- **Editor**: botones de guardar/jugar más grandes, nombre limitado a 18
+  caracteres, y **eliminada la etiqueta de tipo** ("Héroe/Villano").
 - **Desbloqueo de mundos por acumulación**: un mundo se abre cuando
   `Wallet.totalCoinsEarned >= unlockCost` (permanente; no baja al gastar).
   Costes escalonados (galaxy 500 … robot_city 8000). Barra de progreso en la
@@ -124,7 +148,8 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 ### Pulido de juego (calidad, no monetización)
 - Atajo **"▶ Jugar"** en galería + **"Guardar y jugar"** (icono bandera) en el
   editor, llevando al selector de mundos con el corredor preseleccionado.
-- **Recompensas de victoria** subidas (+500 monedas, +2500 score, +400/embestida).
+- **Recompensas de victoria**: +200 monedas (bajó de 500 por balance de economía,
+  ver `docs/ECONOMIA.md`), +2500 score, +400/embestida.
 - **Efecto de derrota del jefe**: estallido de escombros + ondas + desvanecido.
 - **Sacudida de pantalla** (embestida y K.O.).
 - **Movimiento del jefe en pelea**: respiración, embestida al atacar, inclinación.
@@ -153,8 +178,8 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
   no tiene Android SDK: `dl.google.com` está bloqueado por la política de red).
 
 ### Post-MVP (no bloquea)
-- **Vías de ganar gemas gratis** además del VIP diario (misiones, hitos).
 - **Pase de temporada** (cosméticos estacionales).
+- **Cosméticos _legendary_ comprables con monedas** (techo a la progresión gratis).
 - **Backend** (validación de recibos, vencimiento de suscripción, ranking global,
   analítica agregada) → `docs/BACKEND-PAGOS.md`, archivado.
 
@@ -186,11 +211,13 @@ vía `StoreRepository.entitlementsSync()`).
 - El proyecto **no tiene `analysis_options.yaml`** a propósito: añadir
   `flutter_lints` saca 28 avisos cosméticos (`prefer_const`, llaves en `if`).
   Si se añade, limpiarlos en un cambio aparte.
-- **Rama de desarrollo actual:** `claude/gallery-duplicate-button-2gew4c`
-  (PR → `main`).
+- **Rama de desarrollo:** las correcciones pre-despliegue y la economía se
+  mergearon a `main` (PR #39). La documentación se actualiza en
+  `claude/docs-economia-billetera` (PR → `main`).
 - **No tocar** el nombre del repo/URLs `/lego-custom-character/` (GitHub Pages)
   sin renombrar el repo en GitHub.
-- Docs relacionadas: `MONETIZACION.md`, `BACKEND-PAGOS.md`, `JUGABILIDAD.md`,
-  `ARQUITECTURA.md`, `DESARROLLO.md`. Documentación de tiendas (política de
+- Docs relacionadas: `ECONOMIA.md` (balance económico completo), `MONETIZACION.md`,
+  `BACKEND-PAGOS.md`, `JUGABILIDAD.md`, `ARQUITECTURA.md`, `DESARROLLO.md`.
+  Documentación de tiendas (política de
   privacidad, términos, ficha, formularios, checklist) en **`docs/publicacion/`**
   (borradores con marcadores `[...]` por rellenar).

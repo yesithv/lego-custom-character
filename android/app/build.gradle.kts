@@ -21,7 +21,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.yesithv.runforwin"
+    namespace = "com.iron_coding.runforwin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -33,7 +33,7 @@ android {
     defaultConfig {
         // Identificador definitivo en Google Play: NO se puede cambiar una vez
         // publicada la app.
-        applicationId = "com.yesithv.runforwin"
+        applicationId = "com.iron_coding.runforwin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // versionCode / versionName salen de `version:` en pubspec.yaml

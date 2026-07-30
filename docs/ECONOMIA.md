@@ -7,8 +7,8 @@
 
 > ## ✅ Estado de implementación (2026-07-30)
 >
-> La economía recomendada en §4 **ya está implementada** en la rama
-> `claude/game-pre-deployment-fixes-r1zovq`. Resumen de lo aplicado:
+> La economía recomendada en §4 **ya está implementada y mergeada a `main`**
+> (PR #39). Resumen de lo aplicado:
 >
 > - **Misiones ahora pagan.** Al completar una misión se acreditan sus monedas
 >   al monedero (antes se mostraban pero nunca se daban). Además, cada misión
@@ -27,6 +27,10 @@
 >   + 150💎 + 1000🪙, con etiqueta "OFERTA ÚNICA".
 > - **VIP** mensual $4.99 ("MÁS POPULAR") + **anual $29.99** ("AHORRA 50%").
 > - **Tienda con etiquetas de marketing** (badges) para guiar la conversión.
+> - **Seguimiento de gemas ganadas** (`Entitlements.totalGemsEarned`) y
+>   **pantalla Billetera** (`/wallet`, al tocar las monedas en Home): saldos y
+>   ganado / gastado / saldo de monedas **y** gemas, más logros (piezas, mundos,
+>   racha, VIP).
 >
 > Pendiente/opcional: registrar los nuevos SKU (`gems_large`, `vip_yearly`) en
 > Google Play / App Store; añadir cosméticos *legendary* de monedas; limpiar el

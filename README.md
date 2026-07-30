@@ -88,8 +88,8 @@ está detrás de una interfaz y se cambia en `core/di/injection.dart`.
 | 👥 **Presets** | Personajes precargados agrupados por colección (Ninjas dorados, Superhéroes, Heroínas) que se cargan en el editor y se pueden modificar. |
 | 🏃 **Endless Runner** | Motor Flame con perspectiva pseudo-3D, 3 carriles, salto y deslizamiento, 3 zonas de dificultad progresiva y escenografía lateral por mundo. |
 | 👹 **Peleas contra jefes** | Al final de cada mundo aparece un jefe temático con 3 corazones; se le vence esquivando ataques y embistiendo. |
-| 💰 **Economía** | Monedas, ruleta diaria, cofres común/VIP, desbloqueo de piezas por rareza. |
-| 🎯 **Misiones** | 3 misiones activas rotativas con recompensas en monedas. |
+| 💰 **Economía** | Monedas, ruleta diaria, cofres común/VIP, desbloqueo de piezas por rareza y **billetera** (resumen ganado/gastado/saldo, al tocar las monedas). |
+| 🎯 **Misiones** | 3 misiones activas rotativas; al completarse pagan monedas y regalan una gema. |
 | 🏆 **Ranking** | Tabla de puntuaciones local por mundo. |
 | 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** en bucle seleccionable por personaje. |
 | 🌍 **Mundos** | 8 mundos temáticos con paletas y jefes propios (2 disponibles, resto bloqueados). |
@@ -157,7 +157,7 @@ La carpeta `android/` ya está en el repositorio y configurada:
 
 | Ajuste | Valor |
 |--------|-------|
-| **applicationId** | `com.yesithv.runforwin` — **no se puede cambiar** una vez publicada la app |
+| **applicationId** | `com.iron_coding.runforwin` — **no se puede cambiar** una vez publicada la app |
 | **Nombre visible** | Run For Win |
 | **Orientación** | Vertical fija (el runner está diseñado en vertical) |
 | **compileSdk / targetSdk** | 36 (por defecto de Flutter) · **minSdk** 24 |
@@ -219,10 +219,12 @@ Lo que falta **no es código de la app**; está detallado en
 
 | ID | Tipo | Qué entrega |
 |----|------|-------------|
+| `bundle_starter` | No consumible | Pack de bienvenida: skin exclusivo + 150 💎 + 1000 🪙 |
 | `vip_monthly` | Suscripción | Club VIP: 25 💎/día + monedas ×1.5 |
-| `gems_small` | Consumible | 100 gemas |
+| `vip_yearly` | Suscripción | Club VIP anual (~50% de ahorro) |
+| `gems_small` | Consumible | 200 gemas |
 | `gems_medium` | Consumible | 550 gemas |
-| `bundle_starter` | No consumible | Pack cosmético (jetpack, alas, varita, antifaz) |
+| `gems_large` | Consumible | 1200 gemas |
 
 Si un ID no existe en la consola, la compra devuelve "producto no encontrado"
 en lugar de romper la app. Detalles de la economía en
