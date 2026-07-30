@@ -41,6 +41,13 @@ Alrededor de esos dos pilares hay una **economía de monedas** (ruleta diaria, c
 | 🏆 **Ranking** | Tabla de puntuaciones local por mundo. |
 | 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** en bucle seleccionable por personaje. |
 | 🌍 **Mundos** | 8 mundos temáticos con paletas y jefes propios (2 disponibles, resto bloqueados). |
+| 💎 **Monetización** | Compras opcionales con dinero real: gemas (consumible), pack cosmético (no consumible) y suscripción **Club VIP**. Sin anuncios, sin cajas de botín y sin azar: precios deterministas y compuerta parental antes de comprar. Ver [`docs/COMPRAS_REALES.md`](docs/COMPRAS_REALES.md). |
+| 📈 **Analítica** | *First-party* y **local** (Hive): sesiones, días activos, retención D1/D7 y eventos. Sin SDK de terceros y sin salir del dispositivo, por el requisito de iOS Kids. |
+
+> **Nota sobre el cobro real:** en web la tienda es **simulada** (`StubStoreRepository`),
+> así que en la demo nadie paga nada. El cobro real (`InAppPurchaseStoreRepository`)
+> se activa solo en Android e iOS, y requiere proyecto nativo y los productos dados
+> de alta en las consolas.
 
 ---
 
@@ -53,6 +60,7 @@ Alrededor de esos dos pilares hay una **economía de monedas** (ruleta diaria, c
 - **[go_router](https://pub.dev/packages/go_router) 14** — navegación declarativa
 - **[get_it](https://pub.dev/packages/get_it) 8** — inyección de dependencias (service locator)
 - **[audioplayers](https://pub.dev/packages/audioplayers) 6** — reproducción de audio
+- **[in_app_purchase](https://pub.dev/packages/in_app_purchase) 3** — cobro real en Android e iOS
 - **uuid** — generación de identificadores
 
 > ⚠️ Los `TypeAdapter` de Hive (`*.g.dart`) están **escritos a mano**. No se usan `hive_generator` ni `build_runner`; si añades campos persistidos, actualiza el adapter manualmente.
@@ -142,6 +150,8 @@ Documentación interna detallada en la carpeta [`docs/`](docs/):
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Clean Architecture, capas, DI, persistencia Hive, navegación y flujo de estado. |
 | [`docs/JUGABILIDAD.md`](docs/JUGABILIDAD.md) | Mecánicas del runner: perspectiva, zonas, colisiones, puntuación, power-ups, economía, ruleta, cofres y misiones. |
 | [`docs/DESARROLLO.md`](docs/DESARROLLO.md) | Guía para contribuir: cómo añadir features, escribir adapters Hive a mano, convenciones y pruebas. |
+| [`docs/COMPRAS_REALES.md`](docs/COMPRAS_REALES.md) | Cobro real con `in_app_purchase`: catálogo de SKU, alta en las consolas, pruebas sin gastar dinero y limitaciones asumidas en la v1. |
+| [`docs/PUBLICACION_ANDROID.md`](docs/PUBLICACION_ANDROID.md) | Qué hace falta para publicar en Google Play: 12 testers/14 días, API 36, proyecto nativo, ficha y formularios. |
 
 ---
 
