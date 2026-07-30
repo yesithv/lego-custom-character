@@ -36,6 +36,39 @@
 > Google Play / App Store; añadir cosméticos *legendary* de monedas; limpiar el
 > helper l10n `characterType` (sin uso tras quitar el badge de tipo).
 
+> ## 🔁 Revisión de la canjería de gemas (2026-07-30, sesión posterior)
+>
+> Pase de orden + validación de la pantalla de canjería (`/gems`,
+> `gem_store_page.dart`) y del flujo económico que la sostiene.
+>
+> - **Orden de menor a mayor.** La lista de la canjería ahora se ordena por
+>   **precio en gemas ascendente** en la propia pantalla
+>   (`[...gemStoreCatalog]..sort((a,b) => a.gemPrice.compareTo(b.gemPrice))`),
+>   independiente del orden en que estén declarados en `gem_product.dart`. Orden
+>   resultante: 500🪙 (40💎) · 1500🪙 (100💎) · capa vampiro (120💎) ·
+>   botas de propulsión (140💎) · 4000🪙 (240💎).
+> - **🐛 Bug corregido — doble-canje de cosméticos ya poseídos.** La entrega de
+>   un cosmético en el wallet es **idempotente** (`unlockPart` no re-agrega una
+>   pieza ya desbloqueada), pero la canjería **cobraba las gemas igual**. Un
+>   jugador que ya tuviera `capa vampiro` (p. ej. por el **pack de bienvenida**,
+>   que la incluye) podía re-canjearla por 120💎 y perder las gemas a cambio de
+>   nada. Ahora:
+>   - `_redeem` bloquea el canje si el cosmético ya está en
+>     `wallet.unlockedParts` (guarda defensiva, muestra "ya lo tienes").
+>   - La tarjeta del producto muestra una etiqueta **"Ya lo tienes"** en vez del
+>     botón de canje cuando la pieza ya se posee (paridad con la Tienda de dinero
+>     real, que ya guardaba los no-consumibles con `_ent.owns`).
+>   - Solo aplica a `GemRewardKind.cosmetic`; los paquetes de monedas
+>     (`GemRewardKind.coins`) son consumibles repetibles y no se tocan.
+> - **Validación del resto del flujo (sin cambios necesarios):**
+>   - Saldo insuficiente → `spendGems` devuelve `success:false` y no entrega
+>     premio; la UI ya lo bloquea antes con `affordable`/`_ent.gems`.
+>   - Reentrada protegida por `_busy`; diálogo de confirmación antes de gastar.
+>   - Monedas por gemas: `spendGems` + `EarnCoinsEvent` — correcto, repetible.
+>   - Las gemas viven en `entitlements` (Hive) y las monedas/piezas en `wallet`
+>     (Hive): dos cajas distintas, pero la entrega es local y no puede fallar
+>     parcialmente en la práctica.
+
 Este documento tiene cuatro partes:
 
 1. **Estado actual** — todos los números tal como están hoy en el código.
