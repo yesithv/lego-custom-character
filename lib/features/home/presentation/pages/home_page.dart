@@ -39,7 +39,7 @@ class _HomeView extends StatelessWidget {
 
   /// Abre el ranking directamente (el primer mundo por defecto). La pantalla
   /// de ranking ya trae los chips para cambiar de mundo, así que no hace falta
-  /// un selector previo.
+  /// un selector previo .
   void _openRanking(BuildContext context) {
     final world = worlds.first;
     context.goNamed(
