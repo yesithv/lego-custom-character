@@ -4,7 +4,12 @@
 > **decisiones firmes**, lo **construido** y lo **pendiente**. Mantenerlo al día
 > al cerrar cada bloque de trabajo.
 
-_Última actualización: rama `claude/game-economy-purchase-motivation-gjp7pt`:
+_Última actualización: rama `claude/fix-real-purchases-flow`: **puesta a punto
+de compras reales** — precios localizados desde la tienda, estado "compra
+pendiente" (Ask to Buy) resuelto en la UI, aviso de compras simuladas limitado a
+web, y permiso `BILLING` explícito en el manifiesto. Se sincronizó
+`docs/COMPRAS_REALES.md` (estaba desactualizado: decía que `android/` no
+existía). Antes: rama `claude/game-economy-purchase-motivation-gjp7pt`:
 **motivación de compra de gemas** (chip de gemas en Home, oferta de bienvenida,
 nudge post-carrera, puente canjería→Tienda, faucet de misiones visible) +
 canjería ordenada de menor a mayor y arreglo del doble-canje de cosméticos. No
@@ -79,6 +84,15 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Pagos reales cableados** (`in_app_purchase`): en móvil se registra
   `InAppPurchaseStoreRepository`; en web sigue el stub. Verificado que la build
   web sigue compilando con el adaptador importado.
+  - **Precios reales localizados**: la Tienda pide los precios a la tienda al
+    abrirse (`StoreRepository.loadPrices` → `queryProductDetails`) y muestra la
+    moneda del usuario; el `priceLabel` del catálogo es solo respaldo.
+  - **Compra pendiente (Ask to Buy)** contemplada: al llegar `pending` se
+    desbloquea la UI con el aviso `iap_purchase_pending`; el beneficio se
+    concede al confirmarse y se ve al recargar.
+  - **Aviso "compras simuladas" solo en web** (antes salía también en móvil).
+  - **Permiso `com.android.vending.BILLING`** declarado explícito en el
+    manifiesto de Android.
 - **Rebrand LEGO → Brix** (visible + interno: ids, paquete, assets).
 - **Tienda** (`features/monetization`, `/store`) con catálogo. SKUs:
   `bundle_starter`, `vip_monthly`, `vip_yearly`, `gems_small`, `gems_medium`,
