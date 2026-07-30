@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:run_for_win/core/l10n/app_localizations.dart';
 import 'package:run_for_win/core/l10n/app_strings.dart';
@@ -66,18 +67,21 @@ void main() {
 
   group('PortraitGate', () {
     setUp(() {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
       landscapeBlocked.value = false;
     });
 
     tearDown(() {
-      debugDefaultTargetPlatformOverride = null;
       landscapeBlocked.value = false;
     });
 
     Widget harness(Size size) => MaterialApp(
           locale: const Locale('es'),
-          localizationsDelegates: const [AppLocalizations.delegate],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           supportedLocales: AppLocalizations.supportedLocales,
           home: MediaQuery(
             data: MediaQueryData(size: size),
@@ -89,8 +93,13 @@ void main() {
 
     testWidgets('en horizontal tapa el juego con el aviso de girar',
         (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
       await tester.pumpWidget(harness(const Size(844, 390)));
       await tester.pump();
+      // El override ya cumplió su papel durante el build; se limpia aquí porque
+      // el framework exige que las variables de depuración vuelvan a null antes
+      // de terminar el cuerpo del test (se verifica antes del tearDown).
+      debugDefaultTargetPlatformOverride = null;
 
       expect(find.text(kStrings['rotate_device_title']!['es']!), findsOneWidget);
       expect(find.text(kStrings['rotate_device_hint']!['es']!), findsOneWidget);
@@ -103,8 +112,10 @@ void main() {
     });
 
     testWidgets('en vertical muestra el juego sin aviso', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
       await tester.pumpWidget(harness(const Size(390, 844)));
       await tester.pump();
+      debugDefaultTargetPlatformOverride = null;
 
       expect(find.text(kStrings['rotate_device_title']!['es']!), findsNothing);
       expect(find.text('contenido del juego'), findsOneWidget);
@@ -112,12 +123,14 @@ void main() {
     });
 
     testWidgets('al volver a vertical el aviso desaparece', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
       await tester.pumpWidget(harness(const Size(844, 390)));
       await tester.pump();
       expect(landscapeBlocked.value, isTrue);
 
       await tester.pumpWidget(harness(const Size(390, 844)));
       await tester.pump();
+      debugDefaultTargetPlatformOverride = null;
 
       expect(find.text(kStrings['rotate_device_title']!['es']!), findsNothing);
       expect(landscapeBlocked.value, isFalse);
