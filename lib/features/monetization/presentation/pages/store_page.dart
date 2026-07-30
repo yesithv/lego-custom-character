@@ -78,10 +78,14 @@ class _StorePageState extends State<StorePage> {
         'product': product.id,
         'kind': product.kind.name,
       });
-      // Los packs cosméticos desbloquean accesorios en el wallet existente.
+      // Los packs cosméticos desbloquean accesorios y (si trae) monedas en el
+      // wallet existente. Las gemas del pack ya las concedió el repositorio.
       if (product.kind == ProductKind.cosmeticBundle) {
         for (final partId in product.grantsPartIds) {
           context.read<WalletBloc>().add(UnlockPartEvent(partId: partId, cost: 0));
+        }
+        if (product.coinAmount > 0) {
+          context.read<WalletBloc>().add(EarnCoinsEvent(product.coinAmount));
         }
       }
       setState(() {
@@ -442,13 +446,23 @@ class _ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.l10n.storeProductTitle(product.id, product.title),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        context.l10n.storeProductTitle(product.id, product.title),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    if (product.badge != null) ...[
+                      const SizedBox(width: 6),
+                      _MarketingBadge(label: product.badge!),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -468,6 +482,35 @@ class _ProductCard extends StatelessWidget {
                   onTap: onBuy,
                 ),
         ],
+      ),
+    );
+  }
+}
+
+/// Etiqueta de marketing (p. ej. "MÁS POPULAR", "MEJOR VALOR") en las tarjetas
+/// de producto. Naranja llamativo para captar la mirada sin ser agresivo.
+class _MarketingBadge extends StatelessWidget {
+  final String label;
+  const _MarketingBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF8A00), Color(0xFFFF5A00)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

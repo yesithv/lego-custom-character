@@ -80,6 +80,15 @@ class InAppPurchaseStoreRepository implements StoreRepository {
   }
 
   @override
+  Future<Entitlements> grantGems(int amount) async {
+    var e = _ds.get().toEntity();
+    if (amount <= 0) return e;
+    e = e.copyWith(gems: e.gems + amount);
+    await _ds.save(EntitlementsModel.fromEntity(e));
+    return e;
+  }
+
+  @override
   Future<({Entitlements entitlements, int gemsGranted})> claimVipDaily() async {
     var e = _ds.get().toEntity();
     if (!e.canClaimVipDaily) return (entitlements: e, gemsGranted: 0);
@@ -195,7 +204,12 @@ class InAppPurchaseStoreRepository implements StoreRepository {
         case ProductKind.subscription:
           e = e.copyWith(subscriptionActive: true);
         case ProductKind.cosmeticBundle:
-          break;
+          // Accesorios y monedas los concede la UI sobre el wallet; aquí las
+          // gemas del pack. Solo en la primera compra (no al restaurar): el
+          // pack es no consumible y `owns` aún es false la primera vez.
+          if (product.gemAmount > 0 && !e.owns(productId)) {
+            e = e.copyWith(gems: e.gems + product.gemAmount);
+          }
       }
     }
     if (!e.owns(productId)) {

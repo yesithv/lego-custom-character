@@ -60,9 +60,12 @@ class StubStoreRepository implements StoreRepository {
       case ProductKind.subscription:
         e = e.copyWith(subscriptionActive: true);
       case ProductKind.cosmeticBundle:
-        // El desbloqueo de accesorios lo aplica la UI sobre el wallet; aquí
-        // solo se registra la posesión del pack.
-        break;
+        // El desbloqueo de accesorios y la entrega de monedas los aplica la UI
+        // sobre el wallet; aquí solo concedemos las gemas del pack y se registra
+        // la posesión.
+        if (product.gemAmount > 0) {
+          e = e.copyWith(gems: e.gems + product.gemAmount);
+        }
     }
 
     if (!e.owns(product.id)) {
@@ -84,5 +87,14 @@ class StubStoreRepository implements StoreRepository {
     e = e.copyWith(gems: e.gems - amount);
     await _ds.save(EntitlementsModel.fromEntity(e));
     return (entitlements: e, success: true);
+  }
+
+  @override
+  Future<Entitlements> grantGems(int amount) async {
+    var e = _ds.get().toEntity();
+    if (amount <= 0) return e;
+    e = e.copyWith(gems: e.gems + amount);
+    await _ds.save(EntitlementsModel.fromEntity(e));
+    return e;
   }
 }

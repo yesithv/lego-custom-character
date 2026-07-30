@@ -112,6 +112,25 @@ class _RunnerPageState extends State<RunnerPage> {
     }
   }
 
+  /// Gemas gratis por cada misión completada (faucet). Hace que las gemas sean
+  /// alcanzables jugando, sin regalar tantas que nadie compre. Ver ECONOMIA.md.
+  static const int _gemsPerCompletedMission = 1;
+
+  /// Paga las recompensas de las misiones recién completadas: monedas (que hasta
+  /// ahora se mostraban pero NUNCA se acreditaban) y un pequeño faucet de gemas.
+  void _rewardCompletedMissions(List<Mission> completed) {
+    if (completed.isEmpty) return;
+    final coins = completed.fold<int>(0, (sum, m) => sum + m.rewardCoins);
+    if (coins > 0) {
+      context.read<WalletBloc>().add(EarnCoinsEvent(coins));
+    }
+    final gems = completed.length * _gemsPerCompletedMission;
+    if (gems > 0) {
+      // Fire-and-forget: incrementa el saldo de gemas (entitlements) en local.
+      sl<StoreRepository>().grantGems(gems);
+    }
+  }
+
   void _onRunComplete(int coins) {
     context.read<WalletBloc>().add(RecordRunEvent(coins));
     context.read<MissionBloc>().add(AdvanceMissionsEvent(MissionRunData(
@@ -192,6 +211,16 @@ class _RunnerPageState extends State<RunnerPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // Paga las misiones recién completadas (monedas + gemas) una sola vez
+          // por carrera: se dispara cuando `justCompleted` pasa a no vacío.
+          BlocListener<MissionBloc, MissionState>(
+            listenWhen: (p, c) =>
+                c.justCompleted.isNotEmpty &&
+                p.justCompleted != c.justCompleted,
+            listener: (context, missionState) =>
+                _rewardCompletedMissions(missionState.justCompleted),
+            child: const SizedBox.shrink(),
+          ),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onPanEnd: _handleSwipe,

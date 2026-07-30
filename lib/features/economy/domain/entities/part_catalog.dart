@@ -7,15 +7,24 @@ class CatalogEntry {
   final AccessoryRarity rarity;
   final int coinCost;
 
+  /// Exclusivo de la Tienda: **no** se puede comprar con monedas. Solo se
+  /// obtiene con gemas (canjería) o dentro de un pack de dinero real. En el
+  /// editor aparece bloqueado con 💎 y lleva a la Tienda. Da a las gemas un uso
+  /// real y evita que un cosmético premium quede "dominado" por las monedas.
+  final bool premium;
+
   const CatalogEntry({
     required this.id,
     required this.name,
     required this.slot,
     required this.rarity,
     this.coinCost = 0,
+    this.premium = false,
   });
 
-  bool get isFree => coinCost == 0;
+  /// Gratis = sin costo en monedas y no premium. Los premium nunca son gratis
+  /// (se pagan con gemas), aunque su [coinCost] sea 0.
+  bool get isFree => coinCost == 0 && !premium;
 }
 
 // Coin costs by rarity
@@ -63,7 +72,8 @@ const partCatalog = <String, CatalogEntry>{
   'mochila': CatalogEntry(id: 'mochila', name: 'Mochila', slot: 'back', rarity: AccessoryRarity.common),
   'jetpack': CatalogEntry(id: 'jetpack', name: 'Jetpack', slot: 'back', rarity: AccessoryRarity.rare, coinCost: 200),
   'alas': CatalogEntry(id: 'alas', name: 'Alas', slot: 'back', rarity: AccessoryRarity.rare, coinCost: 200),
-  'capa vampiro': CatalogEntry(id: 'capa vampiro', name: 'Capa vampiro', slot: 'back', rarity: AccessoryRarity.epic, coinCost: 500),
+  // Premium: exclusivo de la Tienda (gemas / pack). No se compra con monedas.
+  'capa vampiro': CatalogEntry(id: 'capa vampiro', name: 'Capa vampiro', slot: 'back', rarity: AccessoryRarity.epic, premium: true),
   'alas mariposa': CatalogEntry(id: 'alas mariposa', name: 'Alas de mariposa', slot: 'back', rarity: AccessoryRarity.common),
   'katanas dobles': CatalogEntry(id: 'katanas dobles', name: 'Katanas dobles', slot: 'back', rarity: AccessoryRarity.common),
 
@@ -104,7 +114,8 @@ const partCatalog = <String, CatalogEntry>{
   // ── Feet ───────────────────────────────────────────────────────────────────
   'espuelas': CatalogEntry(id: 'espuelas', name: 'Espuelas cowboy', slot: 'feet', rarity: AccessoryRarity.common),
   'tobilleras': CatalogEntry(id: 'tobilleras', name: 'Tobilleras', slot: 'feet', rarity: AccessoryRarity.common),
-  'botas propulsión': CatalogEntry(id: 'botas propulsión', name: 'Botas de propulsión', slot: 'feet', rarity: AccessoryRarity.epic, coinCost: 500),
+  // Premium: exclusivo de la Tienda (gemas / pack). No se compra con monedas.
+  'botas propulsión': CatalogEntry(id: 'botas propulsión', name: 'Botas de propulsión', slot: 'feet', rarity: AccessoryRarity.epic, premium: true),
   'moños zapatos': CatalogEntry(id: 'moños zapatos', name: 'Moños en los zapatos', slot: 'feet', rarity: AccessoryRarity.common),
 };
 

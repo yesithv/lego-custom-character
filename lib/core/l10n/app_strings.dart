@@ -1089,6 +1089,26 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Desbloquear', 'en': 'Unlock', 'pt': 'Desbloquear',
     'de': 'Freischalten', 'ru': 'Открыть', 'fr': 'Débloquer',
   },
+  'premium_title': {
+    'es': 'Exclusivo de la Tienda',
+    'en': 'Store exclusive',
+    'pt': 'Exclusivo da Loja',
+    'de': 'Shop-exklusiv',
+    'ru': 'Только в магазине',
+    'fr': 'Exclusivité Boutique',
+  },
+  'premium_body': {
+    'es': 'Este cosmético no se compra con monedas. Consíguelo con 💎 gemas en la Tienda.',
+    'en': 'This cosmetic can’t be bought with coins. Get it with 💎 gems in the Store.',
+    'pt': 'Este cosmético não se compra com moedas. Consiga-o com 💎 gemas na Loja.',
+    'de': 'Dieses Kosmetik gibt es nicht für Münzen. Hol es dir mit 💎 im Shop.',
+    'ru': 'Этот предмет нельзя купить за монеты. Возьми его за 💎 в магазине.',
+    'fr': 'Ce cosmétique ne s’achète pas avec des pièces. Obtiens-le avec 💎 en Boutique.',
+  },
+  'premium_go_store': {
+    'es': 'Ir a la Tienda', 'en': 'Go to Store', 'pt': 'Ir à Loja',
+    'de': 'Zum Shop', 'ru': 'В магазин', 'fr': 'Aller à la Boutique',
+  },
   'coins_amount': {
     'es': '{n} monedas', 'en': '{n} coins', 'pt': '{n} moedas',
     'de': '{n} Münzen', 'ru': '{n} монет', 'fr': '{n} pièces',

@@ -794,12 +794,65 @@ class _AccessoriesTab extends StatelessWidget {
     );
   }
 
+  /// Diálogo para piezas premium (exclusivas): no se compran con monedas, se
+  /// consiguen con gemas en la Tienda. Es un gancho de conversión: muestra el
+  /// cosmético y lleva directo a la canjería de gemas.
+  void _showPremiumDialog(BuildContext context, CatalogEntry entry) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('💎 ${context.l10n.tr('premium_title')}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.l10n.partName(entry),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              context.l10n.tr('premium_body'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: Colors.black87,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              context.pushNamed('gems');
+            },
+            child: Text(context.l10n.tr('premium_go_store'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showUnlockDialog(
     BuildContext context, {
     required CatalogEntry entry,
     required int coins,
     required VoidCallback onConfirm,
   }) {
+    // Premium = exclusivo de la Tienda: no se paga con monedas.
+    if (entry.premium) {
+      _showPremiumDialog(context, entry);
+      return;
+    }
     final canAfford = coins >= entry.coinCost;
     showDialog<void>(
       context: context,
@@ -936,8 +989,9 @@ class _AccessorySlot extends StatelessWidget {
                   label: context.l10n.partName(entry),
                   isSelected: selected == entry.id,
                   isLocked: !isAvailable,
-                  coinCost: isAvailable ? null : entry.coinCost,
+                  coinCost: (isAvailable || entry.premium) ? null : entry.coinCost,
                   rarity: entry.rarity,
+                  isPremium: entry.premium,
                   onTap: () {
                     if (isAvailable) {
                       onSelect(selected == entry.id ? null : entry.id);
@@ -962,6 +1016,7 @@ class _OptionChip extends StatelessWidget {
   final bool isLocked;
   final int? coinCost;
   final AccessoryRarity? rarity;
+  final bool isPremium;
   final VoidCallback onTap;
 
   const _OptionChip({
@@ -970,10 +1025,13 @@ class _OptionChip extends StatelessWidget {
     required this.isLocked,
     this.coinCost,
     this.rarity,
+    this.isPremium = false,
     required this.onTap,
   });
 
   Color get _rarityColor {
+    // Los premium se distinguen con dorado (exclusivos de la Tienda).
+    if (isPremium) return const Color(0xFFFFD700);
     if (rarity == AccessoryRarity.legendary) return const Color(0xFFE67E22);
     if (rarity == AccessoryRarity.epic) return const Color(0xFF9B59B6);
     if (rarity == AccessoryRarity.rare) return const Color(0xFF4A90E2);
@@ -1008,7 +1066,8 @@ class _OptionChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isLocked) ...[
-                Icon(Icons.lock_outline, size: 12, color: _rarityColor),
+                Icon(isPremium ? Icons.workspace_premium_rounded : Icons.lock_outline,
+                    size: 12, color: _rarityColor),
                 const SizedBox(width: 4),
               ],
               Text(
@@ -1023,7 +1082,13 @@ class _OptionChip extends StatelessWidget {
                           : Colors.white70,
                 ),
               ),
-              if (isLocked && coinCost != null) ...[
+              if (isLocked && isPremium) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '💎',
+                  style: TextStyle(fontSize: 11, color: _rarityColor),
+                ),
+              ] else if (isLocked && coinCost != null) ...[
                 const SizedBox(width: 4),
                 Text(
                   '🪙$coinCost',

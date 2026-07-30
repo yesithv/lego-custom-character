@@ -5,6 +5,33 @@
 > compuerta parental antes de comprar, sin loot boxes con dinero real, sin
 > pay-to-win.** Todo lo que sigue respeta esas restricciones.
 
+> ## ✅ Estado de implementación (2026-07-30)
+>
+> La economía recomendada en §4 **ya está implementada** en la rama
+> `claude/game-pre-deployment-fixes-r1zovq`. Resumen de lo aplicado:
+>
+> - **Misiones ahora pagan.** Al completar una misión se acreditan sus monedas
+>   al monedero (antes se mostraban pero nunca se daban). Además, cada misión
+>   completada regala **+1 💎** (faucet gratuito: las gemas ya son alcanzables
+>   jugando, sin migración de Hive).
+> - **Bonus de victoria 500 → 200**, para frenar la inflación de monedas.
+> - **Cosméticos premium (exclusivos de la Tienda):** `capa vampiro` y
+>   `botas propulsión` ya no se compran con monedas (flag `premium`). En el
+>   editor salen bloqueados con 💎 y llevan directo a la canjería de gemas.
+> - **Canjería de gemas sin dominación:** vende esos cosméticos exclusivos
+>   (120/140 💎) + paquetes de monedas (500/1500/4000). Se quitaron los
+>   cosméticos que eran más baratos en monedas.
+> - **Escalera de gemas IAP:** 200💎/$1.99 · 550💎/$4.99 (+10%) · 1200💎/$9.99
+>   (+20%, "MEJOR VALOR").
+> - **Pack de bienvenida** rediseñado ($2.99, una vez): capa vampiro EXCLUSIVA
+>   + 150💎 + 1000🪙, con etiqueta "OFERTA ÚNICA".
+> - **VIP** mensual $4.99 ("MÁS POPULAR") + **anual $29.99** ("AHORRA 50%").
+> - **Tienda con etiquetas de marketing** (badges) para guiar la conversión.
+>
+> Pendiente/opcional: registrar los nuevos SKU (`gems_large`, `vip_yearly`) en
+> Google Play / App Store; añadir cosméticos *legendary* de monedas; limpiar el
+> helper l10n `characterType` (sin uso tras quitar el badge de tipo).
+
 Este documento tiene cuatro partes:
 
 1. **Estado actual** — todos los números tal como están hoy en el código.

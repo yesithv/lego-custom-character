@@ -68,9 +68,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   static const int maxBossHearts = 3;
   static const double _chargePerDodge = 0.2;
-  // Recompensas por derrotar al jefe (el mayor logro de la partida): un buen
-  // botón de monedas al vencer, más puntos por cada embestida y por la victoria.
-  static const int victoryCoinBonus = 500;
+  // Recompensa por derrotar al jefe (el mayor logro de la partida). Antes eran
+  // 500, pero eso inflaba la economía (una sola victoria compraba cualquier
+  // cosmético y desbloqueaba el 2.º mundo). Con 200 la victoria sigue siendo un
+  // premio claro, pero los cosméticos épicos cuestan ~2 victorias: hay meta.
+  static const int victoryCoinBonus = 200;
   static const int _dashScoreBonus = 400;
   static const int _victoryScoreBonus = 2500;
 
