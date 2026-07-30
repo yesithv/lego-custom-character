@@ -1,39 +1,11 @@
 import 'dart:math';
 
-import '../../../character_editor/domain/entities/character.dart';
 import '../../domain/entities/reward.dart';
+import '../../domain/entities/reward_pools.dart';
 import '../../domain/entities/wallet.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import '../datasources/wallet_local_datasource.dart';
 import '../models/wallet_model.dart';
-
-// Weighted prize table for roulette and chests
-const _roulettePrizes = [
-  (weight: 30, prize: CoinsReward(50)),
-  (weight: 25, prize: CoinsReward(100)),
-  (weight: 15, prize: CoinsReward(200)),
-  (weight: 10, prize: CoinsReward(500)),
-  (weight: 10, prize: PartReward(partId: 'cape', partName: 'Capa', rarity: AccessoryRarity.common)),
-  (weight: 5, prize: PartReward(partId: 'shield', partName: 'Escudo', rarity: AccessoryRarity.common)),
-  (weight: 4, prize: PartReward(partId: 'jetpack', partName: 'Jetpack', rarity: AccessoryRarity.rare)),
-  (weight: 1, prize: PartReward(partId: 'golden_medallion', partName: 'Medallón dorado', rarity: AccessoryRarity.epic)),
-];
-
-const _commonChestPrizes = [
-  (weight: 50, prize: CoinsReward(30)),
-  (weight: 25, prize: CoinsReward(75)),
-  (weight: 15, prize: PartReward(partId: 'hat_1', partName: 'Sombrero', rarity: AccessoryRarity.common)),
-  (weight: 8, prize: PartReward(partId: 'wings', partName: 'Alas', rarity: AccessoryRarity.rare)),
-  (weight: 2, prize: PartReward(partId: 'crown', partName: 'Corona épica', rarity: AccessoryRarity.epic)),
-];
-
-const _vipChestPrizes = [
-  (weight: 30, prize: CoinsReward(150)),
-  (weight: 25, prize: PartReward(partId: 'jetpack', partName: 'Jetpack', rarity: AccessoryRarity.rare)),
-  (weight: 25, prize: PartReward(partId: 'magic_wand', partName: 'Varita mágica', rarity: AccessoryRarity.rare)),
-  (weight: 15, prize: PartReward(partId: 'golden_cape', partName: 'Capa dorada', rarity: AccessoryRarity.epic)),
-  (weight: 5, prize: PartReward(partId: 'legendary_sword', partName: 'Espada legendaria', rarity: AccessoryRarity.legendary)),
-];
 
 class WalletRepositoryImpl implements WalletRepository {
   final WalletLocalDatasource _datasource;
@@ -66,58 +38,74 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<({Wallet wallet, Reward reward})> claimDailyRoulette() async {
-    final prize = _weightedPick(_roulettePrizes);
+    final rolled = _weightedPick(roulettePrizeTable);
     final m = _datasource.getWallet();
-    int newCoins = m.coins;
-    List<String> parts = List.from(m.unlockedParts);
-
-    if (prize is CoinsReward) {
-      newCoins += prize.amount;
-    } else if (prize is PartReward) {
-      if (!parts.contains(prize.partId)) parts.add(prize.partId);
-    }
+    final (:coins, :parts, :reward) = _resolvePrize(rolled, m);
 
     // Etiqueta corta para la tarjeta "HOY GANASTE": el número si son monedas,
     // el nombre de la pieza si es un accesorio.
-    final rewardLabel = switch (prize) {
+    final rewardLabel = switch (reward) {
       CoinsReward(:final amount) => '$amount',
       PartReward(:final partName) => partName,
     };
 
     final updated = m.toEntity().copyWith(
-          coins: newCoins,
+          coins: coins,
           lastRouletteDate: DateTime.now(),
           unlockedParts: parts,
-          totalCoinsEarned: prize is CoinsReward
-              ? m.totalCoinsEarned + prize.amount
+          totalCoinsEarned: reward is CoinsReward
+              ? m.totalCoinsEarned + reward.amount
               : m.totalCoinsEarned,
           lastRouletteRewardLabel: rewardLabel,
-          lastRouletteRewardEmoji: prize.emoji,
+          lastRouletteRewardEmoji: reward.emoji,
         );
     await _datasource.saveWallet(WalletModel.fromEntity(updated));
-    return (wallet: updated, reward: prize);
+    return (wallet: updated, reward: reward);
   }
 
   @override
   Future<({Wallet wallet, Reward reward})> openChest({required bool isVip}) async {
-    final table = isVip ? _vipChestPrizes : _commonChestPrizes;
-    final prize = _weightedPick(table);
+    final table = isVip ? vipChestPrizeTable : commonChestPrizeTable;
+    final rolled = _weightedPick(table);
     final m = _datasource.getWallet();
-    int newCoins = m.coins;
-    List<String> parts = List.from(m.unlockedParts);
-
-    if (prize is CoinsReward) {
-      newCoins += prize.amount;
-    } else if (prize is PartReward) {
-      if (!parts.contains(prize.partId)) parts.add(prize.partId);
-    }
+    final (:coins, :parts, :reward) = _resolvePrize(rolled, m);
 
     final updated = m.toEntity().copyWith(
-          coins: newCoins,
+          coins: coins,
           unlockedParts: parts,
+          totalCoinsEarned: reward is CoinsReward
+              ? m.totalCoinsEarned + reward.amount
+              : m.totalCoinsEarned,
         );
     await _datasource.saveWallet(WalletModel.fromEntity(updated));
-    return (wallet: updated, reward: prize);
+    return (wallet: updated, reward: reward);
+  }
+
+  /// Aplica un premio recién sorteado sobre el estado actual del monedero y
+  /// devuelve el nuevo saldo, la lista de piezas y el premio *efectivo*.
+  ///
+  /// Si el premio es un accesorio que el jugador **ya posee**, se convierte en
+  /// monedas de consuelo (según su rareza) para que ningún cofre/ruleta se
+  /// sienta vacío. Así toda recompensa es siempre útil.
+  ({int coins, List<String> parts, Reward reward}) _resolvePrize(
+      Reward prize, WalletModel m) {
+    if (prize is CoinsReward) {
+      return (coins: m.coins + prize.amount, parts: m.unlockedParts, reward: prize);
+    }
+    final part = prize as PartReward;
+    if (m.unlockedParts.contains(part.partId)) {
+      final consolation = coinValueForRarity(part.rarity);
+      return (
+        coins: m.coins + consolation,
+        parts: m.unlockedParts,
+        reward: CoinsReward(consolation),
+      );
+    }
+    return (
+      coins: m.coins,
+      parts: [...m.unlockedParts, part.partId],
+      reward: part,
+    );
   }
 
   @override
