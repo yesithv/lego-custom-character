@@ -601,6 +601,21 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
             ..close();
           drawShadedPath(canvas, mass, color);
         }
+      case HairStyle.sideBuns:
+        // Vista trasera: casquete que cubre la nuca y dos rodetes a los lados
+        _rr(canvas, Rect.fromLTWH(w * 0.09, -5, w * 0.82, h * 0.205), color, 8);
+        for (final side in [-1.0, 1.0]) {
+          final bx = side < 0 ? w * 0.10 : w * 0.90;
+          final by = h * 0.14;
+          drawPlasticSphere(canvas, Offset(bx, by), w * 0.19, color);
+          canvas.drawCircle(
+              Offset(bx, by),
+              w * 0.10,
+              Paint()
+                ..color = darkenColor(color, 0.16).withValues(alpha: 0.7)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.3);
+        }
       case HairStyle.bald:
         break;
     }

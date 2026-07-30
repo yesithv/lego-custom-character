@@ -184,16 +184,17 @@ class _CharacterPainter extends CustomPainter {
     drawPlasticSphere(canvas, leftFist, r, gloveColor);
     drawPlasticSphere(canvas, rightFist, r, gloveColor);
     if (appearance.gloves == GloveType.claws) {
+      // Garras exageradas: el doble de largas y gruesas, muy visibles.
       final clawPaint = Paint()
         ..color = Colors.grey.shade100
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6
+        ..strokeWidth = 3.2
         ..strokeCap = StrokeCap.round;
       for (final fist in [leftFist, rightFist]) {
         for (var i = -1; i <= 1; i++) {
           canvas.drawLine(
-            Offset(fist.dx + i * fistR * 0.5, fist.dy + fistR * 0.4),
-            Offset(fist.dx + i * fistR * 0.7, fist.dy + fistR * 1.3),
+            Offset(fist.dx + i * fistR * 0.6, fist.dy + fistR * 0.3),
+            Offset(fist.dx + i * fistR * 1.05, fist.dy + fistR * 2.5),
             clawPaint,
           );
         }
@@ -861,6 +862,42 @@ class _CharacterPainter extends CustomPainter {
                   torsoH * 0.18),
               Paint()..color = silver);
         }
+      case TorsoDesign.princessLeia:
+        // Túnica ceremonial blanca: cuello en capucha caído sobre los hombros
+        // y pliegues verticales que caen desde el pecho.
+        final shade = darkenColor(const Color(0xFFF3F1EA), 0.10);
+        // Capucha/cuello drapeado sobre los hombros
+        final hood = Path()
+          ..moveTo(torsoX, torsoTop)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.02,
+              torsoX + torsoW, torsoTop)
+          ..lineTo(torsoX + torsoW, torsoTop + torsoH * 0.22)
+          ..quadraticBezierTo(cx, torsoTop + torsoH * 0.40, torsoX,
+              torsoTop + torsoH * 0.22)
+          ..close();
+        drawShadedPath(canvas, hood, const Color(0xFFEDEAE0));
+        // Escote en V de la túnica
+        final vNeck = Path()
+          ..moveTo(cx - torsoW * 0.16, torsoTop + torsoH * 0.06)
+          ..lineTo(cx, torsoTop + torsoH * 0.34)
+          ..lineTo(cx + torsoW * 0.16, torsoTop + torsoH * 0.06);
+        canvas.drawPath(
+            vNeck,
+            Paint()
+              ..color = shade.withValues(alpha: 0.6)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.6);
+        // Pliegues verticales de la túnica
+        final fold = Paint()
+          ..color = shade.withValues(alpha: 0.5)
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke;
+        for (final fx in [0.30, 0.5, 0.70]) {
+          canvas.drawLine(
+              Offset(torsoX + torsoW * fx, torsoTop + torsoH * 0.44),
+              Offset(torsoX + torsoW * fx, torsoTop + torsoH * 0.96),
+              fold);
+        }
     }
   }
 
@@ -1311,6 +1348,36 @@ class _CharacterPainter extends CustomPainter {
                 width: hipW * 0.14,
                 height: beltRect.height * 0.8),
             Paint()..color = const Color(0xFFFFD700));
+      case 'cinturón plateado':
+        // Cinturón de eslabones plateados con una cadena que cuelga en V,
+        // el detalle metálico de la túnica de la princesa.
+        const silver = Color(0xFFCED2D8);
+        final linkRect = Rect.fromLTWH(
+            (w - hipW) / 2, hipTop + hipH * 0.15, hipW, hipH * 0.42);
+        canvas.drawRect(linkRect, metalPaint(linkRect));
+        canvas.drawRect(linkRect, outlinePaintFor(silver, width: 1.2));
+        // Eslabones marcados a lo largo del cinturón
+        final link = Paint()
+          ..color = darkenColor(silver, 0.22).withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.1;
+        for (var i = 1; i < 6; i++) {
+          final lx = linkRect.left + linkRect.width * i / 6;
+          canvas.drawLine(Offset(lx, linkRect.top),
+              Offset(lx, linkRect.bottom), link);
+        }
+        // Cadena colgante en V al frente
+        final chain = Paint()
+          ..color = silver
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2
+          ..strokeCap = StrokeCap.round;
+        final apex = Offset(w / 2, linkRect.bottom + hipH * 0.9);
+        canvas.drawLine(
+            Offset(linkRect.left + hipW * 0.24, linkRect.bottom), apex, chain);
+        canvas.drawLine(
+            Offset(linkRect.right - hipW * 0.24, linkRect.bottom), apex, chain);
+        drawPlasticSphere(canvas, apex, hipH * 0.16, silver);
       case 'tutú':
         // Tutú de bailarina: falda de tul rosa con volantes
         final pink = Colors.pink.shade300;
@@ -1800,27 +1867,28 @@ class _CharacterPainter extends CustomPainter {
             beam, Paint()..color = Colors.yellow.withValues(alpha: 0.55));
       case 'escudo':
         // El semiancho no puede pasar de ~0.096w: el puño izquierdo está a
-        // 0.13w del borde y encima se le aplica [_handAccessoryScale].
+        // 0.13w del borde y encima se le aplica [_handAccessoryScale]. Se lleva
+        // al máximo para que el escudo se vea lo más grande posible.
         final shield = Path()
-          ..moveTo(fist.dx - w * 0.0855, fist.dy - h * 0.073)
-          ..lineTo(fist.dx + w * 0.0855, fist.dy - h * 0.073)
-          ..lineTo(fist.dx + w * 0.073, fist.dy + h * 0.024)
-          ..lineTo(fist.dx, fist.dy + h * 0.067)
-          ..lineTo(fist.dx - w * 0.073, fist.dy + h * 0.024)
+          ..moveTo(fist.dx - w * 0.115, fist.dy - h * 0.098)
+          ..lineTo(fist.dx + w * 0.115, fist.dy - h * 0.098)
+          ..lineTo(fist.dx + w * 0.098, fist.dy + h * 0.032)
+          ..lineTo(fist.dx, fist.dy + h * 0.090)
+          ..lineTo(fist.dx - w * 0.098, fist.dy + h * 0.032)
           ..close();
         canvas.drawPath(
             shield,
             metalPaint(Rect.fromCenter(
-                center: fist, width: w * 0.171, height: h * 0.146)));
+                center: fist, width: w * 0.230, height: h * 0.197)));
         canvas.drawPath(
             shield,
             Paint()
               ..color = Colors.blueGrey.shade800
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.6);
+              ..strokeWidth = 2.0);
         // Heraldic center boss
         drawPlasticSphere(canvas, Offset(fist.dx, fist.dy - h * 0.006),
-            w * 0.027, const Color(0xFFD4A017));
+            w * 0.038, const Color(0xFFD4A017));
       case 'libro':
         _drawRoundRect(
             canvas,
@@ -1985,30 +2053,30 @@ class _CharacterPainter extends CustomPainter {
               ..strokeCap = StrokeCap.round);
       case 'escudo capitán':
         final c = Offset(fist.dx, fist.dy - fistR * 0.2);
-        canvas.drawCircle(c, w * 0.11, Paint()..color = Colors.red.shade700);
-        canvas.drawCircle(c, w * 0.085, Paint()..color = Colors.white);
-        canvas.drawCircle(c, w * 0.06, Paint()..color = Colors.red.shade700);
-        canvas.drawCircle(c, w * 0.038, Paint()..color = Colors.blue.shade800);
-        drawStar4(canvas, c, w * 0.032, Paint()..color = Colors.white);
-        canvas.drawCircle(c, w * 0.11, outlinePaintFor(Colors.red.shade700));
+        canvas.drawCircle(c, w * 0.156, Paint()..color = Colors.red.shade700);
+        canvas.drawCircle(c, w * 0.12, Paint()..color = Colors.white);
+        canvas.drawCircle(c, w * 0.085, Paint()..color = Colors.red.shade700);
+        canvas.drawCircle(c, w * 0.054, Paint()..color = Colors.blue.shade800);
+        drawStar4(canvas, c, w * 0.046, Paint()..color = Colors.white);
+        canvas.drawCircle(c, w * 0.156, outlinePaintFor(Colors.red.shade700));
       case 'escudo dragón':
         final c = Offset(fist.dx, fist.dy - fistR * 0.2);
-        canvas.drawCircle(c, w * 0.11, Paint()..color = const Color(0xFFD4AF37));
-        canvas.drawCircle(c, w * 0.085, Paint()..color = const Color(0xFF8C6D1F));
+        canvas.drawCircle(c, w * 0.156, Paint()..color = const Color(0xFFD4AF37));
+        canvas.drawCircle(c, w * 0.12, Paint()..color = const Color(0xFF8C6D1F));
         // Silueta de dragón simplificada (S)
         final dragon = Path()
-          ..moveTo(c.dx - w * 0.04, c.dy + w * 0.04)
-          ..quadraticBezierTo(c.dx + w * 0.05, c.dy + w * 0.02,
-              c.dx, c.dy - w * 0.01)
-          ..quadraticBezierTo(c.dx - w * 0.05, c.dy - w * 0.03,
-              c.dx + w * 0.04, c.dy - w * 0.05);
+          ..moveTo(c.dx - w * 0.056, c.dy + w * 0.056)
+          ..quadraticBezierTo(c.dx + w * 0.071, c.dy + w * 0.029,
+              c.dx, c.dy - w * 0.014)
+          ..quadraticBezierTo(c.dx - w * 0.071, c.dy - w * 0.042,
+              c.dx + w * 0.056, c.dy - w * 0.071);
         canvas.drawPath(
             dragon,
             Paint()
               ..color = const Color(0xFFFFE9A8)
               ..style = PaintingStyle.stroke
-              ..strokeWidth = w * 0.012);
-        canvas.drawCircle(c, w * 0.11, outlinePaintFor(const Color(0xFFD4AF37)));
+              ..strokeWidth = w * 0.017);
+        canvas.drawCircle(c, w * 0.156, outlinePaintFor(const Color(0xFFD4AF37)));
       case 'pistola bláster':
         final body = Paint()..color = Colors.blueGrey.shade900;
         canvas.drawRRect(
@@ -2241,6 +2309,41 @@ class _CharacterPainter extends CustomPainter {
                 anchor - side * hs * 0.16, hy + hs * 0.06)
             ..close();
           drawShadedPath(canvas, lock, color);
+        }
+      case HairStyle.sideBuns:
+        // Peinado de la princesa: raya al medio, casquete liso y dos grandes
+        // rodetes ("caracoles") a los lados, a la altura de las orejas.
+        _drawRoundRect(canvas,
+            Rect.fromLTWH(hx - 3, hy - hs * 0.14, hs + 6, hs * 0.30), color, 8);
+        // Raya central marcada
+        canvas.drawLine(
+            Offset(hx + hs * 0.5, hy - hs * 0.12),
+            Offset(hx + hs * 0.5, hy + hs * 0.05),
+            Paint()
+              ..color = darkenColor(color, 0.18).withValues(alpha: 0.65)
+              ..strokeWidth = 1.4
+              ..style = PaintingStyle.stroke);
+        // Patillas que enmarcan la cara hacia los rodetes
+        for (final side in [-1.0, 1.0]) {
+          final edgeX = side < 0 ? hx - 2 : hx + hs - hs * 0.12 + 2;
+          _drawRoundRect(
+              canvas,
+              Rect.fromLTWH(edgeX, hy + hs * 0.04, hs * 0.12, hs * 0.30),
+              color,
+              3);
+        }
+        // Dos rodetes esféricos con espiral interior
+        for (final side in [-1.0, 1.0]) {
+          final bx = side < 0 ? hx - hs * 0.05 : hx + hs + hs * 0.05;
+          final by = hy + hs * 0.34;
+          drawPlasticSphere(canvas, Offset(bx, by), hs * 0.23, color);
+          canvas.drawCircle(
+              Offset(bx, by),
+              hs * 0.12,
+              Paint()
+                ..color = darkenColor(color, 0.16).withValues(alpha: 0.7)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.3);
         }
       case HairStyle.bald:
         break;

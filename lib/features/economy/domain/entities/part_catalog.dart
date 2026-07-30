@@ -89,6 +89,7 @@ const partCatalog = <String, CatalogEntry>{
   'faja ninja': CatalogEntry(id: 'faja ninja', name: 'Faja ninja', slot: 'waist', rarity: AccessoryRarity.rare, coinCost: 200),
   'correa cowboy': CatalogEntry(id: 'correa cowboy', name: 'Correa cowboy', slot: 'waist', rarity: AccessoryRarity.common),
   'tutú': CatalogEntry(id: 'tutú', name: 'Tutú de bailarina', slot: 'waist', rarity: AccessoryRarity.common),
+  'cinturón plateado': CatalogEntry(id: 'cinturón plateado', name: 'Cinturón plateado', slot: 'waist', rarity: AccessoryRarity.rare, coinCost: 200),
 
   // ── Neck ───────────────────────────────────────────────────────────────────
   'collar': CatalogEntry(id: 'collar', name: 'Collar', slot: 'neck', rarity: AccessoryRarity.common),

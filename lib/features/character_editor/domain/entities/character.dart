@@ -25,7 +25,7 @@ enum FacialExtra { none, freckles, blush, scar, tribalTattoo, warPaint, monocle 
 // New values are appended at the end: Hive stores enums by index.
 enum HairStyle {
   straight, curly, afro, mohawk, ponytail, braids, shaved, bald, messy, swept,
-  fringe, longBlonde, longBlack, wavyBob, longCoral,
+  fringe, longBlonde, longBlack, wavyBob, longCoral, sideBuns,
 }
 enum HeadwearType { none, hair, helmet, hat }
 // New values are appended at the end: Hive stores enums by index.
@@ -43,6 +43,7 @@ enum TorsoDesign {
   dinosaur, robot, monster, alien,
   tactical, tanktop, commando, golden,
   spiderGwen, wonderWoman, captainMarvel, blackWidow, starPrincess,
+  princessLeia,
 }
 
 // New values are appended at the end: Hive stores enums by index.
@@ -50,7 +51,7 @@ enum GloveType { none, boxing, medieval, superhero, claws, energy, spiderWeb }
 // New values are appended at the end: Hive stores enums by index.
 enum LegDesign {
   plain, camouflage, stripes, checkered, flames, stars, armor, desertCamo,
-  mechanic, urbanCamo, golden, cosmicStripes,
+  mechanic, urbanCamo, golden, cosmicStripes, whiteGown,
 }
 enum LegType { pants, shorts, skirt, legArmor, spacesuit }
 // New values are appended at the end: Hive stores enums by index.
