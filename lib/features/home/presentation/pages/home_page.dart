@@ -417,7 +417,11 @@ class _TestModeSheet extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
         child: ValueListenableBuilder<bool>(
           valueListenable: TestMode.instance.enabled,
-          builder: (context, isOn, _) => Column(
+          // Desplazable: en pantallas bajas (o en horizontal) el contenido
+          // supera el alto del bottom sheet y, sin scroll, la Column desborda
+          // (RenderFlex overflow). Con el scroll simplemente se puede arrastrar.
+          builder: (context, isOn, _) => SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -492,6 +496,7 @@ class _TestModeSheet extends StatelessWidget {
                 label: Text(context.l10n.tr('view_analytics_panel')),
               ),
             ],
+            ),
           ),
         ),
       ),
