@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -29,6 +30,7 @@ import '../../features/missions/domain/repositories/mission_repository.dart';
 import '../../features/missions/presentation/bloc/mission_bloc.dart';
 import '../../features/monetization/data/datasources/store_local_datasource.dart';
 import '../../features/monetization/data/models/entitlements_model.dart';
+import '../../features/monetization/data/repositories/in_app_purchase_store_repository.dart';
 import '../../features/monetization/data/repositories/stub_store_repository.dart';
 import '../../features/monetization/domain/repositories/store_repository.dart';
 import '../../features/ranking/data/models/score_model.dart';
@@ -118,23 +120,26 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => RankingBloc(repository: sl()));
 
   // ── Monetización ──────────────────────────────────────────────────────────
-  // Pago real: sustituye StubStoreRepository por InAppPurchaseStoreRepository
-  // (ver `data/repositories/in_app_purchase_store_repository.dart`). Ese
-  // adaptador SOLO funciona en iOS/Android; para no romper la web, regístralo
-  // condicionado a la plataforma, p. ej.:
-  //
-  //   import 'package:flutter/foundation.dart' show kIsWeb;
-  //   sl.registerLazySingleton<StoreRepository>(() => kIsWeb
-  //       ? StubStoreRepository(sl())
-  //       : InAppPurchaseStoreRepository(sl()));
-  //
-  // Requisitos: `flutter pub get`, plataformas nativas y productos dados de
-  // alta en Google Play / App Store con los mismos IDs que `storeCatalog`.
   sl.registerLazySingleton<StoreLocalDatasource>(
     () => StoreLocalDatasourceImpl(Hive.box('entitlements')),
   );
+
+  // Pago real en móvil, simulado en web.
+  //
+  // `in_app_purchase` solo tiene implementación en iOS y Android: en web no
+  // existe `InAppPurchase.instance`, así que el adaptador real ni se instancia
+  // y la demo web sigue funcionando con el stub. La compuerta es kIsWeb, no un
+  // import condicional, porque el paquete se resuelve igual en todas las
+  // plataformas y lo único que hay que evitar es *usarlo* en el navegador.
+  //
+  // Para que las compras funcionen de verdad hacen falta, además de este
+  // registro: proyecto nativo Android/iOS, y los productos dados de alta en
+  // Google Play Console y App Store Connect con los MISMOS ids que
+  // `storeCatalog` (ver docs/COMPRAS_REALES.md).
   sl.registerLazySingleton<StoreRepository>(
-    () => StubStoreRepository(sl()),
+    () => kIsWeb
+        ? StubStoreRepository(sl())
+        : InAppPurchaseStoreRepository(sl()),
   );
 
   // ── Analítica (first-party, local) ────────────────────────────────────────
