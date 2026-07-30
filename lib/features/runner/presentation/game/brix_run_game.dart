@@ -19,6 +19,7 @@ import 'components/coin_component.dart';
 import 'components/obstacle_component.dart';
 import 'components/player_component.dart';
 import 'components/powerup_component.dart';
+import 'components/powerup_effects.dart';
 import 'components/scenery_component.dart';
 import 'components/score_popup_component.dart';
 
@@ -92,12 +93,16 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   bool _heroShieldActive = false;
   bool shieldPowerupActive = false;
   bool magnetActive = false;
+  bool boostActive = false;
   double _shieldTimer = 0;
   double _magnetTimer = 0;
+  double _boostTimer = 0;
   double _powerupTimer = 0;
 
-  static const double _shieldPowerupDuration = 5.0;
+  static const double _shieldPowerupDuration = 10.0;
   static const double _magnetDuration = 5.0;
+  static const double _boostDuration = 4.0;
+  static const double _boostSpeedBonus = 230.0;
   static const double _powerupSpawnInterval = 12.0;
 
   bool get hasShield => _heroShieldActive || shieldPowerupActive;
@@ -107,6 +112,9 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
   /// Segundos restantes del imán (0 si no está activo).
   double get magnetTimeLeft => magnetActive ? _magnetTimer : 0;
+
+  /// Segundos restantes del turbo (0 si no está activo).
+  double get boostTimeLeft => boostActive ? _boostTimer : 0;
 
   /// Si el escudo innato del héroe sigue disponible (absorbe un golpe).
   bool get heroShieldReady => _heroShieldActive;
@@ -173,11 +181,21 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   double perspectiveScale(double depth) =>
       (0.07 + 0.93 * depth).clamp(0.0, 1.5);
 
+  /// Velocidad real de avance: la base más el empujón del turbo si está activo.
+  double get _movementSpeed => speed + (boostActive ? _boostSpeedBonus : 0);
+
   /// Depth units per second at current speed.
-  double get depthRate => 0.42 * (speed / 220.0);
+  double get depthRate => 0.42 * (_movementSpeed / 220.0);
 
   double get playerX => _player.position.x + _player.size.x / 2;
   double get playerY => _player.position.y;
+
+  /// Carril actual del jugador (0–2). Lo usan las monedas para saber si el imán
+  /// puede atraerlas.
+  int get playerLane => _player.currentLane;
+
+  /// Centro aproximado del pecho del jugador en pantalla (ancla de efectos).
+  Vector2 get playerCenter => Vector2(playerX, playerY + 30);
 
   static const String _overlayHud = 'hud';
   static const String _overlayGameOver = 'gameOver';
@@ -244,7 +262,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     if (!isAlive) return;
 
     elapsedSeconds += dt;
-    _distanceTraveled += speed * dt;
+    _distanceTraveled += _movementSpeed * dt;
     meters = (_distanceTraveled / 100).floor();
     _recomputeScore();
 
@@ -296,6 +314,10 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     if (shieldPowerupActive) {
       _shieldTimer -= dt;
       if (_shieldTimer <= 0) shieldPowerupActive = false;
+    }
+    if (boostActive) {
+      _boostTimer -= dt;
+      if (_boostTimer <= 0) boostActive = false;
     }
 
     _checkDepthCollisions();
@@ -527,6 +549,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
         // Sliding clears barriers (duck under them)
         if (_player.isSliding && obs.type == ObstacleType.barrier) continue;
 
+        // El turbo arrasa con los obstáculos sin recibir daño.
+        if (boostActive) {
+          obs.collided = true;
+          continue;
+        }
+
         obs.collided = true;
         hitObstacle();
         return;
@@ -534,7 +562,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     }
 
     for (final coin in children.whereType<CoinComponent>().toList()) {
-      if (coin.collected) continue;
+      // Las monedas atraídas por el imán vuelan solas y se recogen al llegar.
+      if (coin.collected || coin.magnetized) continue;
       // Magnet grabs adjacent lanes too
       final inRange = coin.lane == playerLane ||
           (magnetActive && (coin.lane - playerLane).abs() == 1);
@@ -582,7 +611,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   }
 
   void _spawnPowerup() {
-    final type = _rng.nextBool() ? PowerupType.shield : PowerupType.magnet;
+    final type = PowerupType.values[_rng.nextInt(PowerupType.values.length)];
     add(PowerupComponent(lane: _rng.nextInt(3), type: type));
   }
 
@@ -615,7 +644,14 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     }
   }
 
-  void onSwipeDown() => _player.slide();
+  void onSwipeDown() {
+    final started = _player.slide();
+    if (started && isAlive) {
+      AudioService.instance.playSlide();
+      // Nube de polvo a los pies del corredor.
+      add(SlideDustEffect(center: Vector2(playerX, playerBaseY - 6)));
+    }
+  }
   void onSwipeLeft() => _player.changeLane(-1, laneXPositions);
   void onSwipeRight() => _player.changeLane(1, laneXPositions);
 
@@ -679,14 +715,35 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   }
 
   void activatePowerup(PowerupType type) {
-    AudioService.instance.playPowerup();
     switch (type) {
       case PowerupType.shield:
         shieldPowerupActive = true;
         _shieldTimer = _shieldPowerupDuration;
+        AudioService.instance.playShield();
       case PowerupType.magnet:
         magnetActive = true;
         _magnetTimer = _magnetDuration;
+        AudioService.instance.playMagnet();
+        // Estallido de succión naranja sobre el jugador + sacudida breve.
+        add(MagnetPickupEffect(center: playerCenter));
+        shake(magnitude: 5, duration: 0.2);
+        add(ScorePopupComponent(
+          '🧲 ${L10n.t('powerup_magnet')}',
+          spawnPosition: Vector2(playerX, playerY - 30),
+          color: const Color(0xFFFF6B35),
+        ));
+      case PowerupType.boost:
+        boostActive = true;
+        _boostTimer = _boostDuration;
+        AudioService.instance.playPowerup();
+        // Ráfaga de velocidad: líneas cinéticas en el jugador + sacudida.
+        _player.dash();
+        shake(magnitude: 6, duration: 0.25);
+        add(ScorePopupComponent(
+          '⚡ ${L10n.t('powerup_boost')}',
+          spawnPosition: Vector2(playerX, playerY - 30),
+          color: const Color(0xFFB266FF),
+        ));
     }
     notifyListeners();
   }
@@ -711,6 +768,14 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       _heroShieldActive = false;
       shieldPowerupActive = false;
       _shieldTimer = 0;
+      // El escudo se rompe: fragmentos azules, sacudida y aviso en pantalla.
+      add(ShieldBreakEffect(center: playerCenter));
+      shake(magnitude: 9, duration: 0.32);
+      add(ScorePopupComponent(
+        '🛡️ ${L10n.t('shield_block')}',
+        spawnPosition: Vector2(playerX, playerY - 30),
+        color: const Color(0xFF00AAFF),
+      ));
       AudioService.instance.playHit();
       onHit?.call();
       notifyListeners();
@@ -749,8 +814,10 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     _heroShieldActive = characterType == CharacterType.hero;
     shieldPowerupActive = false;
     magnetActive = false;
+    boostActive = false;
     _magnetTimer = 0;
     _shieldTimer = 0;
+    _boostTimer = 0;
     isAlive = true;
 
     phase = GamePhase.running;

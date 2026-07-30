@@ -88,6 +88,9 @@ class CharacterEditorBloc
     final current = state.currentCharacter;
     if (current == null) return;
     emit(state.copyWith(
+      // Al escribir se sale del estado de error para no re-mostrar el aviso
+      // ("falta nombre") en cada tecla.
+      status: EditorStatus.editing,
       currentCharacter: current.copyWith(
         name: event.name,
         updatedAt: DateTime.now(),
@@ -100,6 +103,7 @@ class CharacterEditorBloc
     final current = state.currentCharacter;
     if (current == null) return;
     emit(state.copyWith(
+      status: EditorStatus.editing,
       currentCharacter: current.copyWith(type: event.type),
     ));
   }
@@ -109,6 +113,7 @@ class CharacterEditorBloc
     final current = state.currentCharacter;
     if (current == null) return;
     emit(state.copyWith(
+      status: EditorStatus.editing,
       currentCharacter: current.copyWith(
         appearance: event.appearance,
         updatedAt: DateTime.now(),

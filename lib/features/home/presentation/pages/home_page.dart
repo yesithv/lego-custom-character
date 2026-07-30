@@ -15,6 +15,7 @@ import '../../../character_editor/presentation/bloc/character_editor_state.dart'
 import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
+import '../../../economy/presentation/widgets/wallet_icon.dart';
 import '../widgets/roulette_button.dart';
 import '../../../runner/presentation/pages/world_selection_page.dart';
 
@@ -81,7 +82,7 @@ class _HomeView extends StatelessWidget {
                         _HomeCoinBadge(),
                         const Spacer(),
                         _StoreButton(onTap: () => context.pushNamed('store')),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 18),
                         BlocBuilder<WalletBloc, WalletState>(
                           builder: (context, walletState) => RouletteButton(
                             available:
@@ -169,25 +170,31 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-/// Botón redondo de acceso a la Tienda en la barra superior.
+/// Botón de acceso a la Tienda en la barra superior. Cuadro redondeado (a juego
+/// con la forma del botón de la ruleta), no círculo.
 class _StoreButton extends StatelessWidget {
   final VoidCallback onTap;
   const _StoreButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(16);
     return Material(
       color: const Color(0xFF063574).withValues(alpha: 0.6),
-      shape: const CircleBorder(
-        side: BorderSide(color: Color(0xFFFFD700), width: 2),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: const BorderSide(color: Color(0xFFFFD700), width: 2),
       ),
       child: InkWell(
-        customBorder: const CircleBorder(),
+        borderRadius: radius,
         onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.all(9),
-          child: Icon(Icons.storefront_rounded,
-              color: Color(0xFFFFD700), size: 22),
+        // Recuadro más ancho para que el emoji tenga aire a los lados.
+        child: const SizedBox(
+          width: 54,
+          height: 48,
+          // Mismo ícono de tienda que el título de la página de la Tienda (🛍️)
+          // para tener una sola imagen de tienda en todo el juego.
+          child: Center(child: Text('🛍️', style: TextStyle(fontSize: 24))),
         ),
       ),
     );
@@ -566,79 +573,17 @@ class _DotGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Indicador de monedas del home: moneda dorada grande con el saldo debajo.
+/// Billetera del home: ilustración (sin cifras) de la que asoman la moneda y la
+/// gema del juego. Tocarla abre "Mi Billetera", donde sí se ven los saldos.
 class _HomeCoinBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<WalletBloc, WalletState>(
-      // Tocar las monedas abre "Mi Billetera" (resumen de la economía).
-      builder: (context, state) => InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: () => context.pushNamed('wallet'),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF063574).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: const Color(0xFFFFD700), width: 2),
-              ),
-              child: _coin(),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${state.wallet.coins}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
-                shadows: [
-                  Shadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _coin() {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          center: Alignment(-0.3, -0.3),
-          colors: [Color(0xFFFFF0A0), Color(0xFFFFD700), Color(0xFFD9A400)],
-        ),
-      ),
-      child: Center(
-        child: Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFB8860B).withValues(alpha: 0.6),
-              width: 1.5,
-            ),
-          ),
-          child: const Center(
-            child: Text(
-              '\$',
-              style: TextStyle(
-                color: Color(0xFF9C6B00),
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => context.pushNamed('wallet'),
+      child: const Padding(
+        padding: EdgeInsets.all(4),
+        child: WalletIcon(size: 54),
       ),
     );
   }

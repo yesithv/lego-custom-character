@@ -5,7 +5,7 @@ import 'package:flutter/material.dart' hide Image;
 
 import '../brix_run_game.dart';
 
-enum PowerupType { shield, magnet }
+enum PowerupType { shield, magnet, boost }
 
 class PowerupComponent extends PositionComponent with HasGameReference<BrixRunGame> {
   final int lane;
@@ -52,12 +52,16 @@ class PowerupComponent extends PositionComponent with HasGameReference<BrixRunGa
     final Color color;
     final String icon;
 
-    if (type == PowerupType.shield) {
-      color = const Color(0xFF00AAFF);
-      icon = '🛡';
-    } else {
-      color = const Color(0xFFFF6B35);
-      icon = '🧲';
+    switch (type) {
+      case PowerupType.shield:
+        color = const Color(0xFF00AAFF);
+        icon = '🛡';
+      case PowerupType.magnet:
+        color = const Color(0xFFFF6B35);
+        icon = '🧲';
+      case PowerupType.boost:
+        color = const Color(0xFFB266FF);
+        icon = '⚡';
     }
 
     // Outer glow ring

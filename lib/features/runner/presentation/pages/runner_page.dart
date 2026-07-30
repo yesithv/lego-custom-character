@@ -86,22 +86,29 @@ class _RunnerPageState extends State<RunnerPage> {
     // Pre-load ranking for this world to show personal best in game over
     context.read<RankingBloc>().add(LoadRanking(widget.worldId));
     // Música de fondo temática del mundo elegida antes de correr (en bucle).
-    // Si el jugador la desactivó, nos aseguramos de que no suene nada.
-    final asset = widget.musicAsset;
-    if (asset != null) {
-      AudioService.instance.playMusic(asset);
-    } else {
-      AudioService.instance.stopMusic();
-    }
+    _startMusic();
     // En la web móvil el navegador puede quedarse en horizontal: mientras el
     // aviso de "gira tu teléfono" tapa la partida, el motor se pausa para que
     // el jugador no muera a ciegas.
     landscapeBlocked.addListener(_onLandscapeBlockedChanged);
   }
 
+  /// Arranca la música de fondo del mundo (en bucle) si el jugador la dejó
+  /// activada antes de correr; si la desactivó, garantiza silencio de música.
+  /// Se usa al entrar y al reiniciar la partida.
+  void _startMusic() {
+    final asset = widget.musicAsset;
+    if (asset != null) {
+      AudioService.instance.playMusic(asset);
+    } else {
+      AudioService.instance.stopMusic();
+    }
+  }
+
   void _onLandscapeBlockedChanged() {
     if (landscapeBlocked.value) {
       _game.pauseEngine();
+      AudioService.instance.pauseMusic();
       return;
     }
     // Al volver a vertical solo se reanuda si la partida sigue viva y el
@@ -109,6 +116,7 @@ class _RunnerPageState extends State<RunnerPage> {
     final runOver = !_game.isAlive || _game.phase == GamePhase.victory;
     if (!_isPaused && !runOver) {
       _game.resumeEngine();
+      AudioService.instance.resumeMusic();
     }
   }
 
@@ -132,6 +140,9 @@ class _RunnerPageState extends State<RunnerPage> {
   }
 
   void _onRunComplete(int coins) {
+    // La carrera terminó (derrota o victoria): corta la música de fondo de
+    // inmediato para que no siga sonando bajo la pantalla de fin de partida.
+    AudioService.instance.stopMusic();
     context.read<WalletBloc>().add(RecordRunEvent(coins));
     context.read<MissionBloc>().add(AdvanceMissionsEvent(MissionRunData(
       coins: _game.coins,
@@ -200,8 +211,11 @@ class _RunnerPageState extends State<RunnerPage> {
       _isPaused = !_isPaused;
       if (_isPaused) {
         _game.pauseEngine();
+        // Al pausar también se calla la música de fondo.
+        AudioService.instance.pauseMusic();
       } else {
         _game.resumeEngine();
+        AudioService.instance.resumeMusic();
       }
     });
   }
@@ -248,6 +262,9 @@ class _RunnerPageState extends State<RunnerPage> {
                             _isPaused = false;
                           });
                           game.restart();
+                          // La música se cortó al terminar la carrera anterior:
+                          // vuelve a arrancarla para la nueva.
+                          _startMusic();
                         },
                         onExit: () => context.goNamed('worlds'),
                       ),
@@ -275,6 +292,9 @@ class _RunnerPageState extends State<RunnerPage> {
                             _isPaused = false;
                           });
                           game.restart();
+                          // La música se cortó al terminar la carrera anterior:
+                          // vuelve a arrancarla para la nueva.
+                          _startMusic();
                         },
                         onExit: () => context.goNamed('worlds'),
                       ),
@@ -339,7 +359,7 @@ class _HudOverlayState extends State<_HudOverlay>
   @override
   Widget build(BuildContext context) {
     final g = widget.game;
-    final muted = AudioService.instance.muted;
+    final musicMuted = AudioService.instance.musicMuted;
 
     return SafeArea(
       child: Stack(
@@ -359,7 +379,9 @@ class _HudOverlayState extends State<_HudOverlay>
           Align(
             alignment: const Alignment(-1.0, 0.3),
             child: Padding(
-              padding: const EdgeInsets.only(left: 12),
+              // Misma separación del borde que la barra de progreso de la
+              // derecha (right: 22), para que ambos queden simétricos.
+              padding: const EdgeInsets.only(left: 22),
               child: IgnorePointer(child: _PowerupDock(game: g)),
             ),
           ),
@@ -378,9 +400,14 @@ class _HudOverlayState extends State<_HudOverlay>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SquareChip(
-                      icon: Icons.pause_rounded,
-                      onTap: widget.onTogglePause,
+                    // Bajado al mismo nivel que el contador de monedas (que
+                    // usa top:16) para que pausa, monedas y música se alineen.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: _SquareChip(
+                        icon: Icons.pause_rounded,
+                        onTap: widget.onTogglePause,
+                      ),
                     ),
                     const Spacer(),
                     // Bajadas respecto a los botones de mando para despejar
@@ -405,11 +432,18 @@ class _HudOverlayState extends State<_HudOverlay>
                       ),
                     ),
                     const Spacer(),
-                    _SquareChip(
-                      icon: muted
-                          ? Icons.music_off_rounded
-                          : Icons.music_note_rounded,
-                      onTap: () => AudioService.instance.toggleMute(),
+                    // Silencia SOLO la música de fondo; los efectos (monedas,
+                    // escudo, imán, saltos…) siguen sonando. Por eso usa el
+                    // icono de nota musical.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: _SquareChip(
+                        icon: musicMuted
+                            ? Icons.music_off_rounded
+                            : Icons.music_note_rounded,
+                        onTap: () => setState(
+                            () => AudioService.instance.toggleMusicMute()),
+                      ),
                     ),
                   ],
                 ),
@@ -821,8 +855,10 @@ class _PowerupDock extends StatelessWidget {
           _PowerSlot(
             emoji: '⚡',
             color: const Color(0xFFB266FF),
-            active: inBossFight && g.dashCharge > 0,
-            label: inBossFight ? '${(g.dashCharge * 100).round()}%' : '—',
+            active: inBossFight ? g.dashCharge > 0 : g.boostActive,
+            label: inBossFight
+                ? '${(g.dashCharge * 100).round()}%'
+                : (g.boostActive ? '${g.boostTimeLeft.ceil()}s' : '—'),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/game_snackbar.dart';
 import '../../../character_editor/domain/entities/character.dart';
 import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
 import '../../../character_editor/presentation/bloc/character_editor_event.dart';
@@ -407,18 +408,15 @@ class _WorldCard extends StatelessWidget {
   void _showLocked(BuildContext context) {
     final remaining =
         (world.unlockCost - coinsEarned).clamp(0, world.unlockCost);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.l10n.trp('world_locked_snack', {
-            'earned': coinsEarned,
-            'cost': world.unlockCost,
-            'remaining': remaining,
-            'name': context.l10n.worldName(world.id),
-          }),
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showGameSnackBar(
+      context,
+      context.l10n.trp('world_locked_snack', {
+        'earned': coinsEarned,
+        'cost': world.unlockCost,
+        'remaining': remaining,
+        'name': context.l10n.worldName(world.id),
+      }),
+      type: GameSnackType.info,
     );
   }
 

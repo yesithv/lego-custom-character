@@ -62,7 +62,7 @@ Future<void> pumpUntil(
 void main() {
   setUpAll(() {
     // Evita llamadas a canales de plataforma de audioplayers en tests
-    AudioService.instance.muted = true;
+    AudioService.instance.muteAll = true;
   });
 
   testWidgets('la carrera empieza en fase running y sin jefe', (tester) async {

@@ -6,6 +6,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/test_mode/test_mode.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/game_snackbar.dart';
 import '../../../economy/domain/entities/part_catalog.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
@@ -66,13 +67,17 @@ class _EditorViewState extends State<_EditorView> {
           curr.showSaveSuccess || curr.status == EditorStatus.error,
       listener: (context, state) {
         if (state.showSaveSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.tr('editor_saved')),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          final goingToGame = _playAfterSave;
+          // Si vamos a la partida, no dejamos aviso: navegamos limpio.
+          if (!goingToGame) {
+            showGameSnackBar(
+              context,
+              context.l10n.tr('editor_saved'),
+              type: GameSnackType.success,
+            );
+          } else {
+            ScaffoldMessenger.of(context).clearSnackBars();
+          }
           if (_playAfterSave) {
             _playAfterSave = false;
             final id = state.currentCharacter?.id;
@@ -87,12 +92,10 @@ class _EditorViewState extends State<_EditorView> {
         }
         if (state.status == EditorStatus.error && state.errorMessage != null) {
           _playAfterSave = false;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
+          showGameSnackBar(
+            context,
+            state.errorMessage!,
+            type: GameSnackType.error,
           );
         }
       },

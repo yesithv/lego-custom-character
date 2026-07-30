@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/widgets/game_snackbar.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
@@ -131,9 +132,7 @@ class _GemStorePageState extends State<GemStorePage> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-    );
+    showGameSnackBar(context, msg);
   }
 
   @override

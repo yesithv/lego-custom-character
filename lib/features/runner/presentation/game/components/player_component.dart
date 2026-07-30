@@ -87,13 +87,17 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
     _jumpProgress = 0;
   }
 
-  void slide() {
-    if (_state == PlayerState.sliding || _state == PlayerState.dead) return;
-    if (_state == PlayerState.jumping) return;
+  /// Inicia el agachado. Devuelve `true` solo si de verdad arranca (no estaba ya
+  /// agachado, saltando ni muerto), para que el juego dispare sonido/efecto una
+  /// única vez por agachado.
+  bool slide() {
+    if (_state == PlayerState.sliding || _state == PlayerState.dead) return false;
+    if (_state == PlayerState.jumping) return false;
     _state = PlayerState.sliding;
     _slideTimer = 0;
     size = Vector2(_w, _slideH);
     position.y = game.playerBaseY - _slideH;
+    return true;
   }
 
   void changeLane(int direction, List<double> laneXPositions) {
@@ -121,14 +125,15 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
         _drawSliding(canvas);
       default:
         _drawRunning(canvas);
-        if (_dashTimer > 0) _drawDashLines(canvas);
+        if (_dashTimer > 0 || game.boostActive) _drawDashLines(canvas);
         if (game.magnetActive) _drawMagnetAura(canvas);
     }
   }
 
-  // Líneas de velocidad durante la embestida al jefe
+  // Líneas de velocidad durante la embestida al jefe o el turbo de carrera.
   void _drawDashLines(Canvas canvas) {
-    final strength = (_dashTimer / 0.5).clamp(0.0, 1.0);
+    final dashStrength = (_dashTimer / 0.5).clamp(0.0, 1.0);
+    final strength = game.boostActive ? 1.0 : dashStrength;
     final line = Paint()
       ..color = const Color(0xFFFFD700).withValues(alpha: 0.85 * strength)
       ..strokeWidth = 3
