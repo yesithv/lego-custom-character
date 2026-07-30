@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +33,10 @@ class _StorePageState extends State<StorePage> {
   final AnalyticsService _analytics = sl<AnalyticsService>();
 
   Entitlements _ent = const Entitlements();
+
+  /// Precios reales localizados por id (moneda del usuario). Vacío en web o si
+  /// la tienda no responde: se cae al `priceLabel` de relleno del catálogo.
+  Map<String, String> _prices = {};
   bool _loading = true;
   bool _busy = false;
 
@@ -44,12 +49,19 @@ class _StorePageState extends State<StorePage> {
 
   Future<void> _load() async {
     final e = await _store.getEntitlements();
+    final prices =
+        await _store.loadPrices(storeCatalog.map((p) => p.id).toSet());
     if (!mounted) return;
     setState(() {
       _ent = e;
+      _prices = prices;
       _loading = false;
     });
   }
+
+  /// Precio a mostrar: el real de la tienda si está disponible, si no el de
+  /// relleno del catálogo.
+  String _priceLabel(StoreProduct p) => _prices[p.id] ?? p.priceLabel;
 
   Future<void> _buy(StoreProduct product) async {
     if (_busy) return;
@@ -73,6 +85,16 @@ class _StorePageState extends State<StorePage> {
     setState(() => _busy = true);
     final result = await _store.buy(product);
     if (!mounted) return;
+
+    if (result.pending) {
+      // "Pedir permiso" (Ask to Buy): la compra espera aprobación de un adulto.
+      // No es éxito ni fallo; el beneficio llegará al confirmarse.
+      _analytics.track(AnalyticsEvents.purchaseAttempt,
+          params: {'product': product.id, 'pending': 'true'});
+      setState(() => _busy = false);
+      _snack(context.l10n.tr('iap_purchase_pending'));
+      return;
+    }
 
     if (result.success) {
       _analytics.track(AnalyticsEvents.purchaseSuccess, params: {
@@ -182,11 +204,16 @@ class _StorePageState extends State<StorePage> {
                         onClaim: _claimVipDaily,
                       ),
                     ],
-                    const SizedBox(height: 12),
-                    const _StubBanner(),
+                    // El aviso de "compras simuladas" solo aplica a la demo web
+                    // (stub). En móvil el pago es real: mostrarlo confundiría.
+                    if (kIsWeb) ...[
+                      const SizedBox(height: 12),
+                      const _StubBanner(),
+                    ],
                     const SizedBox(height: 12),
                     ...storeCatalog.map((p) => _ProductCard(
                           product: p,
+                          priceLabel: _priceLabel(p),
                           owned: p.type != ProductType.consumable &&
                               _ent.owns(p.id),
                           busy: _busy,
@@ -406,12 +433,16 @@ class _StubBanner extends StatelessWidget {
 
 class _ProductCard extends StatelessWidget {
   final StoreProduct product;
+
+  /// Precio ya resuelto (real de la tienda o de relleno). Ver `_priceLabel`.
+  final String priceLabel;
   final bool owned;
   final bool busy;
   final VoidCallback onBuy;
 
   const _ProductCard({
     required this.product,
+    required this.priceLabel,
     required this.owned,
     required this.busy,
     required this.onBuy,
@@ -476,7 +507,7 @@ class _ProductCard extends StatelessWidget {
           owned
               ? const _OwnedChip()
               : _BuyButton(
-                  label: product.priceLabel,
+                  label: priceLabel,
                   busy: busy,
                   onTap: onBuy,
                 ),

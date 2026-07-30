@@ -45,41 +45,44 @@ por letra:
 | `gems_medium` | Cofre de gemas (550) | USD 4,99 | Consumible |
 | `gems_large` | Baúl de gemas (1200) | USD 9,99 | Consumible |
 
-Los `priceLabel` del código son solo texto de relleno: el precio que se muestra
-al usuario debe venir de la tienda, ya localizado en su moneda. No los uses para
-lógica.
+Los `priceLabel` del código son solo texto de relleno para la demo web. En
+móvil, la Tienda pide los precios reales a la tienda al abrirse
+(`StoreRepository.loadPrices` → `queryProductDetails`) y muestra el precio ya
+localizado en la moneda del usuario; el `priceLabel` solo se usa como respaldo
+si la tienda no responde. No uses ninguno de los dos para lógica.
 
 ## Lo que falta, en orden
 
 ### 1. Proyecto nativo
 
-`in_app_purchase` es un plugin con código nativo, así que **sin carpeta
-`android/` no hay compras**. Hoy el repositorio solo tiene `lib/`, `web/`,
-`test/` y `assets/`.
+`in_app_purchase` es un plugin con código nativo, así que sin carpeta nativa no
+hay compras.
 
-```bash
-flutter create --platforms=android,ios .
-```
+- **Android: ✅ ya generado y configurado.** `android/` existe con
+  `applicationId = "com.iron_coding.runforwin"` (en `android/app/build.gradle.kts`).
+  Ese identificador **no se puede cambiar nunca** tras publicar en Google Play.
+- **iOS: ⛔ pendiente.** No existe `ios/` todavía. Cuando toque publicar en la
+  App Store: `flutter create --platforms=ios .` y dejar solo orientaciones
+  portrait en `Info.plist`.
 
-Al generarlo, dos decisiones que **no se pueden deshacer** una vez publicada la
-app:
+Sigue pendiente, antes de la primera release:
 
-- **`applicationId` / bundle id.** No puede quedar `com.example.run_for_win`:
-  Google Play lo rechaza. Y el identificador **no se puede cambiar nunca** tras
-  publicar. Propuesta: `art.ironcoding.runforwin`, que sigue valiendo si más
-  adelante la app pasa de persona natural a empresa.
-- **Keystore de firma.** Si se pierde, no se pueden publicar más
-  actualizaciones. Activa Play App Signing y guarda el keystore y su contraseña
-  en dos sitios distintos.
+- **Keystore de firma.** Hoy solo hay `android/key.properties.example`; falta
+  crear el keystore real y rellenar `android/key.properties` (ignorado por git).
+  Si no está, la firma de release cae a claves de depuración y **Play rechaza la
+  subida**. Si el keystore se pierde, no se pueden publicar más actualizaciones:
+  activa Play App Signing y guárdalo con su contraseña en dos sitios distintos.
 
 ### 2. Permiso de facturación en Android
 
-Google Play Billing lo añade el plugin, pero verifica que el manifiesto acabe
-con:
+**✅ Ya declarado** en `android/app/src/main/AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="com.android.vending.BILLING" />
 ```
+
+El plugin también lo aporta y se fusiona en el manifiesto final; se dejó
+explícito para que la intención sea visible.
 
 ### 3. Alta de productos en las consolas
 
@@ -110,8 +113,10 @@ Casos que hay que probar a mano, porque son los que fallan:
 2. Compra cancelada por el usuario a mitad.
 3. Compra **pendiente** — «Pedir permiso» / Ask to Buy: un menor pide
    autorización y la compra queda en `PurchaseStatus.pending` hasta que un
-   adulto la aprueba. Hoy la UI no resuelve nada hasta que llega el resultado
-   final; conviene mostrar un estado de espera explícito.
+   adulto la aprueba. La UI ya lo contempla: al llegar `pending` se desbloquea
+   el botón y se muestra el aviso `iap_purchase_pending`; el beneficio se
+   concede cuando llega `purchased` (se persiste aunque ya no haya diálogo
+   abierto) y se ve al recargar la Tienda.
 4. Restaurar compras en un dispositivo nuevo (el pack cosmético y el VIP deben
    volver; las gemas consumidas no).
 5. Cancelar la suscripción y comprobar qué pasa al vencer.

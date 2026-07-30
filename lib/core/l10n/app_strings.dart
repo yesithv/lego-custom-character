@@ -821,6 +821,14 @@ const Map<String, Map<String, String>> kStrings = {
     'pt': 'Compra cancelada.', 'de': 'Kauf abgebrochen.',
     'ru': 'Покупка отменена.', 'fr': 'Achat annulé.',
   },
+  'iap_purchase_pending': {
+    'es': 'Compra pendiente: espera la aprobación de un adulto. Aparecerá al confirmarse.',
+    'en': 'Purchase pending: waiting for an adult’s approval. It will appear once confirmed.',
+    'pt': 'Compra pendente: aguarde a aprovação de um adulto. Aparecerá ao ser confirmada.',
+    'de': 'Kauf ausstehend: Warte auf die Freigabe eines Erwachsenen. Erscheint nach Bestätigung.',
+    'ru': 'Покупка ожидает: нужна одобрение взрослого. Появится после подтверждения.',
+    'fr': 'Achat en attente : approbation d’un adulte requise. Il apparaîtra une fois confirmé.',
+  },
   'purchases_restored': {
     'es': 'Compras restauradas.', 'en': 'Purchases restored.',
     'pt': 'Compras restauradas.', 'de': 'Käufe wiederhergestellt.',
