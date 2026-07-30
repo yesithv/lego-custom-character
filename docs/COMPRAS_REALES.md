@@ -38,10 +38,12 @@ por letra:
 
 | id | Producto | Precio de referencia | Tipo en la tienda |
 |---|---|---|---|
-| `gems_small` | Puñado de gemas (100) | USD 1,99 | Consumible |
-| `gems_medium` | Cofre de gemas (550) | USD 8,99 | Consumible |
-| `bundle_starter` | Pack de bienvenida | USD 3,99 | No consumible |
+| `bundle_starter` | Pack de bienvenida (skin exclusivo + 150 💎 + 1000 🪙) | USD 2,99 | No consumible |
 | `vip_monthly` | Club VIP | USD 4,99 / mes | **Suscripción** |
+| `vip_yearly` | Club VIP anual | USD 29,99 / año | **Suscripción** |
+| `gems_small` | Puñado de gemas (200) | USD 1,99 | Consumible |
+| `gems_medium` | Cofre de gemas (550) | USD 4,99 | Consumible |
+| `gems_large` | Baúl de gemas (1200) | USD 9,99 | Consumible |
 
 Los `priceLabel` del código son solo texto de relleno: el precio que se muestra
 al usuario debe venir de la tienda, ya localizado en su moneda. No los uses para

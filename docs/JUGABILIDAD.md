@@ -195,7 +195,11 @@ Ser golpeado por un ataque del jefe equivale a un golpe normal: con escudo se co
 
 ### Recompensas por victoria
 
-Al vencer al jefe: **+500 monedas** (`victoryCoinBonus`) y **+2500** al score (`bossBonusScore`), además de **+400** al score por cada embestida acertada (`_dashScoreBonus`). Luego `onRunComplete(coins)`.
+Al vencer al jefe: **+200 monedas** (`victoryCoinBonus`) y **+2500** al score (`bossBonusScore`), además de **+400** al score por cada embestida acertada (`_dashScoreBonus`). Luego `onRunComplete(coins)`.
+
+> El bonus de victoria bajó de **500 → 200** para frenar la inflación de monedas
+> (con 500, una sola victoria compraba cualquier épico y abría el 2.º mundo). Ver
+> `docs/ECONOMIA.md`.
 
 ### Jefes por mundo
 
@@ -282,6 +286,12 @@ Las piezas repetidas no se duplican: si ya está en `unlockedParts`, no se vuelv
 
 `UnlockPart(partId, cost)` descuenta monedas y añade la pieza a `unlockedParts` solo si hay saldo suficiente; devuelve `success: false` si no.
 
+**Piezas premium (exclusivas de la Tienda):** algunas piezas llevan el flag
+`CatalogEntry.premium` (hoy `capa vampiro` y `botas propulsión`). **No se compran
+con monedas**: en el editor aparecen bloqueadas con 💎 y llevan a la canjería de
+gemas. Es lo que da a las gemas un uso real sin quedar "dominadas" por un precio
+en monedas más barato. Ver `docs/ECONOMIA.md`.
+
 Emojis de rareza (en recompensas): común ⚙️, rara 💎, épica ⚡, legendaria 👑.
 
 ---
@@ -301,6 +311,11 @@ Tipos de misión (`MissionType`) y ejemplos de objetivo:
 | `useJump` | 5 → 50, 15 → 100 |
 
 Al terminar una carrera, `advanceMissions(MissionRunData)` suma el progreso correspondiente a cada misión (monedas, metros, obstáculos evadidos, segundos, saltos). Cuando **todas** las misiones activas se completan, se regeneran automáticamente 3 nuevas.
+
+**Recompensa al completar (se paga de verdad):** cuando una misión pasa a
+completada, `runner_page` acredita su `rewardCoins` al monedero (`EarnCoinsEvent`)
+y regala **+1 💎** por misión (faucet gratuito de gemas). Antes las recompensas
+se mostraban pero **nunca se otorgaban** — corregido. Ver `docs/ECONOMIA.md`.
 
 ---
 

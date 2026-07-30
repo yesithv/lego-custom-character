@@ -45,7 +45,7 @@ Las features viven en `lib/features/`:
 |---------|-----------------|
 | `home` | Pantalla de inicio enfocada en la carrera (CTA "¡JUGAR!"); ruta inicial. |
 | `character_editor` | Crear, editar, listar y borrar personajes (galería + editor) y presets precargados. |
-| `economy` | Monedas, ruleta diaria, cofres, desbloqueo/compra de piezas, streak de juego. |
+| `economy` | Monedas, ruleta diaria, cofres, desbloqueo/compra de piezas, streak de juego y **billetera** (`/wallet`: resumen ganado/gastado/saldo). |
 | `missions` | Generar y avanzar 3 misiones activas rotativas. |
 | `ranking` | Registrar y consultar puntuaciones por mundo. |
 | `runner` | El juego en sí: selección de mundo, pre-run, partida (motor Flame), peleas contra jefes y HUD. |
@@ -164,6 +164,9 @@ Un caso especial: **`BrixRunGame` es un `FlameGame with ChangeNotifier`**. El HU
 | `/editor/:id` | `editor-edit` | Editar personaje existente. |
 | `/worlds` | `worlds` | Selección de mundo. |
 | `/roulette` | `roulette` | Ruleta diaria. |
+| `/wallet` | `wallet` | Billetera: resumen de la economía (se abre al tocar las monedas en Home). |
+| `/store` | `store` | Tienda IAP (packs de gemas, VIP, pack de bienvenida). |
+| `/gems` | `gems` | Canjería de gemas (cosméticos exclusivos + monedas). |
 | `/pre-run` | `pre-run` | Pantalla previa a la carrera. |
 | `/runner` | `runner` | La partida (Flame). |
 | `/ranking/:worldId` | `ranking` | Ranking de un mundo. |
