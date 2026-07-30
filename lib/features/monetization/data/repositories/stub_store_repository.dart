@@ -29,6 +29,7 @@ class StubStoreRepository implements StoreRepository {
     if (!e.canClaimVipDaily) return (entitlements: e, gemsGranted: 0);
     e = e.copyWith(
       gems: e.gems + VipPerks.dailyGems,
+      totalGemsEarned: e.totalGemsEarned + VipPerks.dailyGems,
       lastVipClaim: DateTime.now(),
     );
     await _ds.save(EntitlementsModel.fromEntity(e));
@@ -54,7 +55,10 @@ class StubStoreRepository implements StoreRepository {
 
     switch (product.kind) {
       case ProductKind.gems:
-        e = e.copyWith(gems: e.gems + product.gemAmount);
+        e = e.copyWith(
+          gems: e.gems + product.gemAmount,
+          totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+        );
       case ProductKind.removeAds:
         e = e.copyWith(adsRemoved: true);
       case ProductKind.subscription:
@@ -64,7 +68,10 @@ class StubStoreRepository implements StoreRepository {
         // sobre el wallet; aquí solo concedemos las gemas del pack y se registra
         // la posesión.
         if (product.gemAmount > 0) {
-          e = e.copyWith(gems: e.gems + product.gemAmount);
+          e = e.copyWith(
+            gems: e.gems + product.gemAmount,
+            totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+          );
         }
     }
 
@@ -93,7 +100,10 @@ class StubStoreRepository implements StoreRepository {
   Future<Entitlements> grantGems(int amount) async {
     var e = _ds.get().toEntity();
     if (amount <= 0) return e;
-    e = e.copyWith(gems: e.gems + amount);
+    e = e.copyWith(
+      gems: e.gems + amount,
+      totalGemsEarned: e.totalGemsEarned + amount,
+    );
     await _ds.save(EntitlementsModel.fromEntity(e));
     return e;
   }

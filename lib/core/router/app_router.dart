@@ -7,6 +7,7 @@ import '../../features/character_editor/presentation/pages/character_editor_page
 import '../../features/character_editor/presentation/pages/character_gallery_page.dart';
 import '../../features/character_editor/presentation/pages/preset_gallery_page.dart';
 import '../../features/economy/presentation/pages/daily_roulette_page.dart';
+import '../../features/economy/presentation/pages/wallet_page.dart';
 import '../../features/analytics/presentation/pages/analytics_debug_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/monetization/presentation/pages/gem_store_page.dart';
@@ -67,6 +68,11 @@ class AppRouter {
         path: '/roulette',
         name: 'roulette',
         builder: (context, state) => const DailyRoulettePage(),
+      ),
+      GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletPage(),
       ),
       GoRoute(
         path: '/store',

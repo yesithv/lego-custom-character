@@ -83,7 +83,10 @@ class InAppPurchaseStoreRepository implements StoreRepository {
   Future<Entitlements> grantGems(int amount) async {
     var e = _ds.get().toEntity();
     if (amount <= 0) return e;
-    e = e.copyWith(gems: e.gems + amount);
+    e = e.copyWith(
+      gems: e.gems + amount,
+      totalGemsEarned: e.totalGemsEarned + amount,
+    );
     await _ds.save(EntitlementsModel.fromEntity(e));
     return e;
   }
@@ -94,6 +97,7 @@ class InAppPurchaseStoreRepository implements StoreRepository {
     if (!e.canClaimVipDaily) return (entitlements: e, gemsGranted: 0);
     e = e.copyWith(
       gems: e.gems + VipPerks.dailyGems,
+      totalGemsEarned: e.totalGemsEarned + VipPerks.dailyGems,
       lastVipClaim: DateTime.now(),
     );
     await _ds.save(EntitlementsModel.fromEntity(e));
@@ -198,7 +202,10 @@ class InAppPurchaseStoreRepository implements StoreRepository {
     if (product != null) {
       switch (product.kind) {
         case ProductKind.gems:
-          e = e.copyWith(gems: e.gems + product.gemAmount);
+          e = e.copyWith(
+            gems: e.gems + product.gemAmount,
+            totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+          );
         case ProductKind.removeAds:
           e = e.copyWith(adsRemoved: true);
         case ProductKind.subscription:
@@ -208,7 +215,10 @@ class InAppPurchaseStoreRepository implements StoreRepository {
           // gemas del pack. Solo en la primera compra (no al restaurar): el
           // pack es no consumible y `owns` aún es false la primera vez.
           if (product.gemAmount > 0 && !e.owns(productId)) {
-            e = e.copyWith(gems: e.gems + product.gemAmount);
+            e = e.copyWith(
+              gems: e.gems + product.gemAmount,
+              totalGemsEarned: e.totalGemsEarned + product.gemAmount,
+            );
           }
       }
     }

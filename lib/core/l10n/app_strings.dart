@@ -1109,6 +1109,72 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Ir a la Tienda', 'en': 'Go to Store', 'pt': 'Ir à Loja',
     'de': 'Zum Shop', 'ru': 'В магазин', 'fr': 'Aller à la Boutique',
   },
+  // ── Billetera ──────────────────────────────────────────────────────────────
+  'wallet_title': {
+    'es': 'Mi Billetera', 'en': 'My Wallet', 'pt': 'Minha Carteira',
+    'de': 'Mein Geldbeutel', 'ru': 'Мой кошелёк', 'fr': 'Mon Porte-monnaie',
+  },
+  'wallet_coins': {
+    'es': 'Monedas', 'en': 'Coins', 'pt': 'Moedas',
+    'de': 'Münzen', 'ru': 'Монеты', 'fr': 'Pièces',
+  },
+  'wallet_gems': {
+    'es': 'Gemas', 'en': 'Gems', 'pt': 'Gemas',
+    'de': 'Edelsteine', 'ru': 'Кристаллы', 'fr': 'Gemmes',
+  },
+  'wallet_economy': {
+    'es': 'Tu economía', 'en': 'Your economy', 'pt': 'Sua economia',
+    'de': 'Deine Wirtschaft', 'ru': 'Твоя экономика', 'fr': 'Ton économie',
+  },
+  'wallet_earned': {
+    'es': 'Has ganado', 'en': 'Earned', 'pt': 'Você ganhou',
+    'de': 'Verdient', 'ru': 'Заработано', 'fr': 'Gagné',
+  },
+  'wallet_spent': {
+    'es': 'Has gastado', 'en': 'Spent', 'pt': 'Você gastou',
+    'de': 'Ausgegeben', 'ru': 'Потрачено', 'fr': 'Dépensé',
+  },
+  'wallet_balance': {
+    'es': 'Te quedan', 'en': 'You have', 'pt': 'Você tem',
+    'de': 'Übrig', 'ru': 'Осталось', 'fr': 'Il te reste',
+  },
+  'wallet_spent_pct': {
+    'es': '{n}% gastado', 'en': '{n}% spent', 'pt': '{n}% gasto',
+    'de': '{n}% ausgegeben', 'ru': '{n}% потрачено', 'fr': '{n}% dépensé',
+  },
+  'wallet_saved_pct': {
+    'es': '{n}% ahorrado', 'en': '{n}% saved', 'pt': '{n}% poupado',
+    'de': '{n}% gespart', 'ru': '{n}% сэкономлено', 'fr': '{n}% épargné',
+  },
+  'wallet_achievements': {
+    'es': 'Lo que has conseguido', 'en': 'What you\'ve earned',
+    'pt': 'O que você conquistou', 'de': 'Was du erreicht hast',
+    'ru': 'Чего ты добился', 'fr': 'Ce que tu as obtenu',
+  },
+  'wallet_parts': {
+    'es': 'Piezas', 'en': 'Parts', 'pt': 'Peças',
+    'de': 'Teile', 'ru': 'Детали', 'fr': 'Pièces',
+  },
+  'wallet_worlds': {
+    'es': 'Mundos', 'en': 'Worlds', 'pt': 'Mundos',
+    'de': 'Welten', 'ru': 'Миры', 'fr': 'Mondes',
+  },
+  'wallet_streak': {
+    'es': 'Días de racha', 'en': 'Day streak', 'pt': 'Dias seguidos',
+    'de': 'Tage in Folge', 'ru': 'Дней подряд', 'fr': 'Jours d’affilée',
+  },
+  'wallet_vip': {
+    'es': 'Club VIP', 'en': 'VIP Club', 'pt': 'Clube VIP',
+    'de': 'VIP-Club', 'ru': 'VIP-клуб', 'fr': 'Club VIP',
+  },
+  'wallet_vip_on': {
+    'es': 'VIP activo', 'en': 'VIP active', 'pt': 'VIP ativo',
+    'de': 'VIP aktiv', 'ru': 'VIP активен', 'fr': 'VIP actif',
+  },
+  'wallet_vip_off': {
+    'es': 'Hazte VIP', 'en': 'Get VIP', 'pt': 'Seja VIP',
+    'de': 'VIP holen', 'ru': 'Стать VIP', 'fr': 'Devenir VIP',
+  },
   'coins_amount': {
     'es': '{n} monedas', 'en': '{n} coins', 'pt': '{n} moedas',
     'de': '{n} Münzen', 'ru': '{n} монет', 'fr': '{n} pièces',

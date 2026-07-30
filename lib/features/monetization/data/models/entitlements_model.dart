@@ -19,12 +19,17 @@ class EntitlementsModel extends HiveObject {
   @HiveField(4)
   int? lastVipClaimMs;
 
+  /// Total de gemas obtenidas de por vida (para la billetera).
+  @HiveField(5)
+  int totalGemsEarned;
+
   EntitlementsModel({
     required this.gems,
     required this.adsRemoved,
     required this.subscriptionActive,
     required this.ownedProductIds,
     this.lastVipClaimMs,
+    this.totalGemsEarned = 0,
   });
 
   factory EntitlementsModel.fromEntity(Entitlements e) => EntitlementsModel(
@@ -33,10 +38,12 @@ class EntitlementsModel extends HiveObject {
         subscriptionActive: e.subscriptionActive,
         ownedProductIds: List.from(e.ownedProductIds),
         lastVipClaimMs: e.lastVipClaim?.millisecondsSinceEpoch,
+        totalGemsEarned: e.totalGemsEarned,
       );
 
   Entitlements toEntity() => Entitlements(
         gems: gems,
+        totalGemsEarned: totalGemsEarned,
         adsRemoved: adsRemoved,
         subscriptionActive: subscriptionActive,
         ownedProductIds: List.unmodifiable(ownedProductIds),

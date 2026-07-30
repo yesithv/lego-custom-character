@@ -571,32 +571,37 @@ class _HomeCoinBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
-      builder: (context, state) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF063574).withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+      // Tocar las monedas abre "Mi Billetera" (resumen de la economía).
+      builder: (context, state) => InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: () => context.pushNamed('wallet'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF063574).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: const Color(0xFFFFD700), width: 2),
+              ),
+              child: _coin(),
             ),
-            child: _coin(),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${state.wallet.coins}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 15,
-              shadows: [
-                Shadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              '${state.wallet.coins}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                shadows: [
+                  Shadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
