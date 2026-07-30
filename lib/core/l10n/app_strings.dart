@@ -1138,14 +1138,6 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Te quedan', 'en': 'You have', 'pt': 'Você tem',
     'de': 'Übrig', 'ru': 'Осталось', 'fr': 'Il te reste',
   },
-  'wallet_spent_pct': {
-    'es': '{n}% gastado', 'en': '{n}% spent', 'pt': '{n}% gasto',
-    'de': '{n}% ausgegeben', 'ru': '{n}% потрачено', 'fr': '{n}% dépensé',
-  },
-  'wallet_saved_pct': {
-    'es': '{n}% ahorrado', 'en': '{n}% saved', 'pt': '{n}% poupado',
-    'de': '{n}% gespart', 'ru': '{n}% сэкономлено', 'fr': '{n}% épargné',
-  },
   'wallet_achievements': {
     'es': 'Lo que has conseguido', 'en': 'What you\'ve earned',
     'pt': 'O que você conquistou', 'de': 'Was du erreicht hast',

@@ -264,9 +264,6 @@ class _EconomyCard extends StatelessWidget {
             valueColor: const Color(0xFFFFD700),
             emphasize: true,
           ),
-          const SizedBox(height: 14),
-          // Barra de ahorro de monedas (la economía principal)
-          _SavingsBar(earned: coinsEarned, spent: coinsSpent),
         ],
       ),
     );
@@ -368,67 +365,6 @@ class _EconRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Barra proporcional gastado vs. ahorrado (sobre lo ganado de por vida).
-class _SavingsBar extends StatelessWidget {
-  final int earned;
-  final int spent;
-
-  const _SavingsBar({required this.earned, required this.spent});
-
-  @override
-  Widget build(BuildContext context) {
-    final total = earned <= 0 ? 1 : earned;
-    final spentPct = (spent / total).clamp(0.0, 1.0);
-    final keptPct = 1 - spentPct;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Row(
-            children: [
-              Expanded(
-                flex: (spentPct * 1000).round().clamp(0, 1000),
-                child: Container(
-                  height: 14,
-                  color: const Color(0xFFFF8A2B),
-                ),
-              ),
-              Expanded(
-                flex: (keptPct * 1000).round().clamp(0, 1000),
-                child: Container(
-                  height: 14,
-                  color: const Color(0xFFFFD700),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 7),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              context.l10n.trp('wallet_spent_pct', {'n': (spentPct * 100).round()}),
-              style: const TextStyle(
-                  color: Color(0xFFFF8A2B),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11.5),
-            ),
-            Text(
-              context.l10n.trp('wallet_saved_pct', {'n': (keptPct * 100).round()}),
-              style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11.5),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
