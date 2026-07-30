@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Google Play Billing (compras integradas). El plugin `in_app_purchase`
+         también lo declara y se fusiona en el manifiesto final, pero lo dejamos
+         explícito para que la intención sea visible. -->
+    <uses-permission android:name="com.android.vending.BILLING" />
     <application
         android:label="Run For Win"
         android:name="${applicationName}"

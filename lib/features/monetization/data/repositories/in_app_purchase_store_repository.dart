@@ -107,6 +107,15 @@ class InAppPurchaseStoreRepository implements StoreRepository {
   // ── Compras reales ─────────────────────────────────────────────────────────
 
   @override
+  Future<Map<String, String>> loadPrices(Set<String> ids) async {
+    if (!await _iap.isAvailable()) return const {};
+    final response = await _iap.queryProductDetails(ids);
+    return {
+      for (final d in response.productDetails) d.id: d.price,
+    };
+  }
+
+  @override
   Future<PurchaseResult> buy(StoreProduct product) async {
     final current = _ds.get().toEntity();
 
@@ -186,9 +195,18 @@ class InAppPurchaseStoreRepository implements StoreRepository {
                 ),
               );
         case PurchaseStatus.pending:
-          // A la espera (p. ej. aprobación parental "Pedir permiso"). No se
-          // resuelve el completer hasta que llegue el estado final.
-          break;
+          // A la espera (p. ej. aprobación parental "Pedir permiso"). No es un
+          // fallo: resolvemos el completer como `pending` para que la UI se
+          // desbloquee y avise al usuario. El beneficio se concederá cuando
+          // llegue el estado final (`purchased`), que persiste vía [_grant]
+          // aunque ya no haya completer, y se verá al recargar la Tienda.
+          _pending.remove(p.productID)?.complete(
+                PurchaseResult(
+                  success: false,
+                  pending: true,
+                  entitlements: _ds.get().toEntity(),
+                ),
+              );
       }
     }
   }

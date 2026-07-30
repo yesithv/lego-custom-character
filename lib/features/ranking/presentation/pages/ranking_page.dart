@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../character_editor/presentation/bloc/character_editor_bloc.dart';
-import '../../../character_editor/presentation/bloc/character_editor_event.dart';
 import '../../../runner/presentation/pages/world_selection_page.dart' show worlds, WorldData;
 import '../../domain/entities/score.dart';
 import '../bloc/ranking_bloc.dart';
@@ -29,14 +27,8 @@ class RankingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => sl<RankingBloc>()..add(LoadRanking(worldId))),
-        // Para identificar "Tú": el primer personaje es el corredor activo.
-        BlocProvider(
-          create: (_) => sl<CharacterEditorBloc>()..add(const LoadCharacters()),
-        ),
-      ],
+    return BlocProvider(
+      create: (_) => sl<RankingBloc>()..add(LoadRanking(worldId)),
       child: _RankingView(worldId: worldId),
     );
   }
@@ -90,12 +82,6 @@ class _RankingViewState extends State<_RankingView> {
 
   @override
   Widget build(BuildContext context) {
-    // Nombre del personaje activo del jugador → fila "Tú".
-    final editorState = context.watch<CharacterEditorBloc>().state;
-    final activeName = editorState.characters.isNotEmpty
-        ? editorState.characters.first.name
-        : null;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       body: Container(
@@ -175,13 +161,9 @@ class _RankingViewState extends State<_RankingView> {
                       itemBuilder: (context, i) {
                         final score = scores[i];
                         final rank = i + 1;
-                        final isYou = activeName != null &&
-                            activeName.isNotEmpty &&
-                            score.characterName == activeName;
                         return _ScoreRow(
                           rank: rank,
                           score: score,
-                          isYou: isYou,
                         );
                       },
                     );
@@ -422,12 +404,10 @@ class _WorldChip extends StatelessWidget {
 class _ScoreRow extends StatelessWidget {
   final int rank;
   final Score score;
-  final bool isYou;
 
   const _ScoreRow({
     required this.rank,
     required this.score,
-    required this.isYou,
   });
 
   static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
@@ -445,7 +425,7 @@ class _ScoreRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isChampion = rank == 1;
-    final highlighted = isChampion || isYou;
+    final highlighted = isChampion;
     final avatarColor = _avatarColors[(rank - 1) % _avatarColors.length];
     final name = score.characterName.isEmpty
         ? context.l10n.tr('default_runner')
@@ -508,42 +488,18 @@ class _ScoreRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Nombre (o "Tú (nombre)")
+          // Nombre real del personaje
           Expanded(
-            child: isYou
-                ? RichText(
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${context.l10n.tr('you')} ',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '($name)',
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           // Puntaje

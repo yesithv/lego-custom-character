@@ -285,6 +285,11 @@ class BossAttackComponent extends PositionComponent
   double depth;
   bool dodged = false;
   bool collided = false;
+
+  /// El golpe se decide una sola vez, cuando el ataque cruza el plano del
+  /// jugador (ver [BrixRunGame._checkBossAttacks]); evita el mismo defecto de
+  /// "esquivé a tiempo pero igual me golpea" que tenían los obstáculos.
+  bool resolved = false;
   double _animT = 0;
 
   static const double _projSize = 48.0;
