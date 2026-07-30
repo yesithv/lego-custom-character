@@ -98,14 +98,22 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
   accesorios, mundos), hace la pista muy corta (20 m) y el jefe débil (1 corazón).
 
 ### Ritmo de partida y ajustes de juego
-- **Pistas un 20 % más cortas** (`worldTrackMeters`: 960 … 2000 m). Con ellas
-  bajaron un 20 % los **umbrales de zona** (400/1200) y los **objetivos de las
-  misiones de distancia** (160/400/800), para no romper el ritmo ni dejar
-  misiones imposibles en la pista inicial.
-  ⚠️ **Ojo con la aritmética:** como la velocidad sube con el tiempo, −20 % de
-  distancia son solo **−14 % de duración** (media 5,3 → 4,6 min por partida). Si
-  se quiere una partida de ~3 min hay que recortar hasta ~770 m **o** subir la
-  velocidad base (300 px/s con rampa +16/5 s daría ~1040 m en 3 min).
+- **Pistas dimensionadas por duración objetivo**, no por porcentaje
+  (`worldTrackMeters`: **500 … 1100 m** → de 2,2 min en la pista inicial a
+  3,8 min en la última, **media ≈ 3 min**). Antes: 4-6,5 min (media 5,3).
+  ⚠️ **Ojo con la aritmética al retocarlas:** la velocidad sube con el tiempo
+  (220 px/s +12 cada 5 s), así que la duración **no** es proporcional a la
+  distancia — el primer intento (−20 % de metros) solo quitó un 14 % de tiempo.
+  Referencias con la velocidad actual: 2 min ≈ 430 m · 2,5 min ≈ 590 m ·
+  3 min ≈ 775 m · 3,5 min ≈ 975 m.
+- Con las pistas se reescalaron sus dos dependencias: **umbrales de zona**
+  (200/600) y **objetivos de las misiones de distancia** (100/250/450), para que
+  la dificultad progrese igual y las misiones sean alcanzables ya en el primer
+  mundo (500 m).
+- **Economía sin retocar a propósito:** se gana ~40 % menos monedas por carrera,
+  pero las carreras duran ~42 % menos, así que las monedas por minuto quedan
+  igual y las victorias (+500) llegan más a menudo. Los costes de desbloqueo de
+  mundos siguen valiendo.
 - **HUD sin contador de metros**: el avance lo comunica la barra vertical de
   progreso de la derecha; los metros se ven en el resumen final.
 - **Atajo del modo de prueba endurecido**: hay que mantener pulsado el título

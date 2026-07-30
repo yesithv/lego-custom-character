@@ -93,13 +93,14 @@ La dificultad aumenta según los metros recorridos (`meters`):
 
 | Zona | Rango | Bonus de velocidad | Extra |
 |------|-------|--------------------|-------|
-| `inicio` | 0–399 m | +0 | — |
-| `nucleo` | 400–1199 m | +60 | — |
-| `caos` | ≥ 1200 m | +160 | 20% de probabilidad de un segundo obstáculo en otro carril |
+| `inicio` | 0–199 m | +0 | — |
+| `nucleo` | 200–599 m | +60 | — |
+| `caos` | ≥ 600 m | +160 | 20% de probabilidad de un segundo obstáculo en otro carril |
 
-> Los umbrales bajaron un 20 % (antes 500 / 1500) junto con la longitud de las
-> pistas, para que la progresión caiga en el mismo punto relativo de la carrera.
-> Ver `worldTrackMeters` en `world_config.dart`.
+> Los umbrales se mueven con la longitud de las pistas (`worldTrackMeters` en
+> `world_config.dart`) para que la progresión caiga siempre en el mismo punto
+> relativo: `inicio` cubre el primer ~40 % de la pista inicial y `caos` solo
+> aparece en los mundos avanzados. Histórico: 500/1500 → 400/1200 → 200/600.
 
 ### Velocidad y spawning
 
@@ -294,7 +295,7 @@ Tipos de misión (`MissionType`) y ejemplos de objetivo:
 | Tipo | Ejemplos (objetivo → recompensa) |
 |------|----------------------------------|
 | `collectCoins` | 10 → 50, 25 → 100, 50 → 200 monedas |
-| `runMeters` | 160 → 50, 400 → 100, 800 → 200 |
+| `runMeters` | 100 → 50, 250 → 100, 450 → 200 |
 | `evadeObstacles` | 5 → 50, 10 → 100, 20 → 200 (seguidos) |
 | `surviveSeconds` | 30 → 75, 60 → 150 |
 | `useJump` | 5 → 50, 15 → 100 |

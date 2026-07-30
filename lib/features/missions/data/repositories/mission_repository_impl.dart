@@ -10,11 +10,12 @@ const _templates = [
   (MissionType.collectCoins, 10, 'Recolector', 'Recoge 10 monedas en una carrera', 50),
   (MissionType.collectCoins, 25, 'Ahorrador', 'Recoge 25 monedas en una carrera', 100),
   (MissionType.collectCoins, 50, 'Rico Rico', 'Recoge 50 monedas en una carrera', 200),
-  // Objetivos recortados un 20 % con las pistas: la más corta mide 960 m, así
-  // que un objetivo de 1000 m ya no cabría dentro de la fase de carrera.
-  (MissionType.runMeters, 160, 'Corredor', 'Corre 160 metros en una carrera', 50),
-  (MissionType.runMeters, 400, 'Maratonista', 'Corre 400 metros en una carrera', 100),
-  (MissionType.runMeters, 800, 'Velocista', 'Corre 800 metros en una carrera', 200),
+  // Objetivos escalados con las pistas: la más corta mide 500 m, así que los
+  // tres tienen que caber dentro de esa carrera para ser alcanzables desde el
+  // primer mundo.
+  (MissionType.runMeters, 100, 'Corredor', 'Corre 100 metros en una carrera', 50),
+  (MissionType.runMeters, 250, 'Maratonista', 'Corre 250 metros en una carrera', 100),
+  (MissionType.runMeters, 450, 'Velocista', 'Corre 450 metros en una carrera', 200),
   (MissionType.evadeObstacles, 5, 'Esquivador', 'Esquiva 5 obstáculos seguidos', 50),
   (MissionType.evadeObstacles, 10, 'Ninja', 'Esquiva 10 obstáculos seguidos', 100),
   (MissionType.evadeObstacles, 20, 'Fantasma', 'Esquiva 20 obstáculos seguidos', 200),

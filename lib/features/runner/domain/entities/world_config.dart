@@ -102,20 +102,40 @@ WorldColors colorsFor(String worldId) =>
 /// recorrer antes de que aparezca el jefe, y también lo que se anuncia en la
 /// tarjeta del mundo: única fuente de verdad para ambos.
 ///
-/// Recortadas un **20 %** respecto a los valores originales (1200/1500/2000/
-/// 1800/2300/1600/2100/2500) para que cada partida se resuelva antes. Al tocar
-/// estos números hay que revisar dos cosas que dependen de ellos: los umbrales
-/// de zona en `BrixRunGame.currentZone` y los objetivos de las misiones de
-/// distancia (`mission_repository_impl.dart`).
+/// **Estos valores salen de una duración objetivo, no de un recorte a ojo.** La
+/// velocidad del corredor sube con el tiempo (220 px/s +12 cada 5 s, ver
+/// `BrixRunGame.update`), así que los metros del final se recorren mucho más
+/// rápido que los del principio y la duración **no** es proporcional a la
+/// distancia: recortar un 20 % la pista solo quitaba un 14 % de tiempo.
+///
+/// Objetivo de esta tabla: partidas de **2,2 min en la pista inicial hasta
+/// 3,8 min en la última** (media ≈ 3 min), frente a los 4-6,5 min del diseño
+/// original. Progresión conservada: cada mundo dura algo más que el anterior.
+///
+/// | mundo | metros | duración aprox. |
+/// |---|---|---|
+/// | brix_city | 500 | 2,2 min |
+/// | medieval | 600 | 2,5 min |
+/// | ocean | 700 | 2,8 min |
+/// | jungle | 800 | 3,1 min |
+/// | galaxy | 850 | 3,2 min |
+/// | tundra | 900 | 3,3 min |
+/// | dark_city | 1000 | 3,6 min |
+/// | robot_city | 1100 | 3,8 min |
+///
+/// Al tocar estos números hay que reescalar con ellos las dos cosas que
+/// dependen de la distancia: los **umbrales de zona** en
+/// `BrixRunGame.currentZone` y los **objetivos de las misiones de distancia**
+/// (`mission_repository_impl.dart`).
 const worldTrackMeters = <String, int>{
-  'brix_city': 960,
-  'medieval': 1200,
-  'galaxy': 1600,
-  'jungle': 1440,
-  'dark_city': 1840,
-  'ocean': 1280,
-  'tundra': 1680,
-  'robot_city': 2000,
+  'brix_city': 500,
+  'medieval': 600,
+  'galaxy': 850,
+  'jungle': 800,
+  'dark_city': 1000,
+  'ocean': 700,
+  'tundra': 900,
+  'robot_city': 1100,
 };
 
-int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 960;
+int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 500;
