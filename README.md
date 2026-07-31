@@ -191,6 +191,20 @@ flutter build appbundle --release
 flutter build apk --release
 ```
 
+#### Modo de prueba y builds de release
+
+El **modo de prueba** (`core/test_mode/test_mode.dart`) desbloquea todo el
+contenido de pago gratis, así que en release queda **inerte por defecto**: el
+AAB que se sube a Play **no** permite activarlo (un usuario real no debe saltarse
+las compras). Sigue funcionando en debug/profile. Para probarlo en un **release
+firmado en tu dispositivo**, recompila pasando el flag:
+
+```bash
+flutter build apk --release --dart-define=BRIX_TESTMODE=true
+```
+
+⚠️ **Nunca** pases ese flag en la build que subes a Play Console.
+
 ### Pendiente antes de enviar a revisión
 
 Lo que falta **no es código de la app**; está detallado en

@@ -9,7 +9,7 @@
 - **Nombre de la app:** Run For Win
 - **Categoría (Google Play):** Juegos → Acción · Público objetivo: **Niños**
 - **Categoría (App Store):** Juegos (primaria) → **Acción** / **Aventura** ·
-  colocación en **Kids** con banda de edad **[6-8]** (ver `FORMULARIOS-TIENDAS.md`)
+  colocación en **Kids** con banda de edad **6-8** (ver `FORMULARIOS-TIENDAS.md`)
 - **Precio:** Gratis con compras opcionales (IAP)
 - **Contiene anuncios:** **No**
 - **Compras integradas:** Sí

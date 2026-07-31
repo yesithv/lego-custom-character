@@ -41,24 +41,25 @@ Flutter y los plugins en versiones recientes y compruébalo en una build real.
 
 ## 1. Proyecto nativo
 
-Hoy el repositorio **no tiene carpeta `android/`**: el juego se ha desarrollado y
-desplegado solo para web.
+La carpeta **`android/` ya está generada y configurada** en el repositorio. Lo
+que ya está resuelto:
 
-```bash
-flutter create --platforms=android,ios .
-```
+- **`applicationId` definitivo:** `com.iron_coding.runforwin`
+  (`android/app/build.gradle.kts`). ⚠️ **Irreversible** una vez publicada la app.
+- **Nombre visible:** «Run For Win» (`android:label` en el manifiesto), no el
+  codename interno `BrixRun`.
+- **Orientación vertical fija**, `compileSdk`/`targetSdk` **36**, `minSdk` 24.
+- **Iconos de lanzador** (5 densidades + adaptativo Android 8+) y splash.
+- **`versionCode`/`versionName`** desde `pubspec.yaml` (`1.0.0+1`). Sube el
+  número tras el `+` en cada envío a Play.
+- **Config de firma** que lee `android/key.properties` (ignorado por git, con
+  plantilla `key.properties.example`); si falta, cae a claves de depuración.
 
-Dos decisiones **irreversibles** tras publicar:
+Lo único **irreversible que aún depende de ti**:
 
-- **`applicationId`.** `com.example.run_for_win` lo rechaza Google. Y el
-  identificador no se puede cambiar nunca después. Propuesta:
-  `art.ironcoding.runforwin`.
-- **Keystore.** Si se pierde, no hay más actualizaciones. Activa Play App
-  Signing y guarda keystore y contraseña en dos sitios distintos.
-
-Además: iconos de lanzador, `versionCode` / `versionName` (hoy `1.0.0+1` en
-`pubspec.yaml`) y revisar que el nombre visible de la app sea «Run For Win» y no
-el codename interno `BrixRun`.
+- **Keystore de subida.** Créalo (comandos en el README), rellena
+  `android/key.properties` y **guárdalo por duplicado**: si se pierde, no hay
+  más actualizaciones. Activa **Play App Signing** al subir.
 
 ## 2. Cuenta de desarrollador
 
@@ -112,7 +113,10 @@ Google Play exige un **correo de soporte** que funcione. La App Store exige una
 **URL de soporte funcional** y sin ella no se puede ni enviar a revisión: un
 placeholder o un «próximamente» es motivo de rechazo.
 
-⚠️ **`soporte@iron-coding.art` tiene que existir y responder antes de enviar.**
+**Correo de soporte:** `yesithvalencia@gmail.com` (ya operativo). Las URLs de la
+tabla de arriba son las del sitio de prensa; **publica ahí** (o donde prefieras)
+los HTML de privacidad, soporte y términos de `docs/publicacion/` y confirma que
+el dominio es tuyo antes de enlazarlo en la ficha.
 
 ## 6. Antes de subir
 

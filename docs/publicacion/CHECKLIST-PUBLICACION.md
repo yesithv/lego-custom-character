@@ -17,10 +17,11 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
   `scenery_component.dart`, `appearance_colors.dart`.
 - [ ] 🔒 **Cumplimiento infantil** completo (documentos de esta carpeta +
   formularios de las tiendas).
-- [ ] 🧪 **Modo de prueba en release** — el atajo ya exige **mantener pulsado 10
-  segundos** el título del Home, sin ninguna pista visual
-  (`core/test_mode/test_mode.dart`). Sigue existiendo en release: decidir si se
-  desactiva del todo antes de publicar con IAP. **(código)**
+- [x] 🧪 **Modo de prueba seguro en release** — resuelto: el modo de prueba
+  (`core/test_mode/test_mode.dart`) queda **inerte en la build de release** que se
+  sube a Play (no se puede activar). Se conserva en debug/profile y se puede
+  rehabilitar en un release firmado propio con
+  `--dart-define=BRIX_TESTMODE=true`. Ver README. **(código)**
 
 ## 1. Cuentas y bases
 
