@@ -296,6 +296,16 @@ class BossAttackComponent extends PositionComponent
   static const double _waveH = 32.0;
   static const double _sweepH = 34.0;
 
+  /// Avance del ataque en profundidad/s, FIJO. Antes usaba `game.depthRate`,
+  /// que hereda la rampa de velocidad de la carrera: al llegar al jefe (500 m
+  /// en el mundo 1) la velocidad ya iba a ~530 y el ataque cruzaba de la
+  /// profundidad del jefe (~0.52) al jugador (1.0) en ~0.42 s — menos que un
+  /// salto (0.62 s), imposible de reaccionar. Con un ritmo fijo el telegrafiado
+  /// es constante (~0.85 s) y saltar/deslizarse a tiempo siempre es viable. El
+  /// enfurecimiento lo acelera un poco (sin pasar de ~0.70 s de telegrafiado).
+  static const double _travelRate = 0.56;
+  static const List<double> _enrageSpeedUp = [1.0, 1.12, 1.22];
+
   /// Separación del suelo del barrido: se pasa por debajo deslizándose.
   static const double _sweepLift = 42.0;
 
@@ -308,7 +318,8 @@ class BossAttackComponent extends PositionComponent
   @override
   void update(double dt) {
     _animT += dt;
-    depth += game.depthRate * dt * 1.12;
+    final enrage = (game.bossMaxHearts - game.bossHearts).clamp(0, 2);
+    depth += _travelRate * _enrageSpeedUp[enrage] * dt;
     _syncTransform();
     if (depth > 1.30) removeFromParent();
   }
