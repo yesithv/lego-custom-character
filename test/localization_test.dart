@@ -26,11 +26,11 @@ void main() {
       );
     });
 
-    test('cae a español si el idioma no está soportado', () {
-      expect(AppLocalizations.resolveLanguage([const Locale('it')]), 'es');
-      expect(AppLocalizations.resolveLanguage([const Locale('ja')]), 'es');
-      expect(AppLocalizations.resolveLanguage([]), 'es');
-      expect(AppLocalizations.resolveLanguage(null), 'es');
+    test('cae a inglés si el idioma no está soportado', () {
+      expect(AppLocalizations.resolveLanguage([const Locale('it')]), 'en');
+      expect(AppLocalizations.resolveLanguage([const Locale('ja')]), 'en');
+      expect(AppLocalizations.resolveLanguage([]), 'en');
+      expect(AppLocalizations.resolveLanguage(null), 'en');
     });
 
     test('respeta el orden de preferencia del dispositivo', () {
@@ -43,16 +43,16 @@ void main() {
     });
   });
 
-  group('Búsqueda y reserva a español', () {
+  group('Búsqueda y reserva a inglés', () {
     test('devuelve el texto del idioma pedido', () {
-      expect(AppLocalizations(const Locale('en')).tr('action_play'), 'PLAY!');
+      expect(AppLocalizations(const Locale('es')).tr('action_play'), '¡JUGAR!');
       expect(AppLocalizations(const Locale('fr')).tr('action_play'), 'JOUER !');
     });
 
-    test('cae a español cuando la clave no existe en el idioma', () {
-      // 'de' existe para esta clave; forzamos un idioma inexistente en el mapa.
+    test('cae a inglés (reserva) cuando la clave no existe en el idioma', () {
+      // Forzamos un idioma inexistente en el mapa: debe caer a kFallbackLanguage.
       final l10n = AppLocalizations(const Locale('xx'));
-      expect(l10n.tr('action_play'), kStrings['action_play']!['es']);
+      expect(l10n.tr('action_play'), kStrings['action_play']![kFallbackLanguage]);
     });
 
     test('devuelve la propia clave si no existe en ningún idioma', () {
@@ -119,11 +119,11 @@ void main() {
       }
     });
 
-    test('español (fuente/reserva) está presente en todas las claves', () {
+    test('el idioma de reserva (inglés) está presente en todas las claves', () {
       for (final table in [kStrings, kStringsExtra]) {
         table.forEach((key, translations) {
           expect(translations.containsKey(kFallbackLanguage), isTrue,
-              reason: 'La clave "$key" no tiene español');
+              reason: 'La clave "$key" no tiene el idioma de reserva');
         });
       }
     });

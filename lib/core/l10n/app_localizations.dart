@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import '../../features/character_editor/domain/entities/character.dart';
 import '../../features/economy/domain/entities/part_catalog.dart';
 import '../../features/missions/domain/entities/mission.dart';
+import '../../features/runner/domain/entities/world_music.dart';
 import 'app_strings.dart';
 import 'app_strings_extra.dart';
 
 /// Localización de Run For Win, escrita a mano (sin generadores).
 ///
 /// - Detecta el idioma del dispositivo y carga uno de los idiomas soportados.
-/// - Si el idioma del dispositivo no está soportado, usa **español** por defecto.
-/// - Cualquier clave sin traducir cae a español y, si tampoco existe, a la clave.
+/// - Si el idioma del dispositivo no está soportado, usa **inglés** por defecto.
+/// - Cualquier clave sin traducir cae a inglés y, si tampoco existe, a la clave.
 ///
 /// Además de la API basada en `BuildContext` ([AppLocalizations.of]), expone un
 /// acceso global [L10n] para la capa del juego (componentes de Flame que no
@@ -23,10 +24,11 @@ class AppLocalizations {
 
   String get languageCode => locale.languageCode;
 
-  /// Idiomas soportados como [Locale], en orden de preferencia.
+  /// Idiomas soportados como [Locale], en orden de preferencia (inglés primero,
+  /// que es el de reserva).
   static const List<Locale> supportedLocales = [
-    Locale('es'),
     Locale('en'),
+    Locale('es'),
     Locale('pt'),
     Locale('de'),
     Locale('ru'),
@@ -44,7 +46,7 @@ class AppLocalizations {
 
   /// Elige el código de idioma soportado a partir de la lista de idiomas del
   /// dispositivo (en orden de preferencia). Devuelve [kFallbackLanguage]
-  /// (español) si ninguno coincide. La comparación es solo por `languageCode`,
+  /// (inglés) si ninguno coincide. La comparación es solo por `languageCode`,
   /// así que `pt_BR`, `pt_PT`, etc. mapean todos a `pt`.
   static String resolveLanguage(Iterable<Locale>? deviceLocales) {
     if (deviceLocales != null) {
@@ -59,7 +61,7 @@ class AppLocalizations {
 
   // ── Búsqueda de texto ──────────────────────────────────────────────────────
 
-  /// Traduce [key] al idioma actual. Cae a español y luego a la propia clave.
+  /// Traduce [key] al idioma actual. Cae a inglés y luego a la propia clave.
   String tr(String key) => L10n.lookup(key, languageCode);
 
   /// Como [tr], sustituyendo marcadores `{clave}` por [params].
@@ -116,6 +118,21 @@ class AppLocalizations {
       L10n.lookupOrNull('product_${id}_t', languageCode) ?? fallback;
   String storeProductDescription(String id, String fallback) =>
       L10n.lookupOrNull('product_${id}_d', languageCode) ?? fallback;
+
+  /// Etiqueta de marketing localizada de un producto (badge). Cae al texto en
+  /// español del catálogo si no hay clave `product_<id>_badge`.
+  String? storeProductBadge(String id, String? fallback) =>
+      L10n.lookupOrNull('product_${id}_badge', languageCode) ?? fallback;
+
+  /// Nombre localizado de una pista de música. Cae al nombre en español de la
+  /// propia [WorldTrack] si no hay clave `music_<id>_name`.
+  String musicName(WorldTrack track) =>
+      L10n.lookupOrNull('music_${track.id}_name', languageCode) ?? track.name;
+
+  /// Descripción localizada de una pista de música. Cae a la del catálogo.
+  String musicDescription(WorldTrack track) =>
+      L10n.lookupOrNull('music_${track.id}_desc', languageCode) ??
+      track.description;
 }
 
 /// Acceso global al idioma activo y a la tabla de traducciones.
@@ -129,7 +146,7 @@ class L10n {
   /// Código de idioma activo (uno de [kSupportedLanguages]).
   static String language = kFallbackLanguage;
 
-  /// Traduce una clave a [lang], cayendo a español y luego a la clave.
+  /// Traduce una clave a [lang], cayendo a inglés y luego a la clave.
   static String lookup(String key, String lang) {
     return lookupOrNull(key, lang) ?? key;
   }

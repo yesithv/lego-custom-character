@@ -1,18 +1,19 @@
 // Tabla de traducciones de la app (Run For Win).
 //
-// Estructura: `clave -> { código-idioma -> texto }`. El español ('es') es la
-// fuente de verdad y el idioma de reserva: si falta una traducción, se usa el
-// texto en español; si tampoco existe, se devuelve la propia clave.
+// Estructura: `clave -> { código-idioma -> texto }`. El **inglés ('en')** es el
+// idioma de reserva: si falta una traducción, se usa el texto en inglés; si
+// tampoco existe, se devuelve la propia clave. (Cada entrada trae los 6 idiomas,
+// así que la reserva casi nunca actúa.)
 //
 // Escrita a mano (sin generadores), en línea con el resto del proyecto.
-// Idiomas soportados: es, en, pt, de, ru, fr.
+// Idiomas soportados: en, es, pt, de, ru, fr.
 
-/// Idiomas soportados por la app, en orden de preferencia. El primero ('es')
-/// es el idioma por defecto/reserva.
-const List<String> kSupportedLanguages = ['es', 'en', 'pt', 'de', 'ru', 'fr'];
+/// Idiomas soportados por la app, en orden de preferencia. El primero ('en')
+/// es el idioma por defecto/reserva cuando el dispositivo usa uno no soportado.
+const List<String> kSupportedLanguages = ['en', 'es', 'pt', 'de', 'ru', 'fr'];
 
 /// Idioma por defecto cuando el dispositivo usa uno no soportado.
-const String kFallbackLanguage = 'es';
+const String kFallbackLanguage = 'en';
 
 const Map<String, Map<String, String>> kStrings = {
   // ── Acciones / navegación comunes ─────────────────────────────────────────
@@ -875,6 +876,23 @@ const Map<String, Map<String, String>> kStrings = {
   'roulette_title': {
     'es': 'Ruleta Diaria', 'en': 'Daily Wheel', 'pt': 'Roleta Diária',
     'de': 'Tägliches Rad', 'ru': 'Ежедневная рулетка', 'fr': 'Roue quotidienne',
+  },
+  // Etiquetas de los segmentos de la rueda (las numéricas no se traducen).
+  'roulette_seg_part': {
+    'es': 'Parte', 'en': 'Part', 'pt': 'Peça',
+    'de': 'Teil', 'ru': 'Деталь', 'fr': 'Pièce',
+  },
+  'roulette_seg_common': {
+    'es': 'Común', 'en': 'Common', 'pt': 'Comum',
+    'de': 'Gewöhnlich', 'ru': 'Обычный', 'fr': 'Commun',
+  },
+  'roulette_seg_rare': {
+    'es': 'Raro', 'en': 'Rare', 'pt': 'Raro',
+    'de': 'Selten', 'ru': 'Редкий', 'fr': 'Rare',
+  },
+  'roulette_seg_epic': {
+    'es': '¡Épico!', 'en': 'Epic!', 'pt': 'Épico!',
+    'de': 'Episch!', 'ru': 'Эпик!', 'fr': 'Épique !',
   },
   'roulette_one_spin': {
     'es': '1 giro disponible hoy', 'en': '1 spin available today',
