@@ -63,8 +63,9 @@ puede hacer Claude; el resto son acciones tuyas (cuentas, trámites, arte).
 ## 4. Productos en Play Console
 
 - [ ] Crear los IAP con los **mismos IDs** del catálogo
-  (`store_product.dart`): `vip_monthly` (suscripción), `gems_small` y
-  `gems_medium` (consumibles), `bundle_starter` (no consumible).
+  (`store_product.dart`): `bundle_starter` (no consumible), `vip_monthly` y
+  `vip_yearly` (suscripción), `gems_small`, `gems_medium` y `gems_large`
+  (consumibles).
 - [ ] Fijar precios por región.
 - [ ] Configurar el grupo de **suscripción** VIP.
 - [ ] Añadir **testers de licencia** para probar compras sin cobro real.

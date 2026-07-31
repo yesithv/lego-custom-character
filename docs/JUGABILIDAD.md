@@ -25,6 +25,7 @@ Documentación de las reglas del juego tal como están implementadas. Todos los 
 - [Misiones](#misiones)
 - [Ranking](#ranking)
 - [Mundos](#mundos)
+- [Modo de prueba (desarrollo)](#modo-de-prueba-desarrollo)
 
 ---
 
@@ -34,11 +35,11 @@ Un personaje (`Character`) tiene: `id`, `name`, `type`, `specialPower` opcional,
 
 La apariencia (`CharacterAppearance`) se compone por capas:
 
-- **Cara:** tono de piel (`SkinTone` — 3 realistas + 6 fantásticos), ojos (`EyeStyle`, 10 estilos), boca (7), cejas (5), extra facial (freckles, blush, scar, tatuaje, pintura de guerra, monóculo…).
-- **Cabeza:** `headwearType` = pelo / casco / sombrero. Cada uno con sus variantes (`HairStyle` 11 peinados, `HelmetStyle` 13 cascos —incluidos capuchas de superhéroe como Iron Man, Spider-Man, Black Panther…—, `HatStyle` 8 sombreros).
-- **Torso:** 22 diseños (`TorsoDesign`: policía, bombero, astronauta, ninja, pirata, superhéroe, samurái, robot, alien, táctico, comando, dorado…), con opción de capa (`hasCape`).
-- **Manos:** guantes (`GloveType`: boxeo, medieval, superhéroe, garras).
-- **Piernas y pies:** diseño (`LegDesign`, 11 opciones), tipo (`LegType`: pantalón, shorts, falda, armadura, traje espacial) y calzado (`ShoeType`: 8 tipos).
+- **Cara:** tono de piel (`SkinTone` — 3 realistas + 6 fantásticos), ojos (`EyeStyle`, 11 estilos), boca (7), cejas (5), extra facial (freckles, blush, scar, tatuaje, pintura de guerra, monóculo…).
+- **Cabeza:** `headwearType` = pelo / casco / sombrero. Cada uno con sus variantes (`HairStyle` 16 peinados, `HelmetStyle` 14 cascos —incluidas capuchas de superhéroe como Iron Man, Spider-Man, Black Panther, Deadpool, Wolverine…—, `HatStyle` 8 sombreros).
+- **Torso:** 28 diseños (`TorsoDesign`: policía, bombero, astronauta, ninja, pirata, superhéroe, samurái, robot, alien, táctico, comando, dorado, y heroínas como Spider-Gwen, Wonder Woman, Captain Marvel…), con opción de capa (`hasCape`).
+- **Manos:** guantes (`GloveType`: boxeo, medieval, superhéroe, garras, energía, telaraña; más `none`).
+- **Piernas y pies:** diseño (`LegDesign`, 13 opciones), tipo (`LegType`: pantalón, shorts, falda, armadura, traje espacial) y calzado (`ShoeType`: 11 tipos).
 - **Accesorios:** 8 ranuras (`rightHand`, `leftHand`, `back`, `shoulders`, `waist`, `neck`, `face`, `feet`).
 
 El personaje se dibuja por código (formas y colores), no con sprites, y se guarda en Hive (caja `characters`).
@@ -54,11 +55,11 @@ El personaje se dibuja por código (formas y colores), no con sprites, y se guar
 La música es **temática de cada mundo** y se elige justo antes de correr, no por personaje. En la pantalla previa (`PreRunPage`, tras seleccionar un mundo) el jugador:
 
 1. Decide con un interruptor si quiere música de fondo (activada por defecto).
-2. Si la activa, elige una de las **3–4 pistas ambientadas en ese mundo** (p. ej. en el Reino Medieval: *Marcha del Castillo*, *Justa del Torneo*, *Taberna del Reino*, *Bosque Encantado*). Puede escuchar cada una con ▶ antes de decidir.
+2. Si la activa, elige una de las **2 pistas ambientadas en ese mundo** —una enérgica (`_1`) y otra más tranquila (`_2`)— (p. ej. en el Reino Medieval: *Marcha del Castillo* y *Taberna del Reino*). Puede escuchar cada una con ▶ antes de decidir. Los nombres/descripciones se traducen a cada idioma (claves `music_<id>_name`/`_desc`).
 
-El repertorio por mundo está en `runner/domain/entities/world_music.dart` (`worldMusicCatalog`, `worldTracksFor(worldId)`). Cada pista tiene su **propio fichero** en `assets/audio/music/<mundo>_<n>.wav`, sintetizado a medida con un estilo chiptune acorde al mundo: el mundo aporta la escala/tonalidad y la progresión, y cada pista un estilo (tempo, timbre, percusión). Los WAV se generan de forma determinista con `tool/gen_music.py` (Python puro, sin dependencias).
+El repertorio por mundo está en `runner/domain/entities/world_music.dart` (`worldMusicCatalog`, `worldTracksFor(worldId)`). Cada pista tiene su **propio fichero** en `assets/audio/music/<mundo>_<n>.mp3`. La producción actual (Suno + REAPER) y los prompts están documentados en [`MUSICA.md`](MUSICA.md); el sintetizador chiptune `tool/gen_music.py` es el enfoque anterior y ya no genera los audios en uso. La v2 contempla volver a 4 pistas por mundo.
 
-La pista elegida (o `null` si la música está desactivada) se pasa al `RunnerPage` como `musicAsset`. El runner la reproduce con `AudioService.playMusic(asset)` en `ReleaseMode.loop` y volumen `0.55`; si es `null`, corre en silencio. `toggleMute()` la silencia en caliente sin cortar la pista. Los fallos de reproducción (p. ej. autoplay bloqueado en web) se ignoran silenciosamente.
+La pista elegida (o `null` si la música está desactivada) se pasa al `RunnerPage` como `musicAsset`. El runner la reproduce con `AudioService.playMusic(asset)` en `ReleaseMode.loop` y volumen `0.55`; si es `null`, corre en silencio. `toggleMusicMute()` la silencia en caliente sin cortar la pista. Los fallos de reproducción (p. ej. autoplay bloqueado en web) se ignoran silenciosamente.
 
 ---
 
@@ -108,7 +109,7 @@ La dificultad aumenta según los metros recorridos (`meters`):
 - **Velocidad efectiva** = `speed + bonus de zona`.
 - **Obstáculos:** intervalo de spawn = `(2.2 - velEfectiva/900)` acotado a `[0.65, 2.2]` s. Tipos por probabilidad: barrera 20%, pincho 15%, bloque 65%.
 - **Monedas:** una cada `0.9 s`, en carril aleatorio.
-- **Power-ups:** uno cada `12 s`, tipo shield o magnet (50/50).
+- **Power-ups:** uno cada `12 s`, de **tres tipos equiprobables** (shield / magnet / boost, 1/3 cada uno; `PowerupType.values[_rng.nextInt(3)]`).
 - **Escenografía lateral:** `SceneryComponent` a los lados de la pista cada `0.55 s` (variantes temáticas por mundo). Se siembra al inicio para que el mundo no arranque vacío.
 
 > Obstáculos, monedas y power-ups **solo** aparecen en la fase `running`. Al empezar la pelea contra el jefe (`bossFight`) dejan de generarse, pero la escenografía sigue avanzando para que el mundo no se congele.
@@ -119,7 +120,7 @@ Detección manual por proximidad de profundidad (`_checkDepthCollisions`), no po
 
 - Ventana de impacto: `depth ∈ [0.87, 1.11]` **y** mismo carril que el jugador.
 - Un obstáculo se marca como **evadido** al superar `depth ≥ 1.16` sin colisión.
-- **Salto:** con `jumpProgress ∈ (0.14, 0.88)` se libran **todos** los obstáculos.
+- **Salto:** con `jumpProgress ∈ (0.10, 0.90)` se libran **todos** los obstáculos.
 - **Deslizamiento:** solo libra las **barreras** (`ObstacleType.barrier`).
 - **Monedas:** se recogen en la ventana de impacto si coinciden de carril; con **imán** activo también valen los carriles adyacentes (`|lane - playerLane| == 1`).
 
@@ -132,7 +133,7 @@ score = (meters + coins*5 + obstacleStreak*2) * multiplier + bossBonusScore
 - `meters = distanciaRecorrida / 100`. **No se muestran en el HUD durante la
   carrera** (el avance lo indica la barra vertical de progreso de la derecha);
   aparecen en el resumen de fin de carrera.
-- `bossBonusScore` acumula los bonus de la pelea: `+300` por cada embestida al jefe y `+1000` al vencerlo (ver [Peleas contra jefes](#peleas-contra-jefes)).
+- `bossBonusScore` acumula los bonus de la pelea: `+400` por cada embestida al jefe (`_dashScoreBonus`) y `+2500` al vencerlo (`_victoryScoreBonus`) (ver [Peleas contra jefes](#peleas-contra-jefes)).
 - El **multiplicador** depende de la racha de obstáculos evadidos (`obstacleStreak`):
 
 | Racha evadida | Multiplicador |
@@ -146,8 +147,9 @@ score = (meters + coins*5 + obstacleStreak*2) * multiplier + bossBonusScore
 
 | Power-up | Duración | Efecto |
 |----------|----------|--------|
-| 🛡️ Shield | 5 s | Absorbe un golpe sin morir. |
-| 🧲 Magnet | 5 s | Atrae monedas de los carriles adyacentes. |
+| 🛡️ Shield | 10 s | Absorbe un golpe sin morir (`_shieldPowerupDuration`). |
+| 🧲 Magnet | 5 s | Atrae monedas de los carriles adyacentes (`_magnetDuration`). |
+| ⚡ Boost | 4 s | Ráfaga de velocidad (`_boostDuration`, `+230` a la velocidad) con líneas cinéticas y sacudida. |
 
 Al recibir un golpe con escudo activo (de power-up o de héroe), se consume el escudo y se sobrevive. Sin escudo, la partida termina: el jugador "muere", suena el golpe, aparece el overlay `gameOver` y, 500 ms después, se pausa el motor y se llama a `onRunComplete(coins)`.
 
@@ -166,7 +168,7 @@ El `CharacterType` otorga ventajas al empezar la partida (`onLoad`):
 
 ## Peleas contra jefes
 
-Al alcanzar `bossTriggerMeters` (por defecto **2000 m**; parametrizable para tests) la partida entra en una máquina de fases (`GamePhase`):
+Al alcanzar `bossTriggerMeters` la partida entra en una máquina de fases (`GamePhase`). Por defecto ese umbral es la **longitud de la pista del mundo** (`trackMetersFor(worldId)`, de **500 m** en Ciudad Brix a **1100 m** en Metrópolis Robot; **20 m** en modo de prueba), así que el jefe aparece al final de cada pista. El constructor acepta `bossTriggerMeters` para forzarlo en los tests:
 
 ```
 running → bossIntro → bossFight → bossDefeated → victory
@@ -180,7 +182,7 @@ running → bossIntro → bossFight → bossDefeated → victory
 ### Corazones, ataques y embestida
 
 - El jefe tiene **3 corazones** (`maxBossHearts`).
-- **Cada ataque esquivado** carga la embestida `+0.2` (`dashCharge`). Al llegar a `1.0` el jugador **embiste** automáticamente: quita **1 corazón**, suma **+300** al score y limpia los ataques en vuelo.
+- **Cada ataque esquivado** carga la embestida `+0.2` (`_chargePerDodge`). Al llegar a `1.0` el jugador **embiste** automáticamente: quita **1 corazón**, suma **+400** al score y limpia los ataques en vuelo.
 - El jefe se **enfurece** al perder corazones: el intervalo entre ataques baja de `1.15 s → 0.90 s → 0.70 s`. Enfurecido, a veces lanza un segundo proyectil en otro carril (35% en ataques de proyectil).
 
 ### Tipos de ataque (cada uno se contrarresta con un control)
@@ -224,46 +226,51 @@ Al vencer al jefe: **+200 monedas** (`victoryCoinBonus`) y **+2500** al score (`
 
 El monedero (`Wallet`) guarda: `coins`, `unlockedParts`, `runStreak`, `lastRouletteDate`, `lastPlayDate`, `totalCoinsEarned`.
 
+### Sistema de premios (ruleta y cofres)
+
+Los premios se construyen en `reward_pools.dart` con `buildRewardTable`, que
+combina **recompensas fijas de monedas** con un **pool de accesorios derivado del
+catálogo** (`droppableAccessories`: piezas del `partCatalog` que **no** son
+`premium` ni gratuitas — en la práctica, rares/epics y cualquier legendaria
+futura). El pool se normaliza a una `accessoryFraction` objetivo, así la
+proporción monedas/accesorios se mantiene estable aunque el catálogo crezca.
+Dentro del bucket de accesorios, el peso por rareza es común 12 · rara 6 · épica
+2 · legendaria 1. Si el accesorio premiado **ya se posee**, se entrega su valor en
+**monedas de consuelo** (`coinValueForRarity`: común 50 · rara 150 · épica 350 ·
+legendaria 750), para que ningún premio se sienta vacío.
+
 ### Ruleta diaria
 
-Reclamable una vez por día natural (`canClaimRoulette` compara año/mes/día con `lastRouletteDate`). Premio por tabla ponderada (peso total = 100):
+Reclamable una vez por día natural (`canClaimRoulette` compara año/mes/día con
+`lastRouletteDate`). Monedas fijas + **20 %** de accesorio rare/epic
+(`accessoryFraction: 0.20`):
 
-| Premio | Peso |
-|--------|------|
+| Premio de monedas | Peso |
+|-------------------|------|
 | 50 monedas | 30 |
 | 100 monedas | 25 |
 | 200 monedas | 15 |
 | 500 monedas | 10 |
-| Pieza: Capa (común) | 10 |
-| Pieza: Escudo (común) | 5 |
-| Pieza: Jetpack (rara) | 4 |
-| Pieza: Medallón dorado (épica) | 1 |
+
+Más accesorios **rare/epic** del catálogo (≈20 % del total), elegidos por peso de rareza.
 
 ### Cofres
 
-Dos tablas de premios ponderadas:
+**Cofre común** (fin de carrera): monedas modestas + **30 %** de accesorio rare/epic.
 
-**Cofre común**
-
-| Premio | Peso |
-|--------|------|
+| Premio de monedas | Peso |
+|-------------------|------|
 | 30 monedas | 50 |
 | 75 monedas | 25 |
-| Sombrero (común) | 15 |
-| Alas (raras) | 8 |
-| Corona épica | 2 |
 
-**Cofre VIP** (se obtiene con racha ≥ 3, ver abajo)
+**Cofre VIP** (se obtiene con racha ≥ 3): monedas generosas + **65 %** de accesorio
+**rare/epic/legendary**.
 
-| Premio | Peso |
-|--------|------|
+| Premio de monedas | Peso |
+|-------------------|------|
 | 150 monedas | 30 |
-| Jetpack (raro) | 25 |
-| Varita mágica (rara) | 25 |
-| Capa dorada (épica) | 15 |
-| Espada legendaria (legendaria) | 5 |
 
-Las piezas repetidas no se duplican: si ya está en `unlockedParts`, no se vuelve a añadir.
+Las piezas repetidas no se duplican: si ya está en `unlockedParts`, se entrega el equivalente en monedas de consuelo.
 
 ### Streak de juego
 
@@ -377,3 +384,9 @@ Con el modo de prueba encendido:
 
 Los cambios de pista y jefe se leen al construir la partida, así que aplican en
 la siguiente carrera que inicies tras encender/apagar el modo.
+
+**Seguridad en release:** como el modo de prueba desbloquea contenido de pago, en
+la **build de release** que se publica queda **inerte** (no se puede activar):
+`TestMode.isAvailable` es `false` salvo que se compile con
+`--dart-define=BRIX_TESTMODE=true`. Sigue funcionando en debug/profile. Así, el
+atajo del título no abre nada en la app publicada. Ver el README.

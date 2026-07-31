@@ -44,7 +44,7 @@
 ## Stack técnico
 
 - Flutter 3.44+ / Dart 3.12+ con Flame 1.18.0
-- BLoC pattern (`flutter_bloc ^8.x`) + Hive para persistencia local
+- BLoC pattern (`flutter_bloc ^9.x`) + Hive para persistencia local
 - TypeAdapters de Hive escritos a mano — **no usar `hive_generator` ni `build_runner`**
-- Audio: `audioplayers ^6.0.0`; archivos MP3 en `assets/audio/`
+- Audio: `audioplayers ^6.0.0`; efectos `.wav` y música `.mp3` en `assets/audio/`
 - Build web: `flutter build web --release --base-href "/lego-custom-character/"`

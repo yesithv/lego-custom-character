@@ -4,7 +4,16 @@
 > **decisiones firmes**, lo **construido** y lo **pendiente**. Mantenerlo al día
 > al cerrar cada bloque de trabajo.
 
-_Última actualización: rama `claude/fix-real-purchases-flow`: **puesta a punto
+_Última actualización: rama `claude/google-play-publish-checklist-t7hnhk`:
+**preparación para publicar + i18n + auditoría de docs**. (1) Modo de prueba
+**seguro en release**: se conserva pero queda inerte en el AAB de Play salvo
+`--dart-define=BRIX_TESTMODE=true`. (2) **i18n**: idioma por defecto/reserva
+ahora **inglés** (antes español); se enrutaron por l10n textos que salían en
+español en crudo (selector de música, segmentos de la ruleta, badges de la
+tienda). (3) Borradores legales de `docs/publicacion/` rellenados y
+`docs/PUBLICACION_ANDROID.md` actualizada. (4) **Auditoría de toda la
+documentación** contra el código (Hive, rutas, economía, jugabilidad, música,
+i18n). Antes: rama `claude/fix-real-purchases-flow`: **puesta a punto
 de compras reales** — precios localizados desde la tienda, estado "compra
 pendiente" (Ask to Buy) resuelto en la UI, aviso de compras simuladas limitado a
 web, y permiso `BILLING` explícito en el manifiesto. Se sincronizó
@@ -48,7 +57,7 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 ## 3. Arquitectura clave
 
 - **Clean Architecture por features** (`domain/` · `data/` · `presentation/`),
-  BLoC (`flutter_bloc ^8`), inyección con `get_it` (`core/di/injection.dart`).
+  BLoC (`flutter_bloc ^9`), inyección con `get_it` (`core/di/injection.dart`).
 - **Patrón interfaz + implementación** para todo servicio externo, resuelto por
   plataforma en `injection.dart`:
   - `StoreRepository` → **`InAppPurchaseStoreRepository` en móvil** (pagos
@@ -191,15 +200,20 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 ## 5. Pendiente
 
 ### Para lanzar el MVP v1 (bloqueadores, ninguno es código de la app)
-- **Icono y splash propios** (hoy el icono por defecto de Flutter).
-- **Productos IAP dados de alta** en Play Console con los IDs del catálogo.
+- ~~**Icono y splash propios**~~ → **hecho**: icono generado por código
+  (`tool/gen_icon.dart`, 5 densidades + adaptativo + 512² para la ficha) y splash
+  azul Brix. Habrá que regenerarlo si se rediseña el _trade dress_.
+- **Productos IAP dados de alta** en Play Console con los IDs del catálogo
+  (los 6: `bundle_starter`, `vip_monthly`, `vip_yearly`, `gems_small`,
+  `gems_medium`, `gems_large`).
 - **Política de privacidad en URL pública** + Data Safety + IARC + "Diseñado
   para familias" (borradores en `docs/publicacion/`).
 - **Keystore de subida** creado y `android/key.properties` rellenado.
 - **Rediseño del _trade dress_** (riesgo de IP).
-- **Decidir qué hacer con el "modo de prueba"** (`core/test_mode/test_mode.dart`):
-  hoy un pulsado largo en el título desbloquea todo gratis. Conviene desactivarlo
-  en builds de release antes de publicar con IAP.
+- ~~**Decidir qué hacer con el "modo de prueba"**~~ → **resuelto**: se conserva
+  pero queda **inerte en release** (`TestMode.isAvailable` es `false` salvo con
+  `--dart-define=BRIX_TESTMODE=true`). En debug/profile funciona igual; el AAB de
+  Play no permite activarlo. Ver `core/test_mode/test_mode.dart` y el README.
 - **Verificar `flutter build appbundle --release` en local** (este entorno remoto
   no tiene Android SDK: `dl.google.com` está bloqueado por la política de red).
 

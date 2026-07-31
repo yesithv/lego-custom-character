@@ -91,7 +91,7 @@ está detrás de una interfaz y se cambia en `core/di/injection.dart`.
 | 💰 **Economía** | Monedas, ruleta diaria, cofres común/VIP, desbloqueo de piezas por rareza y **billetera** (resumen ganado/gastado/saldo, al tocar las monedas). |
 | 🎯 **Misiones** | 3 misiones activas rotativas; al completarse pagan monedas y regalan una gema. |
 | 🏆 **Ranking** | Tabla de puntuaciones local por mundo. |
-| 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** en bucle seleccionable por personaje. |
+| 🔊 **Audio** | Efectos de sonido (salto, moneda, golpe, power-up, ruleta, cofre) y **música de fondo** temática por mundo (2 pistas por mundo, elegibles en la pantalla previa a la carrera). |
 | 🌍 **Mundos** | 8 mundos temáticos con paletas y jefes propios (2 disponibles, resto bloqueados). |
 | 💎 **Monetización** | Compras opcionales con dinero real: gemas (consumible), pack cosmético (no consumible) y suscripción **Club VIP**. Sin anuncios, sin cajas de botín y sin azar: precios deterministas y compuerta parental antes de comprar. Ver [`docs/COMPRAS_REALES.md`](docs/COMPRAS_REALES.md). |
 | 📈 **Analítica** | *First-party* y **local** (Hive): sesiones, días activos, retención D1/D7 y eventos. Sin SDK de terceros y sin salir del dispositivo, por el requisito de iOS Kids. |
@@ -107,10 +107,10 @@ está detrás de una interfaz y se cambia en `core/di/injection.dart`.
 
 - **Flutter** `>=3.0.0 <4.0.0` (Dart 3) — verificado con **Flutter 3.44.8 / Dart 3.12.2**
 - **[Flame](https://flame-engine.org/) 1.18** — motor de juego 2D
-- **[flutter_bloc](https://bloclibrary.dev/) 8.x** + **equatable** — gestión de estado (patrón BLoC)
+- **[flutter_bloc](https://bloclibrary.dev/) 9.x** + **equatable** — gestión de estado (patrón BLoC)
 - **[Hive](https://docs.hivedb.dev/) 2.2** — persistencia local (NoSQL clave-valor)
-- **[go_router](https://pub.dev/packages/go_router) 14** — navegación declarativa
-- **[get_it](https://pub.dev/packages/get_it) 8** — inyección de dependencias (service locator)
+- **[go_router](https://pub.dev/packages/go_router) 17** — navegación declarativa
+- **[get_it](https://pub.dev/packages/get_it) 9** — inyección de dependencias (service locator)
 - **[audioplayers](https://pub.dev/packages/audioplayers) 6** — reproducción de audio
 - **[in_app_purchase](https://pub.dev/packages/in_app_purchase) 3.2** — Google Play Billing / StoreKit
 - **uuid** — generación de identificadores
