@@ -20,21 +20,30 @@ import '../bloc/wallet_state.dart';
 // ── Roulette segment data ─────────────────────────────────────────────────────
 
 class _Segment {
+  /// Texto de respaldo (español). Los segmentos de palabra traen además una
+  /// [labelKey] para traducirse; los numéricos (50, 100…) no la necesitan.
   final String label;
   final Color color;
   final String emoji;
-  const _Segment(this.label, this.color, this.emoji);
+
+  /// Clave de traducción para los segmentos con texto (no numéricos). Si es
+  /// `null`, se muestra [label] tal cual (números).
+  final String? labelKey;
+  const _Segment(this.label, this.color, this.emoji, {this.labelKey});
+
+  /// Etiqueta ya localizada para pintar en la rueda.
+  String get displayLabel => labelKey != null ? L10n.t(labelKey!) : label;
 }
 
 const _segments = [
   _Segment('50', Color(0xFF43A047), '🪙'),
-  _Segment('Parte', Color(0xFF9E9E9E), '⚙️'),
+  _Segment('Parte', Color(0xFF9E9E9E), '⚙️', labelKey: 'roulette_seg_part'),
   _Segment('100', Color(0xFF1E88E5), '🪙'),
-  _Segment('Común', Color(0xFF8D9E63), '⚙️'),
+  _Segment('Común', Color(0xFF8D9E63), '⚙️', labelKey: 'roulette_seg_common'),
   _Segment('200', Color(0xFFB07A3B), '🪙'),
-  _Segment('Raro', Color(0xFF3949AB), '💎'),
+  _Segment('Raro', Color(0xFF3949AB), '💎', labelKey: 'roulette_seg_rare'),
   _Segment('500', Color(0xFFE53935), '🪙'),
-  _Segment('¡Épico!', Color(0xFF8E24AA), '⚡'),
+  _Segment('¡Épico!', Color(0xFF8E24AA), '⚡', labelKey: 'roulette_seg_epic'),
 ];
 
 // Map reward type → wheel segment index
@@ -390,7 +399,7 @@ class _WheelPainter extends CustomPainter {
       // Etiqueta hacia el centro
       final tp = TextPainter(
         text: TextSpan(
-          text: seg.label,
+          text: seg.displayLabel,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w900,

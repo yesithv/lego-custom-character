@@ -114,9 +114,15 @@ class _HomeView extends StatelessWidget {
                   const Spacer(flex: 2),
 
                   // Título compacto tipo píldora. Mantener pulsado 10 s abre el
-                  // interruptor del modo de prueba (atajo interno).
+                  // interruptor del modo de prueba (atajo interno). En la build
+                  // de tienda el modo no está disponible, así que el atajo no
+                  // abre nada (ver TestMode.isAvailable).
                   _TitlePill(
-                    onSecretHold: () => _openTestModeSheet(context),
+                    onSecretHold: () {
+                      if (TestMode.instance.isAvailable) {
+                        _openTestModeSheet(context);
+                      }
+                    },
                   ),
                   const Spacer(flex: 2),
 

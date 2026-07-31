@@ -1,7 +1,7 @@
 // Traducciones de contenido "de catálogo": etiquetas de opciones del editor
-// (basadas en enums), plantillas de misiones, nombres de accesorios y de
-// productos de la tienda. Mismo formato y reglas que `app_strings.dart`
-// (español = fuente/reserva).
+// (basadas en enums), plantillas de misiones, nombres de accesorios, productos
+// de la tienda y pistas de música. Mismo formato y reglas que `app_strings.dart`
+// (inglés = reserva; cada entrada trae los 6 idiomas).
 
 const Map<String, Map<String, String>> kStringsExtra = {
   // ── Ojos ──────────────────────────────────────────────────────────────────
@@ -216,6 +216,11 @@ const Map<String, Map<String, String>> kStringsExtra = {
     'ru': 'Играй без рекламы навсегда.', 'fr': 'Joue sans pub pour toujours.',
   },
   'product_vip_monthly_t': {'es': 'Club VIP', 'en': 'VIP Club', 'pt': 'Clube VIP', 'de': 'VIP-Club', 'ru': 'VIP-клуб', 'fr': 'Club VIP'},
+  // Etiquetas de marketing (badge) de las tarjetas de la tienda.
+  'product_bundle_starter_badge': {'es': 'OFERTA ÚNICA', 'en': 'ONE-TIME', 'pt': 'OFERTA ÚNICA', 'de': 'EINMALIG', 'ru': 'ТОЛЬКО РАЗ', 'fr': 'OFFRE UNIQUE'},
+  'product_vip_monthly_badge': {'es': 'MÁS POPULAR', 'en': 'MOST POPULAR', 'pt': 'MAIS POPULAR', 'de': 'BELIEBT', 'ru': 'ПОПУЛЯРНОЕ', 'fr': 'POPULAIRE'},
+  'product_vip_yearly_badge': {'es': 'AHORRA 50%', 'en': 'SAVE 50%', 'pt': 'POUPE 50%', 'de': 'SPARE 50%', 'ru': 'СКИДКА 50%', 'fr': '-50%'},
+  'product_gems_large_badge': {'es': 'MEJOR VALOR', 'en': 'BEST VALUE', 'pt': 'MELHOR VALOR', 'de': 'BESTER WERT', 'ru': 'ВЫГОДНО', 'fr': 'MEILLEUR PRIX'},
   'product_vip_monthly_d': {
     'es': '25 💎 cada día + monedas x1.5 en cada carrera + regalo VIP.',
     'en': '25 💎 every day + x1.5 coins on every run + VIP gift.',
@@ -364,4 +369,40 @@ const Map<String, Map<String, String>> kStringsExtra = {
   'part_tobilleras': {'es': 'Tobilleras', 'en': 'Ankle bands', 'pt': 'Tornozeleiras', 'de': 'Fußbänder', 'ru': 'Браслеты на ноги', 'fr': 'Bracelets de cheville'},
   'part_botas propulsión': {'es': 'Botas de propulsión', 'en': 'Jet boots', 'pt': 'Botas de propulsão', 'de': 'Düsenstiefel', 'ru': 'Реактивные ботинки', 'fr': 'Bottes propulsées'},
   'part_moños zapatos': {'es': 'Moños en los zapatos', 'en': 'Shoe bows', 'pt': 'Laços nos sapatos', 'de': 'Schuhschleifen', 'ru': 'Бантики на туфлях', 'fr': 'Nœuds de chaussures'},
+
+  // ── Música por pista (nombre + descripción) ─────────────────────────────────
+  // Clave: music_<id>_name / music_<id>_desc, donde <id> es el nombre del
+  // fichero de audio sin ruta ni extensión (ver WorldTrack.id).
+  'music_brix_city_1_name': {'es': 'Ritmo de Ciudad', 'en': 'City Rhythm', 'pt': 'Ritmo da Cidade', 'de': 'Stadtrhythmus', 'ru': 'Ритм города', 'fr': 'Rythme urbain'},
+  'music_brix_city_1_desc': {'es': 'Groove urbano alegre de calles de bloques', 'en': 'Cheerful urban groove of block streets', 'pt': 'Groove urbano alegre das ruas de blocos', 'de': 'Fröhlicher Urban-Groove der Klötzchen-Straßen', 'ru': 'Весёлый городской грув блочных улиц', 'fr': 'Groove urbain joyeux des rues de blocs'},
+  'music_brix_city_2_name': {'es': 'Atardecer en la Avenida', 'en': 'Sunset on the Avenue', 'pt': 'Entardecer na Avenida', 'de': 'Sonnenuntergang auf der Allee', 'ru': 'Закат на проспекте', 'fr': 'Coucher de soleil sur l’avenue'},
+  'music_brix_city_2_desc': {'es': 'Lo-fi tranquilo al caer la tarde', 'en': 'Calm lo-fi as evening falls', 'pt': 'Lo-fi tranquilo ao anoitecer', 'de': 'Ruhiger Lo-Fi bei Einbruch des Abends', 'ru': 'Спокойный лоу-фай на закате', 'fr': 'Lo-fi tranquille à la tombée du soir'},
+  'music_medieval_1_name': {'es': 'Marcha del Castillo', 'en': 'Castle March', 'pt': 'Marcha do Castelo', 'de': 'Burgmarsch', 'ru': 'Марш замка', 'fr': 'Marche du château'},
+  'music_medieval_1_desc': {'es': 'Fanfarria épica de torres y murallas', 'en': 'Epic fanfare of towers and walls', 'pt': 'Fanfarra épica de torres e muralhas', 'de': 'Epische Fanfare aus Türmen und Mauern', 'ru': 'Эпические фанфары башен и стен', 'fr': 'Fanfare épique de tours et remparts'},
+  'music_medieval_2_name': {'es': 'Taberna del Reino', 'en': 'Kingdom Tavern', 'pt': 'Taverna do Reino', 'de': 'Taverne des Königreichs', 'ru': 'Таверна королевства', 'fr': 'Taverne du royaume'},
+  'music_medieval_2_desc': {'es': 'Melodía juglar de laúd 8-bit', 'en': '8-bit minstrel lute melody', 'pt': 'Melodia de alaúde de menestrel 8-bit', 'de': '8-Bit-Spielmannslaute', 'ru': 'Менестрельская мелодия лютни в 8-бит', 'fr': 'Mélodie de luth de ménestrel 8-bit'},
+  'music_galaxy_1_name': {'es': 'Órbita Estelar', 'en': 'Stellar Orbit', 'pt': 'Órbita Estelar', 'de': 'Sternenorbit', 'ru': 'Звёздная орбита', 'fr': 'Orbite stellaire'},
+  'music_galaxy_1_desc': {'es': 'Synthwave cósmico entre asteroides', 'en': 'Cosmic synthwave among asteroids', 'pt': 'Synthwave cósmico entre asteroides', 'de': 'Kosmischer Synthwave zwischen Asteroiden', 'ru': 'Космический синтвейв среди астероидов', 'fr': 'Synthwave cosmique parmi les astéroïdes'},
+  'music_galaxy_2_name': {'es': 'Salto Hiperespacial', 'en': 'Hyperspace Jump', 'pt': 'Salto Hiperespacial', 'de': 'Hyperraumsprung', 'ru': 'Прыжок в гиперпространство', 'fr': 'Saut hyperespace'},
+  'music_galaxy_2_desc': {'es': 'Pulso veloz a la velocidad de la luz', 'en': 'Fast pulse at light speed', 'pt': 'Pulso veloz à velocidade da luz', 'de': 'Schneller Puls mit Lichtgeschwindigkeit', 'ru': 'Быстрый пульс на скорости света', 'fr': 'Pulsation rapide à la vitesse de la lumière'},
+  'music_jungle_1_name': {'es': 'Corazón de la Selva', 'en': 'Heart of the Jungle', 'pt': 'Coração da Selva', 'de': 'Herz des Dschungels', 'ru': 'Сердце джунглей', 'fr': 'Cœur de la jungle'},
+  'music_jungle_1_desc': {'es': 'Ritmo tribal entre lianas', 'en': 'Tribal rhythm among vines', 'pt': 'Ritmo tribal entre cipós', 'de': 'Tribal-Rhythmus zwischen Lianen', 'ru': 'Племенной ритм среди лиан', 'fr': 'Rythme tribal parmi les lianes'},
+  'music_jungle_2_name': {'es': 'Templo Perdido', 'en': 'Lost Temple', 'pt': 'Templo Perdido', 'de': 'Verlorener Tempel', 'ru': 'Затерянный храм', 'fr': 'Temple perdu'},
+  'music_jungle_2_desc': {'es': 'Aventura chiptune entre ruinas', 'en': 'Chiptune adventure among ruins', 'pt': 'Aventura chiptune entre ruínas', 'de': 'Chiptune-Abenteuer zwischen Ruinen', 'ru': 'Чиптюн-приключение среди руин', 'fr': 'Aventure chiptune parmi les ruines'},
+  'music_dark_city_1_name': {'es': 'Carrera Embrujada', 'en': 'Haunted Run', 'pt': 'Corrida Assombrada', 'de': 'Spuklauf', 'ru': 'Призрачный забег', 'fr': 'Course hantée'},
+  'music_dark_city_1_desc': {'es': 'Persecución frenética de sombras', 'en': 'Frantic chase of shadows', 'pt': 'Perseguição frenética de sombras', 'de': 'Rasante Jagd der Schatten', 'ru': 'Бешеная погоня теней', 'fr': 'Poursuite effrénée des ombres'},
+  'music_dark_city_2_name': {'es': 'Casa Encantada 8-bit', 'en': '8-bit Haunted House', 'pt': 'Casa Assombrada 8-bit', 'de': '8-Bit-Spukhaus', 'ru': 'Дом с привидениями в 8-бит', 'fr': 'Maison hantée 8-bit'},
+  'music_dark_city_2_desc': {'es': 'Chiptune travieso de Halloween', 'en': 'Mischievous Halloween chiptune', 'pt': 'Chiptune travesso de Halloween', 'de': 'Schelmischer Halloween-Chiptune', 'ru': 'Озорной хэллоуинский чиптюн', 'fr': 'Chiptune espiègle d’Halloween'},
+  'music_ocean_1_name': {'es': 'Arrecife de Neón', 'en': 'Neon Reef', 'pt': 'Recife de Néon', 'de': 'Neon-Riff', 'ru': 'Неоновый риф', 'fr': 'Récif néon'},
+  'music_ocean_1_desc': {'es': 'Synth submarino y luminoso', 'en': 'Luminous underwater synth', 'pt': 'Synth submarino e luminoso', 'de': 'Leuchtender Unterwasser-Synth', 'ru': 'Светящийся подводный синт', 'fr': 'Synth sous-marin et lumineux'},
+  'music_ocean_2_name': {'es': 'Corrientes Profundas', 'en': 'Deep Currents', 'pt': 'Correntes Profundas', 'de': 'Tiefe Strömungen', 'ru': 'Глубинные течения', 'fr': 'Courants profonds'},
+  'music_ocean_2_desc': {'es': 'Lo-fi flotante entre burbujas', 'en': 'Floating lo-fi among bubbles', 'pt': 'Lo-fi flutuante entre bolhas', 'de': 'Schwebender Lo-Fi zwischen Blasen', 'ru': 'Парящий лоу-фай среди пузырьков', 'fr': 'Lo-fi flottant parmi les bulles'},
+  'music_tundra_1_name': {'es': 'Ventisca Veloz', 'en': 'Swift Blizzard', 'pt': 'Nevasca Veloz', 'de': 'Schneller Schneesturm', 'ru': 'Стремительная метель', 'fr': 'Blizzard rapide'},
+  'music_tundra_1_desc': {'es': 'Carrera trepidante sobre el hielo', 'en': 'Thrilling race over the ice', 'pt': 'Corrida emocionante sobre o gelo', 'de': 'Rasantes Rennen über das Eis', 'ru': 'Захватывающая гонка по льду', 'fr': 'Course palpitante sur la glace'},
+  'music_tundra_2_name': {'es': 'Viento Polar', 'en': 'Polar Wind', 'pt': 'Vento Polar', 'de': 'Polarwind', 'ru': 'Полярный ветер', 'fr': 'Vent polaire'},
+  'music_tundra_2_desc': {'es': 'Synth gélido y cristalino', 'en': 'Icy, crystalline synth', 'pt': 'Synth gélido e cristalino', 'de': 'Eisiger, kristallklarer Synth', 'ru': 'Ледяной кристальный синт', 'fr': 'Synth glacial et cristallin'},
+  'music_robot_city_1_name': {'es': 'Circuito Sintético', 'en': 'Synthetic Circuit', 'pt': 'Circuito Sintético', 'de': 'Synthetischer Schaltkreis', 'ru': 'Синтетическая схема', 'fr': 'Circuit synthétique'},
+  'music_robot_city_1_desc': {'es': 'Synthwave metálico de fábrica', 'en': 'Metallic factory synthwave', 'pt': 'Synthwave metálico de fábrica', 'de': 'Metallischer Fabrik-Synthwave', 'ru': 'Металлический заводской синтвейв', 'fr': 'Synthwave métallique d’usine'},
+  'music_robot_city_2_name': {'es': 'Sobrecarga', 'en': 'Overload', 'pt': 'Sobrecarga', 'de': 'Überlastung', 'ru': 'Перегрузка', 'fr': 'Surcharge'},
+  'music_robot_city_2_desc': {'es': 'Techno-pop a máxima revolución', 'en': 'Techno-pop at full throttle', 'pt': 'Techno-pop a todo vapor', 'de': 'Techno-Pop mit Vollgas', 'ru': 'Техно-поп на полную мощность', 'fr': 'Techno-pop à plein régime'},
 };

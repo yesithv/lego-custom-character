@@ -1,11 +1,11 @@
 # Términos de Uso — Run For Win
 
-> **BORRADOR.** No es asesoría legal. Revísalo y rellena los marcadores `[...]`
+> **BORRADOR.** No es asesoría legal. Revísalo (idealmente con un profesional)
 > antes de publicar.
 
-**Última actualización:** [FECHA]
-**Titular:** [TU NOMBRE O EMPRESA]
-**Contacto:** [CORREO DE CONTACTO]
+**Última actualización:** 31 de julio de 2026
+**Titular:** Yesith Valencia
+**Contacto:** yesithvalencia@gmail.com
 
 ## 1. Aceptación
 
@@ -23,7 +23,7 @@ permita.
 ## 3. Propiedad intelectual
 
 El juego, su marca "Run For Win", su estilo de bloques "Brix", personajes,
-gráficos, música y código son propiedad de [TU NOMBRE O EMPRESA] o de sus
+gráficos, música y código son propiedad de Yesith Valencia o de sus
 licenciantes, y están protegidos por las leyes aplicables.
 
 ## 4. Compras dentro de la aplicación
@@ -54,7 +54,7 @@ que esté libre de errores o interrupciones.
 
 ## 8. Limitación de responsabilidad
 
-En la medida máxima permitida por la ley aplicable, [TU NOMBRE O EMPRESA] no será
+En la medida máxima permitida por la ley aplicable, Yesith Valencia no será
 responsable de daños indirectos o incidentales derivados del uso del juego.
 
 ## 9. Cambios
@@ -64,10 +64,10 @@ de la app o en la ficha de la tienda.
 
 ## 10. Ley aplicable
 
-Estos Términos se rigen por las leyes de **[PAÍS / JURISDICCIÓN]**, sin perjuicio
+Estos Términos se rigen por las leyes de **Colombia**, sin perjuicio
 de los derechos que la ley de tu país de residencia te reconozca como consumidor.
 
 ## 11. Contacto
 
-- **Titular:** [TU NOMBRE O EMPRESA]
-- **Correo:** [CORREO DE CONTACTO]
+- **Titular:** Yesith Valencia
+- **Correo:** yesithvalencia@gmail.com

@@ -490,7 +490,11 @@ class _ProductCard extends StatelessWidget {
                     ),
                     if (product.badge != null) ...[
                       const SizedBox(width: 6),
-                      _MarketingBadge(label: product.badge!),
+                      _MarketingBadge(
+                        label: context.l10n
+                                .storeProductBadge(product.id, product.badge) ??
+                            product.badge!,
+                      ),
                     ],
                   ],
                 ),

@@ -30,7 +30,7 @@ Cómo trabajar en Run For Win (codename BrixRun): convenciones, cómo añadir fe
 flutter pub get                 # dependencias
 flutter run                     # desarrollo (elige dispositivo)
 flutter run -d chrome           # desarrollo web
-flutter analyze                 # lints (flutter_lints)
+flutter analyze                 # análisis estático (reglas por defecto del SDK; no hay analysis_options.yaml)
 flutter test                    # pruebas
 flutter build web --release --base-href "/lego-custom-character/"
 ```
@@ -45,8 +45,8 @@ flutter build web --release --base-href "/lego-custom-character/"
 - **Un usecase = una responsabilidad**, invocable con `call()`. El BLoC recibe usecases por constructor.
 - **BLoC** con el trío `Event` / `State` / `Bloc`. Estados y eventos con `Equatable`.
 - **Inyección** vía `get_it` (`sl`). Registra en `initDependencies()`: `registerLazySingleton` para datasources/repos/usecases, `registerFactory` para BLoCs.
-- **Idioma:** nombres de dominio orientados al usuario en español (coinciden con la UI); código y tipos en inglés/estilo Dart.
-- **Lints:** se usa `flutter_lints`. Ejecuta `flutter analyze` antes de subir.
+- **Idioma:** los textos visibles se traducen con el sistema i18n (`core/l10n/`), con **inglés por defecto** y detección del idioma del dispositivo. Los campos de nombre/descripción de las entidades de dominio están en español como **fuente de respaldo** (se traducen vía helpers como `worldName`, `musicName`, etc.); código y tipos en inglés/estilo Dart.
+- **Lints:** `flutter_lints` figura en `pubspec.yaml`, pero el proyecto **no tiene `analysis_options.yaml`** (decisión deliberada: activarlo saca ~28 avisos cosméticos que habría que limpiar aparte). Por eso `flutter analyze` corre con las reglas por defecto del SDK. Ejecútalo siempre antes de subir; objetivo: **0 issues**.
 
 ---
 
@@ -137,6 +137,11 @@ Registrados en `initDependencies()`. Cada `typeId` debe ser único en toda la ap
 | `CharacterAppearanceModelAdapter` | 1 | (anidado en `CharacterModel`) |
 | `WalletModelAdapter` | 2 | `wallet` |
 | `ScoreModelAdapter` | 3 | `scores` |
+| `EntitlementsModelAdapter` | 4 | `entitlements` |
+| `AnalyticsEventModelAdapter` | 5 | `analytics_events` |
+
+> **Próximo `typeId` libre: 6.** Además de las cajas de la tabla, se abren
+> `missions` (JSON `String`) y `analytics_meta` (`dynamic`), que no usan adapter.
 
 > `CharacterModel` persiste, entre otros campos, `musicTrack` (índice del enum `MusicTrack`). Al añadir campos así, actualiza el adapter a mano siguiendo el checklist de arriba.
 
@@ -171,15 +176,15 @@ El HUD y la pantalla de fin de partida son **overlays** de Flame (`hud`, `gameOv
 
 ## Audio
 
-`AudioService.instance` (singleton) reproduce efectos con un `AudioPlayer` por sonido (evita cortar efectos solapados). Métodos de efecto: `playJump`, `playCoin`, `playHit`, `playPowerup`, `playUnlock`, `playRouletteSpin`, `playChestOpen`. Para un sonido nuevo, añade el MP3 en `assets/audio/` (declarado en `pubspec.yaml`) y un método `playX()`.
+`AudioService.instance` (singleton) reproduce efectos con un `AudioPlayer` por sonido (evita cortar efectos solapados). Métodos de efecto: `playJump`, `playCoin`, `playSlide`, `playHit`, `playPowerup`, `playUnlock`, `playRouletteSpin`, `playChestOpen`, `playShield`, `playMagnet`. Los efectos son ficheros `.wav` en `assets/audio/` (declarados en `pubspec.yaml`); para un sonido nuevo, añade el WAV y un método `playX()`.
 
-La **música de fondo** usa un reproductor propio en bucle: `playMusic(asset)` / `stopMusic()`, con volumen `0.55`. `toggleMute()` silencia efectos y música (esta última en caliente, sin cortar la pista). Los MP3 de música van en `assets/audio/music/`.
+La **música de fondo** usa un reproductor propio en bucle: `playMusic(asset)` / `stopMusic()`, con volumen `0.55` (`_musicVolume`). El silencio se controla con dos banderas: `musicMuted` (solo música, alternable en caliente con `toggleMusicMute()`, sin cortar la pista) y `muteAll` (silencia todo). Los MP3 de música van en `assets/audio/music/`.
 
 ## Añadir contenido de juego
 
 - **Mundo:** añade su entrada en `world_config.dart` (`WorldColors`, incluidos colores de obstáculo), su `BossConfig` en `boss_config.dart`, y sus metadatos/estado en `world_selection_page.dart` (`WorldData`).
 - **Jefe:** cada mundo mapea a un `BossConfig` (nombre, emoji, colores y pesos de ataque). El comportamiento vive en `BossComponent`/`BossAttackComponent`; los tres tipos de ataque (`projectile`, `shockwave`, `sweep`) ya están cableados a los controles.
-- **Pista de música (por mundo):** la música es temática de cada mundo y se elige en la pantalla previa a correr. Las 3–4 pistas de cada mundo se declaran en `worldMusicCatalog` (`runner/domain/entities/world_music.dart`) y cada una tiene su WAV en `assets/audio/music/<mundo>_<n>.wav`. Los audios se sintetizan (chiptune, estilo por mundo) con `tool/gen_music.py`: edita el mapa `CATALOG`/`WORLDS`/`STYLES` del script y ejecuta `python3 tool/gen_music.py` para regenerarlos.
+- **Pista de música (por mundo):** la música es temática de cada mundo y se elige en la pantalla previa a correr. En el MVP v1 hay **2 pistas por mundo** (16 en total), declaradas en `worldMusicCatalog` (`runner/domain/entities/world_music.dart`), cada una con su MP3 en `assets/audio/music/<mundo>_<n>.mp3`. Los nombres/descripciones mostrados se traducen (claves `music_<id>_name`/`_desc`). El flujo de producción actual (Suno + REAPER) y los prompts están en [`MUSICA.md`](MUSICA.md); `tool/gen_music.py` es el sintetizador chiptune **anterior** (los audios ya no se generan con él). La v2 contempla volver a 4 pistas por mundo (ver `MUSICA.md`).
 - **Preset:** añade un `PresetCharacter` a la lista de `preset_characters.dart` con su `collection`; aparecerá automáticamente en `/presets`.
 - **Accesorio / pieza:** añade un `CatalogEntry` a `part_catalog.dart` en la ranura y rareza correctas (el coste se deriva de la rareza).
 
@@ -196,6 +201,10 @@ La **música de fondo** usa un reproductor propio en bucle: `playMusic(asset)` /
   - `music_track_test.dart` — pista heredada `MusicTrack` (persistencia/compatibilidad).
   - `world_music_test.dart` — catálogo de música temática por mundo.
   - `preset_characters_test.dart` — personajes precargados.
+  - `localization_test.dart` — detección de idioma, reserva a inglés, helpers de contenido y consistencia de las tablas de traducción (6 idiomas por clave).
+  - `reward_pools_test.dart` — pools de recompensas (ruleta/cofres).
+  - `roulette_button_test.dart` — botón de la ruleta diaria.
+  - `portrait_orientation_test.dart` — bloqueo de orientación / `PortraitGate`.
 - Ejecuta `flutter test`.
 - Al probar BLoCs, mockea los usecases/repositorios con `mocktail` y usa `blocTest` para verificar la secuencia de estados emitida.
 - Para probar el juego, `BrixRunGame` acepta `bossTriggerMeters` por constructor para provocar la pelea sin correr 2000 m reales.

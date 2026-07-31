@@ -483,7 +483,7 @@ class _MusicPanel extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                track.name,
+                                context.l10n.musicName(track),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -491,7 +491,7 @@ class _MusicPanel extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                track.description,
+                                context.l10n.musicDescription(track),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(

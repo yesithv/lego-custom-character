@@ -21,8 +21,7 @@
 > declaras como recopilación de datos por tu parte.
 
 ### Público objetivo y contenido (Google Play)
-- **Grupo de edad objetivo:** incluye **niños** (marca las franjas correspondientes,
-  p. ej. **6-8** y/o **9-12**).
+- **Grupo de edad objetivo:** incluye **niños** — franja principal **6-8**.
 - **Anuncios:** **No**.
 - **Programa "Diseñado para familias":** **Sí** (opta por él).
 
@@ -41,7 +40,7 @@
 
 ### Categoría Kids (Apple)
 - Publicar en la **categoría Kids**.
-- **Banda de edad:** **[6-8]** (o 9-11 según decidas; ver clasificación abajo).
+- **Banda de edad:** **6-8** (ver clasificación abajo).
 - Cumple los requisitos: **sin anuncios de terceros**, **sin analítica de
   terceros**, **compuerta parental** antes de compras/enlaces externos, política
   de privacidad enlazada.
@@ -75,10 +74,13 @@ Everyone / IARC equivalente**), con el aviso de "Compras integradas".
 
 ## 4. Otros datos que piden ambas fichas
 
-- **URL de política de privacidad:** [URL PÚBLICA] (usa `POLITICA-DE-PRIVACIDAD.md`).
-- **URL / correo de soporte:** [CORREO DE CONTACTO] · [URL OPCIONAL].
-- **Contacto del desarrollador:** [NOMBRE], [CORREO], [DIRECCIÓN si aplica].
+- **URL de política de privacidad:** _(pendiente: URL pública donde alojes
+  `POLITICA-DE-PRIVACIDAD.md`)_.
+- **Correo de soporte:** yesithvalencia@gmail.com · **URL de soporte:** _(opcional)_.
+- **Contacto del desarrollador:** Yesith Valencia · yesithvalencia@gmail.com
+  · dirección _(solo si la tienda la exige)_.
 - **Cuenta de prueba:** no aplica (no hay inicio de sesión).
 - **Productos IAP:** dar de alta con los mismos IDs del catálogo
   (`lib/features/monetization/domain/entities/store_product.dart`):
-  `vip_monthly`, `gems_small`, `gems_medium`, `bundle_starter` (y los que añadas).
+  `bundle_starter` (no consumible), `vip_monthly` y `vip_yearly` (suscripción),
+  `gems_small`, `gems_medium` y `gems_large` (consumibles).

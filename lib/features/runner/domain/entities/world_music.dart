@@ -11,7 +11,12 @@
 /// Los ficheros se reproducen en bucle (ver `AudioService.playMusic`), así que
 /// conviene que estén recortados para buclear sin corte perceptible.
 class WorldTrack {
+  /// Nombre en español (fuente de datos / respaldo). El nombre mostrado se
+  /// traduce por [id] con las claves `music_<id>_name` (ver AppLocalizations).
   final String name;
+
+  /// Descripción en español (respaldo). Se traduce por [id] con la clave
+  /// `music_<id>_desc`.
   final String description;
   final String emoji;
 
@@ -24,6 +29,12 @@ class WorldTrack {
     required this.emoji,
     required this.asset,
   });
+
+  /// Identificador estable de la pista, derivado del nombre del fichero de
+  /// audio (p. ej. `music/brix_city_1.mp3` → `brix_city_1`). Se usa como sufijo
+  /// de las claves de traducción `music_<id>_name` / `music_<id>_desc`.
+  String get id =>
+      asset.replaceFirst('music/', '').replaceFirst('.mp3', '');
 }
 
 /// Repertorio temático por identificador de mundo.

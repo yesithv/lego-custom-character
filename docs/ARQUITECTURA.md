@@ -11,6 +11,7 @@ Este documento describe cómo está organizado el código, las decisiones de dis
 - [Persistencia con Hive](#persistencia-con-hive)
 - [Gestión de estado (BLoC)](#gestión-de-estado-bloc)
 - [Navegación](#navegación)
+- [Internacionalización (i18n)](#internacionalización-i18n)
 - [El motor de juego (Flame)](#el-motor-de-juego-flame)
 - [Diagrama de dependencias](#diagrama-de-dependencias)
 
@@ -91,6 +92,9 @@ El BLoC recibe los usecases por constructor (no accede a repositorios directamen
 | `router/app_router.dart` | Configuración de `go_router` (rutas y redirecciones). |
 | `theme/app_theme.dart` | Temas claro/oscuro. Colores marca: amarillo Brix `#FFD700`, azul Brix `#0055A5`. Fuente `Nunito`. |
 | `services/audio_service.dart` | Singleton de audio con un `AudioPlayer` por efecto. |
+| `l10n/` | Internacionalización a mano: `AppLocalizations`/`L10n`, tablas de traducción (`app_strings.dart`, `app_strings_extra.dart`). Ver [Internacionalización (i18n)](#internacionalización-i18n). |
+| `orientation/portrait_lock.dart` | Bloqueo de orientación vertical (nativo con `SystemChrome`; en web, `PortraitGate`). |
+| `test_mode/test_mode.dart` | Interruptor global del modo de prueba (inerte en release salvo `--dart-define=BRIX_TESTMODE=true`). |
 | `error/failures.dart` | Tipos de fallo para el manejo de errores. |
 
 ---
@@ -102,8 +106,8 @@ Se usa **`get_it`** como *service locator*, expuesto como `sl` (`final sl = GetI
 Orden dentro de `initDependencies()`:
 
 1. `await Hive.initFlutter()`.
-2. Registrar los `TypeAdapter` (`CharacterModelAdapter`, `CharacterAppearanceModelAdapter`, `WalletModelAdapter`, `ScoreModelAdapter`).
-3. Abrir las cajas (`characters`, `wallet`, `missions`, `scores`).
+2. Registrar los `TypeAdapter` (`CharacterModelAdapter`, `CharacterAppearanceModelAdapter`, `WalletModelAdapter`, `ScoreModelAdapter`, `EntitlementsModelAdapter`, `AnalyticsEventModelAdapter`).
+3. Abrir las cajas (`characters`, `wallet`, `missions`, `scores`, `entitlements`, `analytics_events`, `analytics_meta`).
 4. Registrar, por feature: datasource → repository → usecases → BLoC.
 
 Convenciones de registro:
@@ -132,8 +136,13 @@ Cajas abiertas y su contenido:
 | `wallet` | `WalletModel` | Monedas, piezas desbloqueadas, streak, fechas de ruleta/juego. |
 | `missions` | `String` | JSON serializado de las 3 misiones activas (clave `active`). |
 | `scores` | `ScoreModel` | Puntuaciones del ranking. |
+| `entitlements` | `EntitlementsModel` | Gemas, `totalGemsEarned`, suscripción VIP, cosméticos poseídos, `adsRemoved` (vestigial). |
+| `analytics_events` | `AnalyticsEventModel` | Eventos de analítica first-party (local). |
+| `analytics_meta` | `dynamic` | Metadatos de analítica (primera apertura, días activos, etc.). |
 
 Nótese que `missions` guarda **JSON como String** en vez de un modelo Hive: la entidad `Mission` implementa `toJson`/`fromJson` y el repositorio serializa la lista completa.
+
+Los `typeId` en uso son `0–5` (Character 0, CharacterAppearance 1, Wallet 2, Score 3, Entitlements 4, AnalyticsEvent 5); el próximo libre es **6**.
 
 ---
 
@@ -167,11 +176,46 @@ Un caso especial: **`BrixRunGame` es un `FlameGame with ChangeNotifier`**. El HU
 | `/wallet` | `wallet` | Billetera: resumen de la economía (se abre al tocar las monedas en Home). |
 | `/store` | `store` | Tienda IAP (packs de gemas, VIP, pack de bienvenida). |
 | `/gems` | `gems` | Canjería de gemas (cosméticos exclusivos + monedas). |
+| `/debug/analytics` | `analytics-debug` | Panel de depuración de la analítica local (accesible desde la hoja del modo de prueba). |
 | `/pre-run` | `pre-run` | Pantalla previa a la carrera. |
 | `/runner` | `runner` | La partida (Flame). |
 | `/ranking/:worldId` | `ranking` | Ranking de un mundo. |
 
 **Detalle importante sobre `extra`:** `/pre-run` y `/runner` reciben datos (personaje, mundo, color, etc.) vía `state.extra`, que es efímero y se pierde al refrescar el navegador o entrar por URL directa. Por eso hay un `redirect` que devuelve a `/` (home) si esas rutas se abren sin `extra`. `errorBuilder` también cae en el home.
+
+---
+
+## Internacionalización (i18n)
+
+La localización está **escrita a mano** (sin `intl`/`gen_l10n`, en línea con el
+resto del proyecto). Vive en `lib/core/l10n/`:
+
+- **`app_strings.dart` / `app_strings_extra.dart`** — tablas `clave → { código-idioma → texto }`.
+  Cada clave trae los **6 idiomas** soportados. `app_strings_extra.dart` agrupa el
+  contenido "de catálogo" (opciones del editor, misiones, accesorios, productos y
+  pistas de música).
+- **`app_localizations.dart`** — dos APIs:
+  - `AppLocalizations` (basada en `BuildContext`): `context.l10n.tr('clave')`,
+    `trp` (con sustitución de `{marcadores}`) y **helpers de contenido tipado**
+    (`worldName`, `worldDescription`, `bossName`, `partName`, `missionTitle`,
+    `storeProductTitle`/`storeProductBadge`, `musicName`/`musicDescription`, …),
+    que traducen entidades cuyos campos de respaldo están en español.
+  - `L10n` (acceso **global**, sin `BuildContext`): para la capa del juego (Flame),
+    que no tiene contexto. El delegado mantiene `L10n.language` en sincronía con
+    `MaterialApp` en cada carga de locale.
+
+**Idiomas soportados:** inglés (`en`), español (`es`), portugués (`pt`), alemán
+(`de`), ruso (`ru`) y francés (`fr`) — `kSupportedLanguages` en `app_strings.dart`.
+
+**Idioma por defecto / de reserva: inglés** (`kFallbackLanguage = 'en'`). Si una
+clave no existe en el idioma activo, cae a inglés y, si tampoco existe, devuelve
+la propia clave.
+
+**Detección del idioma:** `MaterialApp.router` usa `localeListResolutionCallback`
+(en `main.dart`), que delega en `AppLocalizations.resolveLanguage(deviceLocales)`:
+recorre los idiomas del dispositivo en orden de preferencia y elige el primero
+soportado (comparando solo `languageCode`, así `pt_BR`/`pt_PT` → `pt`); si ninguno
+coincide, cae a inglés.
 
 ---
 

@@ -1,11 +1,11 @@
 # Política de Privacidad — Run For Win
 
-> **BORRADOR.** No es asesoría legal. Revísalo antes de publicar. Rellena los
-> marcadores `[...]`. Publícalo en una **URL pública** (la piden ambas tiendas).
+> **BORRADOR.** No es asesoría legal. Revísalo (idealmente con un profesional)
+> antes de publicar. Publícalo en una **URL pública** (la piden ambas tiendas).
 
-**Última actualización:** [FECHA]
-**Responsable:** [TU NOMBRE O EMPRESA]
-**Contacto:** [CORREO DE CONTACTO]
+**Última actualización:** 31 de julio de 2026
+**Responsable:** Yesith Valencia
+**Contacto:** yesithvalencia@gmail.com
 
 ## Resumen para padres y madres
 
@@ -81,7 +81,7 @@ Los padres, madres o tutores pueden en cualquier momento:
 
 - **Borrar todos los datos** desinstalando la app o borrando sus datos desde los
   ajustes del dispositivo.
-- **Escribirnos** a [CORREO DE CONTACTO] con cualquier duda o solicitud.
+- **Escribirnos** a yesithvalencia@gmail.com con cualquier duda o solicitud.
 
 ## 8. Seguridad
 
@@ -95,11 +95,11 @@ cambios importantes se anunciarán dentro de la app o en la ficha de la tienda.
 
 ## 10. Contacto
 
-- **Responsable:** [TU NOMBRE O EMPRESA]
-- **Correo:** [CORREO DE CONTACTO]
-- **Dirección:** [OPCIONAL]
+- **Responsable:** Yesith Valencia
+- **Correo:** yesithvalencia@gmail.com
+- **Dirección:** _(opcional; no se publica salvo que la tienda la exija)_
 
 ---
 
-_Documento redactado como borrador para "Run For Win". Ajusta la jurisdicción y
-los datos de contacto, y valida el texto legalmente antes de publicarlo._
+_Documento redactado como borrador para "Run For Win" (jurisdicción: Colombia).
+Valida el texto legalmente antes de publicarlo._
