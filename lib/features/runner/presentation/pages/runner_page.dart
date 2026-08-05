@@ -15,6 +15,7 @@ import '../../../../core/services/audio_service.dart';
 import '../../../analytics/domain/analytics_service.dart';
 import '../../../analytics/domain/entities/analytics_event.dart';
 import '../../../character_editor/domain/entities/character.dart';
+import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../economy/presentation/bloc/wallet_bloc.dart';
 import '../../../economy/presentation/bloc/wallet_event.dart';
 import '../../../economy/presentation/bloc/wallet_state.dart';
@@ -31,6 +32,7 @@ import '../../../ranking/presentation/bloc/ranking_bloc.dart';
 import '../../../ranking/presentation/bloc/ranking_event.dart';
 import '../../../ranking/presentation/bloc/ranking_state.dart';
 import '../game/brix_run_game.dart';
+import 'world_selection_page.dart';
 
 class RunnerPage extends StatefulWidget {
   final Character character;
@@ -246,6 +248,7 @@ class _RunnerPageState extends State<RunnerPage> {
                     BlocBuilder<MissionBloc, MissionState>(
                       builder: (context, missionState) => _GameOverOverlay(
                         game: game,
+                        character: widget.character,
                         completedMissions: missionState.justCompleted,
                         worldId: widget.worldId,
                         worldName: widget.worldName,
@@ -1035,6 +1038,7 @@ class _PauseOverlay extends StatelessWidget {
 
 class _GameOverOverlay extends StatelessWidget {
   final BrixRunGame game;
+  final Character character;
   final List<Mission> completedMissions;
   final String worldId;
   final String worldName;
@@ -1045,6 +1049,7 @@ class _GameOverOverlay extends StatelessWidget {
 
   const _GameOverOverlay({
     required this.game,
+    required this.character,
     required this.completedMissions,
     required this.worldId,
     required this.worldName,
@@ -1057,161 +1062,554 @@ class _GameOverOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.78),
-      child: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-            padding: const EdgeInsets.fromLTRB(22, 26, 22, 18),
-            decoration: BoxDecoration(
-              color: const Color(0xFF152238),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFFFFD700), width: 2),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.tr('keep_creating'),
-                  style: const TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.tr('almost_podium'),
-                  style: const TextStyle(color: Colors.white60, fontSize: 14),
-                ),
-                const SizedBox(height: 20),
-
-                // Estadísticas de la carrera
-                Row(
+      // Ocupa toda la pantalla con un degradado del color del mundo apagado
+      // hacia negro: hermano de la pantalla de victoria pero en tono sombrío.
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(worldColor, Colors.black, 0.35)!,
+            Color.lerp(worldColor, Colors.black, 0.64)!,
+            const Color(0xFF0A0F1A),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: _StatBox(
-                        icon: '📏',
-                        value: _fmtNum(game.meters),
-                        label: context.l10n.tr('stat_meters'),
+                    const SizedBox(height: 14),
+                    Text(
+                      context.l10n.tr('keep_creating'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 30,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatBox(
-                        icon: '🪙',
-                        value: _fmtNum(game.coins),
-                        label: context.l10n.tr('stat_coins'),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.tr('almost_podium'),
+                      style:
+                          const TextStyle(color: Colors.white60, fontSize: 14),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Héroe: personaje que corrió la carrera + marcador.
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _CharacterPedestal(
+                            character: character,
+                            worldColor: worldColor,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _WideStatBox(
+                                  icon: '⭐',
+                                  label: context.l10n.tr('stat_points'),
+                                  value: _fmtNum(game.score),
+                                  valueColor: const Color(0xFFFFD700),
+                                ),
+                                const SizedBox(height: 10),
+                                _WideStatBox(
+                                  icon: '🪙',
+                                  label: context.l10n.tr('stat_coins'),
+                                  value: _fmtNum(game.coins),
+                                ),
+                                const SizedBox(height: 10),
+                                _WideStatBox(
+                                  icon: '📏',
+                                  label: context.l10n.tr('stat_meters'),
+                                  value: _fmtNum(game.meters),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatBox(
-                        icon: '⭐',
-                        value: _fmtNum(game.score),
-                        label: context.l10n.tr('stat_points'),
-                      ),
+                    const SizedBox(height: 14),
+
+                    // Zona alcanzada + récord personal.
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _ZoneBadge(zone: game.currentZone),
+                        BlocBuilder<RankingBloc, RankingState>(
+                          builder: (context, rankingState) {
+                            if (rankingState.scores.isEmpty ||
+                                rankingState.worldId != worldId) {
+                              return const SizedBox.shrink();
+                            }
+                            final pb = rankingState.scores.first.score;
+                            final isNew = game.score >= pb;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 12),
+                              child: isNew
+                                  ? Text(
+                                      '🎉 ${context.l10n.tr('new_record')}',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD700),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                      ),
+                                    )
+                                  : Text(
+                                      '🥇 ${context.l10n.trp('record_pts', {
+                                            'pb': pb
+                                          })}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 18),
+
+                    // Mini-ranking local del mundo con tu posición resaltada.
+                    _MiniRanking(
+                      worldId: worldId,
+                      currentScore: game.score,
+                      currentName: character.name,
+                    ),
+
+                    // Progreso hacia desbloquear el siguiente mundo.
+                    _NextWorldProgress(worldColor: worldColor),
+
+                    if (completedMissions.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '🎯 ${context.l10n.tr('missions_completed')}',
+                          style: TextStyle(
+                            color: Colors.green.shade300,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ...completedMissions
+                          .map((m) => MissionCard(mission: m, compact: true)),
+                    ],
+                    const SizedBox(height: 20),
                   ],
                 ),
-                const SizedBox(height: 16),
+              ),
+            ),
 
-                // Zona alcanzada + récord personal
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _ZoneBadge(zone: game.currentZone),
-                    BlocBuilder<RankingBloc, RankingState>(
-                      builder: (context, rankingState) {
-                        if (rankingState.scores.isEmpty ||
-                            rankingState.worldId != worldId) {
-                          return const SizedBox.shrink();
-                        }
-                        final pb = rankingState.scores.first.score;
-                        final isNew = game.score >= pb;
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 12),
-                          child: isNew
-                              ? Text(
-                                  '🎉 ${context.l10n.tr('new_record')}',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFD700),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                  ),
-                                )
-                              : Text(
-                                  '🥇 ${context.l10n.trp('record_pts', {
-                                        'pb': pb
-                                      })}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                        );
+            // Acciones fijas abajo.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 6, 22, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _GoldActionButton(
+                    icon: Icons.replay_rounded,
+                    label: context.l10n.tr('play_again'),
+                    onTap: onRestart,
+                  ),
+                  const SizedBox(height: 12),
+                  _DarkActionButton(
+                    icon: Icons.map_rounded,
+                    label: context.l10n.tr('choose_world'),
+                    onTap: onExit,
+                  ),
+                  const SizedBox(height: 4),
+                  TextButton(
+                    onPressed: () => context.goNamed(
+                      'ranking',
+                      pathParameters: {'worldId': worldId},
+                      extra: {
+                        'worldName': worldName,
+                        'worldEmoji': worldEmoji,
+                        'worldColor': worldColor,
                       },
                     ),
-                  ],
-                ),
-
-                if (completedMissions.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
                     child: Text(
-                      '🎯 ${context.l10n.tr('missions_completed')}',
-                      style: TextStyle(
-                        color: Colors.green.shade300,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                      '🏆  ${context.l10n.tr('view_ranking_short')}',
+                      style: const TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  ...completedMissions
-                      .map((m) => MissionCard(mission: m, compact: true)),
+                  const _ShopNudge(),
                 ],
-                const SizedBox(height: 22),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-                _GoldActionButton(
-                  icon: Icons.replay_rounded,
-                  label: context.l10n.tr('play_again'),
-                  onTap: onRestart,
-                ),
-                const SizedBox(height: 14),
-                _DarkActionButton(
-                  icon: Icons.map_rounded,
-                  label: context.l10n.tr('choose_world'),
-                  onTap: onExit,
-                ),
-                const SizedBox(height: 6),
-                TextButton(
-                  onPressed: () => context.goNamed(
-                    'ranking',
-                    pathParameters: {'worldId': worldId},
-                    extra: {
-                      'worldName': worldName,
-                      'worldEmoji': worldEmoji,
-                      'worldColor': worldColor,
-                    },
-                  ),
-                  child: Text(
-                    '🏆  ${context.l10n.tr('view_ranking_short')}',
-                    style: const TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const _ShopNudge(),
+/// Personaje que corrió la carrera sobre un pedestal con foco, con su nombre.
+class _CharacterPedestal extends StatelessWidget {
+  final Character character;
+  final Color worldColor;
+
+  const _CharacterPedestal({required this.character, required this.worldColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0, -0.2),
+              radius: 0.9,
+              colors: [
+                Colors.white.withValues(alpha: 0.14),
+                Colors.white.withValues(alpha: 0.02),
               ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: CharacterPreview(
+            appearance: character.appearance,
+            size: 92,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 128),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          decoration: BoxDecoration(
+            color: Color.lerp(worldColor, Colors.white, 0.16)!,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            character.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 13,
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Caja de estadística horizontal (icono + etiqueta a la izquierda, valor a la
+/// derecha) para el marcador junto al personaje.
+class _WideStatBox extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _WideStatBox({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor = Colors.white,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white60,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: valueColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mini-ranking local del mundo: top 3 con la carrera recién jugada resaltada.
+/// Si tu mejor marca queda fuera del top 3, se añade tu fila con su puesto real.
+class _MiniRanking extends StatelessWidget {
+  final String worldId;
+  final int currentScore;
+  final String currentName;
+
+  const _MiniRanking({
+    required this.worldId,
+    required this.currentScore,
+    required this.currentName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RankingBloc, RankingState>(
+      builder: (context, state) {
+        if (state.worldId != worldId || state.scores.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        // El repositorio devuelve las puntuaciones de mayor a menor; se ordena
+        // de forma defensiva por si acaso.
+        final ranked = [...state.scores]
+          ..sort((a, b) => b.score.compareTo(a.score));
+        // La carrera recién jugada ya está en la lista (se envió al terminar).
+        // Se localiza por la primera coincidencia de puntuación y nombre.
+        final youIndex = ranked.indexWhere(
+          (s) => s.score == currentScore && s.characterName == currentName,
+        );
+
+        final rows = <Widget>[];
+        for (var i = 0; i < ranked.length && i < 3; i++) {
+          rows.add(_row(context, i + 1, ranked[i], i == youIndex));
+        }
+        // Tu fila, si quedó fuera del top 3.
+        if (youIndex >= 3) {
+          rows.add(const Padding(
+            padding: EdgeInsets.symmetric(vertical: 2),
+            child: Text('⋯',
+                style: TextStyle(color: Colors.white38, fontSize: 14)),
+          ));
+          rows.add(_row(context, youIndex + 1, ranked[youIndex], true));
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '🏆 ${context.l10n.tr('world_ranking')}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            ...rows,
+            const SizedBox(height: 18),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _row(BuildContext context, int rank, Score s, bool isYou) {
+    final medal = switch (rank) {
+      1 => '🥇',
+      2 => '🥈',
+      3 => '🥉',
+      _ => '$rank',
+    };
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: isYou
+            ? const Color(0xFFFFD700).withValues(alpha: 0.16)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isYou ? const Color(0xFFFFD700) : Colors.white12,
+          width: isYou ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 26,
+            child: Text(
+              medal,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isYou
+                  ? '${s.characterName} · ${context.l10n.tr('you')}'
+                  : s.characterName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isYou ? const Color(0xFFFFD700) : Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Text(
+            _fmtNum(s.score),
+            style: const TextStyle(
+              color: Color(0xFFFFD700),
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Text('⭐', style: TextStyle(fontSize: 11)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Barra de progreso hacia el siguiente mundo bloqueado (según las monedas
+/// totales ganadas). Motiva a seguir jugando sin presionar a comprar.
+class _NextWorldProgress extends StatelessWidget {
+  final Color worldColor;
+
+  const _NextWorldProgress({required this.worldColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, state) {
+        final earned = state.wallet.totalCoinsEarned;
+        final locked = worlds
+            .where((w) =>
+                w.status == WorldStatus.locked && earned < w.unlockCost)
+            .toList()
+          ..sort((a, b) => a.unlockCost.compareTo(b.unlockCost));
+
+        if (locked.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: Text(
+              '🌍 ${context.l10n.tr('all_worlds_unlocked')}',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          );
+        }
+
+        final next = locked.first;
+        final remaining = (next.unlockCost - earned).clamp(0, next.unlockCost);
+        final progress =
+            (earned / next.unlockCost).clamp(0.0, 1.0).toDouble();
+        final accent = Color.lerp(next.color, Colors.white, 0.35)!;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${next.emoji} ${context.l10n.trp('next_world_progress', {
+                            'name': context.l10n.worldName(next.id),
+                          })}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.l10n.trp('coins_to_next_world', {
+                      'remaining': _fmtNum(remaining),
+                    }),
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 12,
+                      width: double.infinity,
+                      color: Colors.white.withValues(alpha: 0.10),
+                    ),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress,
+                      child: Container(
+                        height: 12,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [accent, next.color],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
