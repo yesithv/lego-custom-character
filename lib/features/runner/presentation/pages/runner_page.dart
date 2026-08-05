@@ -1183,13 +1183,6 @@ class _GameOverOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
 
-                    // Mini-ranking local del mundo con tu posición resaltada.
-                    _MiniRanking(
-                      worldId: worldId,
-                      currentScore: game.score,
-                      currentName: character.name,
-                    ),
-
                     // Progreso hacia desbloquear el siguiente mundo.
                     _NextWorldProgress(worldColor: worldColor),
 
@@ -1216,45 +1209,17 @@ class _GameOverOverlay extends StatelessWidget {
               ),
             ),
 
-            // Acciones fijas abajo.
+            // Acciones fijas abajo: una sola fila estilo Subway Surfers
+            // (cuadros compactos de icono + botón grande de "Play again").
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 6, 22, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _GoldActionButton(
-                    icon: Icons.replay_rounded,
-                    label: context.l10n.tr('play_again'),
-                    onTap: onRestart,
-                  ),
-                  const SizedBox(height: 12),
-                  _DarkActionButton(
-                    icon: Icons.map_rounded,
-                    label: context.l10n.tr('choose_world'),
-                    onTap: onExit,
-                  ),
-                  const SizedBox(height: 4),
-                  TextButton(
-                    onPressed: () => context.goNamed(
-                      'ranking',
-                      pathParameters: {'worldId': worldId},
-                      extra: {
-                        'worldName': worldName,
-                        'worldEmoji': worldEmoji,
-                        'worldColor': worldColor,
-                      },
-                    ),
-                    child: Text(
-                      '🏆  ${context.l10n.tr('view_ranking_short')}',
-                      style: const TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const _ShopNudge(),
-                ],
+              child: _RunEndActions(
+                worldId: worldId,
+                worldName: worldName,
+                worldEmoji: worldEmoji,
+                worldColor: worldColor,
+                onRestart: onRestart,
+                onChooseWorld: onExit,
               ),
             ),
           ],
@@ -1373,200 +1338,6 @@ class _WideStatBox extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Mini-ranking local del mundo: top 3 con la carrera recién jugada resaltada.
-/// Si tu mejor marca queda fuera del top 3, se añade tu fila con su puesto real.
-class _MiniRanking extends StatelessWidget {
-  final String worldId;
-  final int currentScore;
-  final String currentName;
-
-  const _MiniRanking({
-    required this.worldId,
-    required this.currentScore,
-    required this.currentName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<RankingBloc, RankingState>(
-      builder: (context, state) {
-        if (state.worldId != worldId || state.scores.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        // El repositorio devuelve las puntuaciones de mayor a menor; se ordena
-        // de forma defensiva por si acaso.
-        final ranked = [...state.scores]
-          ..sort((a, b) => b.score.compareTo(a.score));
-        // La carrera recién jugada ya está en la lista (se envió al terminar).
-        // Se localiza por la primera coincidencia de puntuación y nombre.
-        final youIndex = ranked.indexWhere(
-          (s) => s.score == currentScore && s.characterName == currentName,
-        );
-
-        final appearances = state.appearancesByName;
-        final rows = <Widget>[];
-        for (var i = 0; i < ranked.length && i < 3; i++) {
-          rows.add(_row(context, i + 1, ranked[i], i == youIndex, appearances));
-        }
-        // Tu fila, si quedó fuera del top 3.
-        if (youIndex >= 3) {
-          rows.add(const Padding(
-            padding: EdgeInsets.symmetric(vertical: 2),
-            child: Text('⋯',
-                style: TextStyle(color: Colors.white38, fontSize: 14)),
-          ));
-          rows.add(
-              _row(context, youIndex + 1, ranked[youIndex], true, appearances));
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                '🏆 ${context.l10n.tr('world_ranking')}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            ...rows,
-            const SizedBox(height: 18),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _row(
-    BuildContext context,
-    int rank,
-    Score s,
-    bool isYou,
-    Map<String, CharacterAppearance> appearancesByName,
-  ) {
-    final medal = switch (rank) {
-      1 => '🥇',
-      2 => '🥈',
-      3 => '🥉',
-      _ => '$rank',
-    };
-    final name = s.characterName.isEmpty
-        ? context.l10n.tr('default_runner')
-        : s.characterName;
-    final appearance = appearancesByName[s.characterName];
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isYou
-            ? const Color(0xFFFFD700).withValues(alpha: 0.16)
-            : Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isYou ? const Color(0xFFFFD700) : Colors.white12,
-          width: isYou ? 1.5 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 22,
-            child: Text(
-              medal,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Mini-figura real del personaje (misma fuente que el podio del
-          // ranking); si no hay apariencia, círculo con la inicial.
-          _RankAvatar(name: name, appearance: appearance),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isYou ? '$name · ${context.l10n.tr('you')}' : name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isYou ? const Color(0xFFFFD700) : Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          Text(
-            _fmtNum(s.score),
-            style: const TextStyle(
-              color: Color(0xFFFFD700),
-              fontWeight: FontWeight.w900,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(width: 4),
-          const Text('⭐', style: TextStyle(fontSize: 11)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Avatar compacto de una fila del mini-ranking: la mini-figura real del
-/// personaje (misma fuente que el podio del ranking) o, si no hay apariencia
-/// guardada para ese nombre, un círculo de color con la inicial.
-class _RankAvatar extends StatelessWidget {
-  final String name;
-  final CharacterAppearance? appearance;
-
-  const _RankAvatar({required this.name, required this.appearance});
-
-  static const _avatarColors = [
-    Color(0xFF9C27B0),
-    Color(0xFF2196F3),
-    Color(0xFF43A047),
-    Color(0xFFFB8C00),
-    Color(0xFFE53935),
-    Color(0xFF26A69A),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    if (appearance != null) {
-      return SizedBox(
-        width: 30,
-        height: 36,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: CharacterPreview(appearance: appearance!, size: 40),
-        ),
-      );
-    }
-    final initial = (name.isEmpty ? '?' : name).characters.first.toUpperCase();
-    final color = _avatarColors[name.hashCode.abs() % _avatarColors.length];
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      alignment: Alignment.center,
-      child: Text(
-        initial,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: 14,
-        ),
       ),
     );
   }
@@ -2147,6 +1918,116 @@ class _DarkActionButton extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Barra de acciones al terminar una carrera, en una sola fila estilo Subway
+/// Surfers: cuadros compactos de icono para las acciones secundarias (elegir
+/// mundo · ranking · tienda) + un botón grande y protagonista de "Play again".
+///
+/// Se deja como widget reutilizable para poder aplicarla o intercambiarla en
+/// otras pantallas de fin de carrera sin duplicar el layout.
+class _RunEndActions extends StatelessWidget {
+  final String worldId;
+  final String worldName;
+  final String worldEmoji;
+  final Color worldColor;
+  final VoidCallback onRestart;
+  final VoidCallback onChooseWorld;
+
+  const _RunEndActions({
+    required this.worldId,
+    required this.worldName,
+    required this.worldEmoji,
+    required this.worldColor,
+    required this.onRestart,
+    required this.onChooseWorld,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _SquareActionButton(
+          icon: Icons.map_rounded,
+          tooltip: context.l10n.tr('choose_world'),
+          onTap: onChooseWorld,
+        ),
+        const SizedBox(width: 10),
+        _SquareActionButton(
+          icon: Icons.emoji_events_rounded,
+          tooltip: context.l10n.tr('view_ranking_short'),
+          onTap: () => context.goNamed(
+            'ranking',
+            pathParameters: {'worldId': worldId},
+            extra: {
+              'worldName': worldName,
+              'worldEmoji': worldEmoji,
+              'worldColor': worldColor,
+            },
+          ),
+        ),
+        const SizedBox(width: 10),
+        _SquareActionButton(
+          icon: Icons.storefront_rounded,
+          tooltip: context.l10n.tr('run_shop_cta'),
+          onTap: () => context.pushNamed('store'),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _GoldActionButton(
+            icon: Icons.replay_rounded,
+            label: context.l10n.tr('play_again'),
+            onTap: onRestart,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Cuadro compacto de acción secundaria: solo un icono centrado, con la misma
+/// altura (56) que el botón grande de "Play again" para que la fila quede
+/// alineada. El texto se expone vía [Tooltip]/[Semantics] para accesibilidad,
+/// sin ocupar espacio visible.
+class _SquareActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _SquareActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        child: Material(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Container(
+              width: 54,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white24, width: 1.5),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
           ),
         ),
       ),
