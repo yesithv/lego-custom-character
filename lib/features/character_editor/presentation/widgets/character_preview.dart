@@ -10,19 +10,25 @@ class CharacterPreview extends StatelessWidget {
   final CharacterAppearance appearance;
   final double size;
 
+  /// Cuando es `true` solo se dibuja la cabeza (con pelo/casco/sombrero y cara),
+  /// sobre un lienzo cuadrado `size × size`. Útil para avatares pequeños, p. ej.
+  /// las filas del ranking. Por defecto se dibuja el minifigure completo.
+  final bool headOnly;
+
   const CharacterPreview({
     super.key,
     required this.appearance,
     this.size = 200,
+    this.headOnly = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: size,
-      height: size * 1.6,
+      height: headOnly ? size : size * 1.6,
       child: CustomPaint(
-        painter: _CharacterPainter(appearance),
+        painter: _CharacterPainter(appearance, headOnly: headOnly),
       ),
     );
   }
@@ -30,8 +36,9 @@ class CharacterPreview extends StatelessWidget {
 
 class _CharacterPainter extends CustomPainter {
   final CharacterAppearance appearance;
+  final bool headOnly;
 
-  _CharacterPainter(this.appearance);
+  _CharacterPainter(this.appearance, {this.headOnly = false});
 
   // Layout (computed once per paint)
   late double w, h;
@@ -54,6 +61,23 @@ class _CharacterPainter extends CustomPainter {
     torsoColor = torsoColorFor(appearance.torso);
     legColor = legColorFor(appearance.legDesign);
     shoeColor = shoeColorFor(appearance.shoes, skin);
+
+    // Modo solo-cabeza: el lienzo es cuadrado y la cabeza lo llena casi entero.
+    // Se dibuja únicamente el grupo de la cabeza y se omite el cuerpo.
+    if (headOnly) {
+      headSize = w * 0.82;
+      headTop = h * 0.10;
+      hx = (w - headSize) / 2;
+
+      _drawHeadBlock(canvas);
+      _drawEyes(canvas, hx, headTop, headSize, skin);
+      _drawEyebrows(canvas, hx, headTop, headSize);
+      _drawMouth(canvas, hx, headTop, headSize);
+      _drawFacialExtra(canvas, hx, headTop, headSize);
+      _drawHeadwear(canvas);
+      _drawFaceAccessory(canvas);
+      return;
+    }
 
     headSize = w * 0.50;
     headTop = h * 0.04;
@@ -3180,5 +3204,5 @@ class _CharacterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CharacterPainter oldDelegate) =>
-      oldDelegate.appearance != appearance;
+      oldDelegate.appearance != appearance || oldDelegate.headOnly != headOnly;
 }
