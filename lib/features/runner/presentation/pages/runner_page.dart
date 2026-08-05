@@ -1380,7 +1380,10 @@ class _NextWorldProgress extends StatelessWidget {
         final remaining = (next.unlockCost - earned).clamp(0, next.unlockCost);
         final progress =
             (earned / next.unlockCost).clamp(0.0, 1.0).toDouble();
-        final accent = Color.lerp(next.color, Colors.white, 0.45)!;
+        // Relleno claro y bien saturado (no se apaga hacia el color oscuro del
+        // mundo) para que resalte sobre el track.
+        final fillLight = Color.lerp(next.color, Colors.white, 0.72)!;
+        final fillDark = Color.lerp(next.color, Colors.white, 0.28)!;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 18),
@@ -1417,36 +1420,39 @@ class _NextWorldProgress extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // Barra más alta y con brillo del color del mundo para que se
-              // note bien sobre el fondo oscuro.
+              // Barra alta y nítida: track gris claro con borde marcado (define
+              // bien la extensión total) y relleno claro y brillante encima. Sin
+              // desenfoque, para que se lea limpia sobre el fondo oscuro.
               Container(
-                decoration: BoxDecoration(
+                height: 18,
+                width: double.infinity,
+                // El borde va como foregroundDecoration para que quede SIEMPRE
+                // encima del relleno y no lo tape.
+                foregroundDecoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: next.color.withValues(alpha: 0.55),
-                      blurRadius: 14,
-                      spreadRadius: 0.5,
-                    ),
-                  ],
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.32),
+                    width: 1,
+                  ),
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Stack(
                     children: [
-                      Container(
-                        height: 16,
-                        width: double.infinity,
-                        color: Colors.white.withValues(alpha: 0.18),
-                      ),
                       FractionallySizedBox(
                         alignment: Alignment.centerLeft,
-                        widthFactor: progress,
+                        // Mínimo visible para que el avance se note aunque sea
+                        // bajo.
+                        widthFactor: progress.clamp(0.06, 1.0).toDouble(),
                         child: Container(
-                          height: 16,
+                          height: 18,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [accent, next.color],
+                              colors: [fillLight, fillDark],
                             ),
                           ),
                         ),
@@ -2174,7 +2180,7 @@ class _SquareActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Container(
-              height: 60,
+              height: 66,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
               alignment: Alignment.center,
               decoration: BoxDecoration(
@@ -2185,7 +2191,7 @@ class _SquareActionButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: Colors.white, size: 24),
+                  Icon(icon, color: Colors.white, size: 22),
                   const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
