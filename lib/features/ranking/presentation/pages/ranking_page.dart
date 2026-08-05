@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../character_editor/domain/entities/character.dart';
+import '../../../character_editor/presentation/widgets/character_preview.dart';
 import '../../../runner/presentation/pages/world_selection_page.dart' show worlds, WorldData;
 import '../../domain/entities/score.dart';
 import '../bloc/ranking_bloc.dart';
@@ -154,18 +156,32 @@ class _RankingViewState extends State<_RankingView> {
                       return _EmptyState(period: _period);
                     }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.horizontal, 0, AppSpacing.horizontal, 20),
-                      itemCount: scores.length,
-                      itemBuilder: (context, i) {
-                        final score = scores[i];
-                        final rank = i + 1;
-                        return _ScoreRow(
-                          rank: rank,
-                          score: score,
-                        );
-                      },
+                    return Column(
+                      children: [
+                        // Podio con cajitas, medallas y los personajes reales
+                        // (1º, 2º y 3º) de este mundo.
+                        _Podium(
+                          scores: scores,
+                          appearancesByName: state.appearancesByName,
+                        ),
+                        // Lista completa debajo del podio.
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.horizontal, 4, AppSpacing.horizontal,
+                                20),
+                            itemCount: scores.length,
+                            itemBuilder: (context, i) {
+                              final score = scores[i];
+                              final rank = i + 1;
+                              return _ScoreRow(
+                                rank: rank,
+                                score: score,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -392,6 +408,227 @@ class _WorldChip extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Podio (top 3 con cajitas, medallas y personajes) ─────────────────────────
+
+class _Podium extends StatelessWidget {
+  final List<Score> scores;
+  final Map<String, CharacterAppearance> appearancesByName;
+
+  const _Podium({required this.scores, required this.appearancesByName});
+
+  // Tamaño idéntico del personaje en los tres puestos (requisito): la jerarquía
+  // la dan las cajitas, no la figura.
+  static const double _figureSize = 74;
+
+  @override
+  Widget build(BuildContext context) {
+    // scores[0..2] = 1º, 2º, 3º. El montaje visual es 2 · 1 · 3.
+    final first = scores.isNotEmpty ? scores[0] : null;
+    final second = scores.length > 1 ? scores[1] : null;
+    final third = scores.length > 2 ? scores[2] : null;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.horizontal, 0, AppSpacing.horizontal, 4),
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: _PodiumSpot(
+              rank: 2,
+              score: second,
+              appearance:
+                  second == null ? null : appearancesByName[second.characterName],
+              figureSize: _figureSize,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _PodiumSpot(
+              rank: 1,
+              score: first,
+              appearance:
+                  first == null ? null : appearancesByName[first.characterName],
+              figureSize: _figureSize,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _PodiumSpot(
+              rank: 3,
+              score: third,
+              appearance:
+                  third == null ? null : appearancesByName[third.characterName],
+              figureSize: _figureSize,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PodiumSpot extends StatelessWidget {
+  final int rank; // 1, 2 o 3
+  final Score? score; // null → puesto vacío (aún no hay 2º/3º)
+  final CharacterAppearance? appearance; // null → fallback de color
+  final double figureSize;
+
+  const _PodiumSpot({
+    required this.rank,
+    required this.score,
+    required this.appearance,
+    required this.figureSize,
+  });
+
+  static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
+
+  // Altura de la cajita por puesto: 1º la más alta.
+  static const _boxHeights = {1: 76.0, 2: 56.0, 3: 44.0};
+
+  // Degradado de la cajita estilo podio (oro / plata / bronce).
+  static const _boxGradients = {
+    1: [Color(0xFFFFE24D), Color(0xFFE0A800)],
+    2: [Color(0xFFE8EEF3), Color(0xFFAEB9C4)],
+    3: [Color(0xFFF0B27A), Color(0xFFC77B3B)],
+  };
+
+  // Color del número sobre la cajita.
+  static const _numberColors = {
+    1: Color(0xFF7A5A00),
+    2: Color(0xFF54626F),
+    3: Color(0xFF7A461F),
+  };
+
+  // Fallback cuando no hay apariencia (personaje borrado/renombrado).
+  static const _fallbackColors = {
+    1: Color(0xFFFFD54F),
+    2: Color(0xFF90A4AE),
+    3: Color(0xFFC77B3B),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final boxHeight = _boxHeights[rank]!;
+
+    // Puesto vacío: solo la cajita, sin personaje ni nombre.
+    if (score == null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: figureSize * 1.6),
+          _box(boxHeight),
+        ],
+      );
+    }
+
+    final name = score!.characterName.isEmpty
+        ? context.l10n.tr('default_runner')
+        : score!.characterName;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Nombre del personaje.
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: rank == 1 ? 13 : 12,
+          ),
+        ),
+        const SizedBox(height: 2),
+        // Medalla.
+        Text(_medals[rank]!, style: const TextStyle(fontSize: 18)),
+        // Personaje (mismo tamaño en los tres) apoyado sobre la cajita.
+        RepaintBoundary(
+          child: appearance != null
+              ? CharacterPreview(appearance: appearance!, size: figureSize)
+              : _fallbackFigure(),
+        ),
+        // Cajita numerada.
+        _box(boxHeight),
+      ],
+    );
+  }
+
+  Widget _box(double height) {
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: _boxGradients[rank]!,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+        boxShadow: [
+          BoxShadow(
+            color: _boxGradients[rank]![1].withValues(alpha: 0.45),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          '$rank',
+          style: TextStyle(
+            color: _numberColors[rank]!,
+            fontWeight: FontWeight.w900,
+            fontSize: rank == 1 ? 34 : 28,
+            shadows: const [
+              Shadow(color: Colors.white54, blurRadius: 2, offset: Offset(0, 1)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Silueta de respaldo: círculo de color con la inicial, con la misma altura
+  // que ocuparía la figura para no descuadrar la fila.
+  Widget _fallbackFigure() {
+    final initial = (score!.characterName.isEmpty ? '?' : score!.characterName)
+        .characters
+        .first
+        .toUpperCase();
+    final color = _fallbackColors[rank]!;
+    return SizedBox(
+      height: figureSize * 1.6,
+      child: Center(
+        child: Container(
+          width: figureSize * 0.66,
+          height: figureSize * 0.66,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+              ),
+            ),
           ),
         ),
       ),
