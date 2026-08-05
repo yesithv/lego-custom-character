@@ -1408,9 +1408,10 @@ class _MiniRanking extends StatelessWidget {
           (s) => s.score == currentScore && s.characterName == currentName,
         );
 
+        final appearances = state.appearancesByName;
         final rows = <Widget>[];
         for (var i = 0; i < ranked.length && i < 3; i++) {
-          rows.add(_row(context, i + 1, ranked[i], i == youIndex));
+          rows.add(_row(context, i + 1, ranked[i], i == youIndex, appearances));
         }
         // Tu fila, si quedó fuera del top 3.
         if (youIndex >= 3) {
@@ -1419,7 +1420,8 @@ class _MiniRanking extends StatelessWidget {
             child: Text('⋯',
                 style: TextStyle(color: Colors.white38, fontSize: 14)),
           ));
-          rows.add(_row(context, youIndex + 1, ranked[youIndex], true));
+          rows.add(
+              _row(context, youIndex + 1, ranked[youIndex], true, appearances));
         }
 
         return Column(
@@ -1444,16 +1446,26 @@ class _MiniRanking extends StatelessWidget {
     );
   }
 
-  Widget _row(BuildContext context, int rank, Score s, bool isYou) {
+  Widget _row(
+    BuildContext context,
+    int rank,
+    Score s,
+    bool isYou,
+    Map<String, CharacterAppearance> appearancesByName,
+  ) {
     final medal = switch (rank) {
       1 => '🥇',
       2 => '🥈',
       3 => '🥉',
       _ => '$rank',
     };
+    final name = s.characterName.isEmpty
+        ? context.l10n.tr('default_runner')
+        : s.characterName;
+    final appearance = appearancesByName[s.characterName];
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isYou
             ? const Color(0xFFFFD700).withValues(alpha: 0.16)
@@ -1467,7 +1479,7 @@ class _MiniRanking extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 26,
+            width: 22,
             child: Text(
               medal,
               textAlign: TextAlign.center,
@@ -1478,12 +1490,14 @@ class _MiniRanking extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(width: 6),
+          // Mini-figura real del personaje (misma fuente que el podio del
+          // ranking); si no hay apariencia, círculo con la inicial.
+          _RankAvatar(name: name, appearance: appearance),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              isYou
-                  ? '${s.characterName} · ${context.l10n.tr('you')}'
-                  : s.characterName,
+              isYou ? '$name · ${context.l10n.tr('you')}' : name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -1504,6 +1518,55 @@ class _MiniRanking extends StatelessWidget {
           const SizedBox(width: 4),
           const Text('⭐', style: TextStyle(fontSize: 11)),
         ],
+      ),
+    );
+  }
+}
+
+/// Avatar compacto de una fila del mini-ranking: la mini-figura real del
+/// personaje (misma fuente que el podio del ranking) o, si no hay apariencia
+/// guardada para ese nombre, un círculo de color con la inicial.
+class _RankAvatar extends StatelessWidget {
+  final String name;
+  final CharacterAppearance? appearance;
+
+  const _RankAvatar({required this.name, required this.appearance});
+
+  static const _avatarColors = [
+    Color(0xFF9C27B0),
+    Color(0xFF2196F3),
+    Color(0xFF43A047),
+    Color(0xFFFB8C00),
+    Color(0xFFE53935),
+    Color(0xFF26A69A),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (appearance != null) {
+      return SizedBox(
+        width: 30,
+        height: 36,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: CharacterPreview(appearance: appearance!, size: 40),
+        ),
+      );
+    }
+    final initial = (name.isEmpty ? '?' : name).characters.first.toUpperCase();
+    final color = _avatarColors[name.hashCode.abs() % _avatarColors.length];
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 14,
+        ),
       ),
     );
   }
