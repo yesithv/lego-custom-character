@@ -117,7 +117,8 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ScoreRepository>(
     () => ScoreLocalRepository(Hive.box('scores')),
   );
-  sl.registerFactory(() => RankingBloc(repository: sl()));
+  sl.registerFactory(
+      () => RankingBloc(repository: sl(), characterRepository: sl()));
 
   // ── Monetización ──────────────────────────────────────────────────────────
   // Pagos REALES en móvil (Google Play Billing / StoreKit) y simulados en web.
