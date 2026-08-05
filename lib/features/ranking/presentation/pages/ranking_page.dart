@@ -499,11 +499,12 @@ class _PodiumSpot extends StatelessWidget {
     3: [Color(0xFFF0B27A), Color(0xFFC77B3B)],
   };
 
-  // Color del número sobre la cajita.
+  // Color del número sobre la cajita. Tonos más oscuros para que el número
+  // resalte mejor sobre el degradado claro de la medalla.
   static const _numberColors = {
-    1: Color(0xFF7A5A00),
-    2: Color(0xFF54626F),
-    3: Color(0xFF7A461F),
+    1: Color(0xFF5A4200),
+    2: Color(0xFF3B4650),
+    3: Color(0xFF5E3416),
   };
 
   // Fallback cuando no hay apariencia (personaje borrado/renombrado).
@@ -585,9 +586,12 @@ class _PodiumSpot extends StatelessWidget {
           style: TextStyle(
             color: _numberColors[rank]!,
             fontWeight: FontWeight.w900,
-            fontSize: rank == 1 ? 34 : 28,
+            fontSize: rank == 1 ? 38 : 32,
+            // Halo claro alrededor del número para separarlo del degradado y
+            // que se lea con más claridad.
             shadows: const [
-              Shadow(color: Colors.white54, blurRadius: 2, offset: Offset(0, 1)),
+              Shadow(color: Colors.white, blurRadius: 3, offset: Offset(0, 1)),
+              Shadow(color: Colors.white70, blurRadius: 4),
             ],
           ),
         ),
