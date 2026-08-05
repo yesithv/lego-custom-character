@@ -33,6 +33,20 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Elegir mundo', 'en': 'Choose world', 'pt': 'Escolher mundo',
     'de': 'Welt wählen', 'ru': 'Выбрать мир', 'fr': 'Choisir un monde',
   },
+  // Etiquetas cortas para los botones secundarios del fin de carrera
+  // (icono + texto): Mapa · Ranking · Tienda.
+  'world_short': {
+    'es': 'Mapa', 'en': 'Map', 'pt': 'Mapa',
+    'de': 'Karte', 'ru': 'Карта', 'fr': 'Carte',
+  },
+  'ranking_short': {
+    'es': 'Ranking', 'en': 'Ranking', 'pt': 'Ranking',
+    'de': 'Rangliste', 'ru': 'Рейтинг', 'fr': 'Classement',
+  },
+  'store_short': {
+    'es': 'Tienda', 'en': 'Store', 'pt': 'Loja',
+    'de': 'Shop', 'ru': 'Магазин', 'fr': 'Boutique',
+  },
   'exit_to_map': {
     'es': 'Salir al mapa', 'en': 'Exit to map', 'pt': 'Sair para o mapa',
     'de': 'Zur Karte', 'ru': 'Выйти на карту', 'fr': 'Retour à la carte',

@@ -1380,7 +1380,7 @@ class _NextWorldProgress extends StatelessWidget {
         final remaining = (next.unlockCost - earned).clamp(0, next.unlockCost);
         final progress =
             (earned / next.unlockCost).clamp(0.0, 1.0).toDouble();
-        final accent = Color.lerp(next.color, Colors.white, 0.35)!;
+        final accent = Color.lerp(next.color, Colors.white, 0.45)!;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 18),
@@ -1417,28 +1417,42 @@ class _NextWorldProgress extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 12,
-                      width: double.infinity,
-                      color: Colors.white.withValues(alpha: 0.10),
+              // Barra más alta y con brillo del color del mundo para que se
+              // note bien sobre el fondo oscuro.
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: next.color.withValues(alpha: 0.55),
+                      blurRadius: 14,
+                      spreadRadius: 0.5,
                     ),
-                    FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress,
-                      child: Container(
-                        height: 12,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [accent, next.color],
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                      FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress,
+                        child: Container(
+                          height: 16,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [accent, next.color],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -2070,57 +2084,78 @@ class _RunEndActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    // Layout A: botón dorado "Jugar de nuevo" centrado y protagonista arriba;
+    // debajo, los tres accesos secundarios (icono + etiqueta) repartidos por
+    // igual en su propia fila.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _SquareActionButton(
-          icon: Icons.map_rounded,
-          tooltip: context.l10n.tr('choose_world'),
-          onTap: onChooseWorld,
-        ),
-        const SizedBox(width: 10),
-        _SquareActionButton(
-          icon: Icons.emoji_events_rounded,
-          tooltip: context.l10n.tr('view_ranking_short'),
-          onTap: () => context.goNamed(
-            'ranking',
-            pathParameters: {'worldId': worldId},
-            extra: {
-              'worldName': worldName,
-              'worldEmoji': worldEmoji,
-              'worldColor': worldColor,
-            },
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: _GoldActionButton(
+              icon: Icons.replay_rounded,
+              label: context.l10n.tr('play_again'),
+              onTap: onRestart,
+            ),
           ),
         ),
-        const SizedBox(width: 10),
-        _SquareActionButton(
-          icon: Icons.storefront_rounded,
-          tooltip: context.l10n.tr('run_shop_cta'),
-          onTap: () => context.pushNamed('store'),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _GoldActionButton(
-            icon: Icons.replay_rounded,
-            label: context.l10n.tr('play_again'),
-            onTap: onRestart,
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.map_rounded,
+                label: context.l10n.tr('world_short'),
+                tooltip: context.l10n.tr('choose_world'),
+                onTap: onChooseWorld,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.emoji_events_rounded,
+                label: context.l10n.tr('ranking_short'),
+                tooltip: context.l10n.tr('view_ranking_short'),
+                onTap: () => context.goNamed(
+                  'ranking',
+                  pathParameters: {'worldId': worldId},
+                  extra: {
+                    'worldName': worldName,
+                    'worldEmoji': worldEmoji,
+                    'worldColor': worldColor,
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.storefront_rounded,
+                label: context.l10n.tr('store_short'),
+                tooltip: context.l10n.tr('run_shop_cta'),
+                onTap: () => context.pushNamed('store'),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-/// Cuadro compacto de acción secundaria: solo un icono centrado, con la misma
-/// altura (56) que el botón grande de "Play again" para que la fila quede
-/// alineada. El texto se expone vía [Tooltip]/[Semantics] para accesibilidad,
-/// sin ocupar espacio visible.
+/// Botón compacto de acción secundaria: icono sobre una etiqueta corta, pensado
+/// para repartirse por igual en una fila (dentro de un [Expanded]). El [tooltip]
+/// (descripción larga) se expone vía [Tooltip]/[Semantics] para accesibilidad.
 class _SquareActionButton extends StatelessWidget {
   final IconData icon;
+  final String label;
   final String tooltip;
   final VoidCallback onTap;
 
   const _SquareActionButton({
     required this.icon,
+    required this.label,
     required this.tooltip,
     required this.onTap,
   });
@@ -2139,14 +2174,33 @@ class _SquareActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Container(
-              width: 54,
-              height: 56,
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white24, width: 1.5),
               ),
-              child: Icon(icon, color: Colors.white, size: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: Colors.white, size: 24),
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
