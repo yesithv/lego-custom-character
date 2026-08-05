@@ -1449,27 +1449,6 @@ class _NextWorldProgress extends StatelessWidget {
   }
 }
 
-/// Enlace discreto a la Tienda que aparece al terminar una carrera (victoria o
-/// derrota): aprovecha el pico de interés para acercar la compra sin presionar.
-class _ShopNudge extends StatelessWidget {
-  const _ShopNudge();
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () => context.pushNamed('store'),
-      child: Text(
-        '🛍️  ${context.l10n.tr('run_shop_cta')}',
-        style: const TextStyle(
-          color: Colors.white54,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-}
-
 // ── Victory Overlay ───────────────────────────────────────────────────────────
 
 class _VictoryOverlay extends StatelessWidget {
