@@ -555,6 +555,30 @@ const Map<String, Map<String, String>> kStrings = {
     'pt': 'Recorde: {pb} pts', 'de': 'Rekord: {pb} Pkt',
     'ru': 'Рекорд: {pb} очк.', 'fr': 'Record : {pb} pts',
   },
+  'world_ranking': {
+    'es': 'Ranking del mundo', 'en': 'World ranking',
+    'pt': 'Ranking do mundo', 'de': 'Weltrangliste',
+    'ru': 'Рейтинг мира', 'fr': 'Classement du monde',
+  },
+  'you': {
+    'es': 'Tú', 'en': 'You', 'pt': 'Você',
+    'de': 'Du', 'ru': 'Ты', 'fr': 'Toi',
+  },
+  'next_world_progress': {
+    'es': 'Progreso a {name}', 'en': 'Progress to {name}',
+    'pt': 'Progresso para {name}', 'de': 'Fortschritt zu {name}',
+    'ru': 'Прогресс до {name}', 'fr': 'Progression vers {name}',
+  },
+  'coins_to_next_world': {
+    'es': 'Faltan {remaining} 🪙', 'en': '{remaining} 🪙 to go',
+    'pt': 'Faltam {remaining} 🪙', 'de': 'Noch {remaining} 🪙',
+    'ru': 'Осталось {remaining} 🪙', 'fr': 'Encore {remaining} 🪙',
+  },
+  'all_worlds_unlocked': {
+    'es': '¡Todos los mundos desbloqueados!', 'en': 'All worlds unlocked!',
+    'pt': 'Todos os mundos desbloqueados!', 'de': 'Alle Welten freigeschaltet!',
+    'ru': 'Все миры открыты!', 'fr': 'Tous les mondes débloqués !',
+  },
   'missions_completed': {
     'es': 'Misiones completadas', 'en': 'Completed missions',
     'pt': 'Missões concluídas', 'de': 'Abgeschlossene Missionen',
