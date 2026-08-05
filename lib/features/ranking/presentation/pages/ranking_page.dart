@@ -177,6 +177,8 @@ class _RankingViewState extends State<_RankingView> {
                               return _ScoreRow(
                                 rank: rank,
                                 score: score,
+                                appearance:
+                                    state.appearancesByName[score.characterName],
                               );
                             },
                           ),
@@ -641,11 +643,15 @@ class _PodiumSpot extends StatelessWidget {
 class _ScoreRow extends StatelessWidget {
   final int rank;
   final Score score;
+  final CharacterAppearance? appearance; // null → fallback de color con inicial
 
   const _ScoreRow({
     required this.rank,
     required this.score,
+    this.appearance,
   });
+
+  static const double _avatarSize = 38;
 
   static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
 
@@ -670,7 +676,8 @@ class _ScoreRow extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      // Un poco más de alto para que quepa la cabeza del personaje.
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: highlighted
             ? const Color(0xFFFFD700).withValues(alpha: 0.08)
@@ -709,21 +716,8 @@ class _ScoreRow extends StatelessWidget {
                   ),
           ),
           const SizedBox(width: 10),
-          // Avatar de color
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: avatarColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: avatarColor.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-          ),
+          // Avatar: cabeza real del personaje (o círculo de color de respaldo).
+          _avatar(avatarColor, name),
           const SizedBox(width: 12),
           // Nombre real del personaje
           Expanded(
@@ -749,6 +743,56 @@ class _ScoreRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Avatar circular con la cabeza del personaje. Si no hay apariencia
+  // (personaje renombrado o borrado) se muestra el círculo de color con la
+  // inicial del nombre, como respaldo.
+  Widget _avatar(Color fallbackColor, String name) {
+    if (appearance == null) {
+      final initial = name.characters.isEmpty
+          ? '?'
+          : name.characters.first.toUpperCase();
+      return Container(
+        width: _avatarSize,
+        height: _avatarSize,
+        decoration: BoxDecoration(
+          color: fallbackColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: fallbackColor.withValues(alpha: 0.5), blurRadius: 6),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            initial,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: _avatarSize,
+      height: _avatarSize,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: RepaintBoundary(
+        child: CharacterPreview(
+          appearance: appearance!,
+          size: _avatarSize,
+          headOnly: true,
+        ),
       ),
     );
   }
