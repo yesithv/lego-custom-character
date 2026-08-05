@@ -560,10 +560,6 @@ const Map<String, Map<String, String>> kStrings = {
     'pt': 'Ranking do mundo', 'de': 'Weltrangliste',
     'ru': 'Рейтинг мира', 'fr': 'Classement du monde',
   },
-  'you': {
-    'es': 'Tú', 'en': 'You', 'pt': 'Você',
-    'de': 'Du', 'ru': 'Ты', 'fr': 'Toi',
-  },
   'next_world_progress': {
     'es': 'Progreso a {name}', 'en': 'Progress to {name}',
     'pt': 'Progresso para {name}', 'de': 'Fortschritt zu {name}',
