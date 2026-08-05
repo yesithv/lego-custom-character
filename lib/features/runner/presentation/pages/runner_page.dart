@@ -272,6 +272,7 @@ class _RunnerPageState extends State<RunnerPage> {
                     BlocBuilder<MissionBloc, MissionState>(
                       builder: (context, missionState) => _VictoryOverlay(
                         game: game,
+                        character: widget.character,
                         completedMissions: missionState.justCompleted,
                         worldId: widget.worldId,
                         worldName: widget.worldName,
@@ -1473,6 +1474,7 @@ class _ShopNudge extends StatelessWidget {
 
 class _VictoryOverlay extends StatelessWidget {
   final BrixRunGame game;
+  final Character character;
   final List<Mission> completedMissions;
   final String worldId;
   final String worldName;
@@ -1485,6 +1487,7 @@ class _VictoryOverlay extends StatelessWidget {
 
   const _VictoryOverlay({
     required this.game,
+    required this.character,
     required this.completedMissions,
     required this.worldId,
     required this.worldName,
@@ -1519,15 +1522,15 @@ class _VictoryOverlay extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 26),
                 child: Column(
                   children: [
-                    const SizedBox(height: 24),
-                    const Text('🏆', style: TextStyle(fontSize: 52)),
+                    const SizedBox(height: 16),
+                    const Text('🏆', style: TextStyle(fontSize: 46)),
                     const SizedBox(height: 6),
                     Text(
                       context.l10n.tr('victory'),
                       style: const TextStyle(
                         color: Color(0xFFFFD700),
                         fontWeight: FontWeight.w900,
-                        fontSize: 34,
+                        fontSize: 32,
                         letterSpacing: 1,
                       ),
                     ),
@@ -1542,34 +1545,108 @@ class _VictoryOverlay extends StatelessWidget {
                         fontSize: 15,
                       ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 18),
 
-                    // Estadísticas de la carrera
+                    // Héroe: personaje que corrió la carrera + marcador, igual
+                    // que en la pantalla de fin de partida.
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _CharacterPedestal(
+                            character: character,
+                            worldColor: worldColor,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _WideStatBox(
+                                  icon: '⭐',
+                                  label: context.l10n.tr('stat_points'),
+                                  value: _fmtNum(game.score),
+                                  valueColor: const Color(0xFFFFD700),
+                                ),
+                                const SizedBox(height: 10),
+                                _WideStatBox(
+                                  icon: '🪙',
+                                  label: context.l10n.tr('stat_coins'),
+                                  value: _fmtNum(game.coins),
+                                ),
+                                const SizedBox(height: 10),
+                                _WideStatBox(
+                                  icon: '📏',
+                                  label: context.l10n.tr('stat_meters'),
+                                  value: _fmtNum(game.meters),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Estadísticas extra de la carrera.
                     Row(
                       children: [
                         Expanded(
                           child: _StatBox(
-                            icon: '🪙',
-                            value: _fmtNum(game.coins),
-                            label: context.l10n.tr('stat_coins'),
-                            valueColor: const Color(0xFFFFD700),
+                            icon: '🦘',
+                            value: _fmtNum(game.jumpCount),
+                            label: context.l10n.tr('stat_jumps'),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatBox(
-                            icon: '📏',
-                            value: _fmtNum(game.meters),
-                            label: context.l10n.tr('stat_meters'),
+                            icon: '🔥',
+                            value: 'x${_fmtNum(game.maxObstacleStreak)}',
+                            label: context.l10n.tr('stat_best_combo'),
+                            valueColor: const Color(0xFFFF8A3D),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatBox(
-                            icon: '⭐',
-                            value: _fmtNum(game.score),
-                            label: context.l10n.tr('stat_points'),
-                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Zona alcanzada + récord personal.
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _ZoneBadge(zone: game.currentZone),
+                        BlocBuilder<RankingBloc, RankingState>(
+                          builder: (context, rankingState) {
+                            if (rankingState.scores.isEmpty ||
+                                rankingState.worldId != worldId) {
+                              return const SizedBox.shrink();
+                            }
+                            final pb = rankingState.scores.first.score;
+                            final isNew = game.score >= pb;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 12),
+                              child: isNew
+                                  ? Text(
+                                      '🎉 ${context.l10n.tr('new_record')}',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD700),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                      ),
+                                    )
+                                  : Text(
+                                      '🥇 ${context.l10n.trp('record_pts', {
+                                            'pb': pb
+                                          })}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -1609,33 +1686,42 @@ class _VictoryOverlay extends StatelessWidget {
                           label: context.l10n.tr('play_again'),
                           onTap: onRestart,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         _DarkActionButton(
                           icon: Icons.map_rounded,
                           label: context.l10n.tr('choose_world'),
                           onTap: onExit,
                         ),
-                        const SizedBox(height: 4),
-                        TextButton(
-                          onPressed: () => context.goNamed(
-                            'ranking',
-                            pathParameters: {'worldId': worldId},
-                            extra: {
-                              'worldName': worldName,
-                              'worldEmoji': worldEmoji,
-                              'worldColor': worldColor,
-                            },
-                          ),
-                          child: Text(
-                            '🏆  ${context.l10n.tr('view_ranking_short')}',
-                            style: const TextStyle(
-                              color: Color(0xFFFFD700),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
+                        const SizedBox(height: 10),
+                        // Fila con dos accesos secundarios como botones reales
+                        // (no enlaces de texto): ranking y tienda.
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _MiniActionButton(
+                                icon: Icons.leaderboard_rounded,
+                                label: context.l10n.tr('view_ranking_short'),
+                                onTap: () => context.goNamed(
+                                  'ranking',
+                                  pathParameters: {'worldId': worldId},
+                                  extra: {
+                                    'worldName': worldName,
+                                    'worldEmoji': worldEmoji,
+                                    'worldColor': worldColor,
+                                  },
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _MiniActionButton(
+                                icon: Icons.storefront_rounded,
+                                label: context.l10n.tr('run_shop_cta'),
+                                onTap: () => context.pushNamed('store'),
+                              ),
+                            ),
+                          ],
                         ),
-                        const _ShopNudge(),
                       ],
                     )
                   : _GoldActionButton(
@@ -1870,6 +1956,61 @@ class _GoldActionButton extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón secundario compacto para filas de dos: icono sobre etiqueta, con
+/// borde sutil. Pensado para accesos como ranking o tienda.
+class _MiniActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MiniActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white24, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: const Color(0xFFFFD700), size: 18),
+              const SizedBox(width: 6),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

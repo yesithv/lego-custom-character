@@ -489,8 +489,6 @@ class _PodiumSpot extends StatelessWidget {
     required this.figureSize,
   });
 
-  static const _medals = {1: '🥇', 2: '🥈', 3: '🥉'};
-
   // Altura de la cajita por puesto: 1º la más alta.
   static const _boxHeights = {1: 76.0, 2: 56.0, 3: 44.0};
 
@@ -549,9 +547,7 @@ class _PodiumSpot extends StatelessWidget {
             fontSize: rank == 1 ? 13 : 12,
           ),
         ),
-        const SizedBox(height: 2),
-        // Medalla.
-        Text(_medals[rank]!, style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 4),
         // Personaje (mismo tamaño en los tres) apoyado sobre la cajita.
         RepaintBoundary(
           child: appearance != null

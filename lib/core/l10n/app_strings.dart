@@ -546,6 +546,14 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'puntos', 'en': 'points', 'pt': 'pontos',
     'de': 'Punkte', 'ru': 'очки', 'fr': 'points',
   },
+  'stat_jumps': {
+    'es': 'saltos', 'en': 'jumps', 'pt': 'saltos',
+    'de': 'Sprünge', 'ru': 'прыжки', 'fr': 'sauts',
+  },
+  'stat_best_combo': {
+    'es': 'mejor combo', 'en': 'best combo', 'pt': 'melhor combo',
+    'de': 'bestes Combo', 'ru': 'лучшее комбо', 'fr': 'meilleur combo',
+  },
   'new_record': {
     'es': '¡Nuevo récord!', 'en': 'New record!', 'pt': 'Novo recorde!',
     'de': 'Neuer Rekord!', 'ru': 'Новый рекорд!', 'fr': 'Nouveau record !',
