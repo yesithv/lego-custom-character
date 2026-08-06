@@ -1256,7 +1256,7 @@ class _CharacterPedestal extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
-          child: CharacterPreview(
+          child: _AnimatedCharacter(
             appearance: character.appearance,
             size: 92,
           ),
@@ -1282,6 +1282,132 @@ class _CharacterPedestal extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Envuelve el [CharacterPreview] estático y le añade vida en el Game Over,
+/// sin depender de qué piezas tenga el personaje (aplica igual a cualquiera):
+///  - Entrada con rebote al aparecer la pantalla (una sola vez).
+///  - Idle continuo: flota y "respira" con una función seno.
+///  - Sombra elíptica bajo los pies que late sincronizada con la flotación.
+class _AnimatedCharacter extends StatefulWidget {
+  final CharacterAppearance appearance;
+  final double size;
+
+  const _AnimatedCharacter({required this.appearance, required this.size});
+
+  @override
+  State<_AnimatedCharacter> createState() => _AnimatedCharacterState();
+}
+
+class _AnimatedCharacterState extends State<_AnimatedCharacter>
+    with TickerProviderStateMixin {
+  // Bucle continuo del idle (flotar + respirar + latido de sombra).
+  late final AnimationController _idle;
+  // Entrada con rebote, se ejecuta una sola vez al montar el overlay.
+  late final AnimationController _entry;
+
+  @override
+  void initState() {
+    super.initState();
+    _idle = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
+    _entry = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _idle.dispose();
+    _entry.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.size;
+    // El preview completo mide size × size*1.6; dejamos algo de aire abajo
+    // para la sombra que late.
+    final previewH = size * 1.6;
+    const shadowBand = 14.0;
+
+    return SizedBox(
+      width: size,
+      height: previewH + shadowBand,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_idle, _entry]),
+        builder: (context, child) {
+          final phase = _idle.value * 2 * pi;
+          final bob = sin(phase); // -1 (arriba) .. 1 (abajo)
+
+          // Idle: flota ±3.5px y respira con un micro-escalado.
+          final idleDy = bob * 3.5;
+          final idleScale = 1 + 0.02 * sin(phase);
+
+          // Entrada: cae desde arriba y "aterriza" con rebote elástico.
+          final entryScale =
+              Curves.elasticOut.transform(_entry.value) * 0.4 + 0.6;
+          final entryDy =
+              (1 - Curves.easeOutCubic.transform(_entry.value)) * -22;
+          final entryOpacity = Curves.easeOut.transform(
+            (_entry.value * 2).clamp(0.0, 1.0),
+          );
+
+          // La sombra crece/opaca cuando el personaje baja (bob > 0) y encoge
+          // cuando sube. (bob + 1) / 2 → 0..1.
+          final t = (bob + 1) / 2;
+          final shadowW = size * (0.42 + 0.10 * t);
+          final shadowAlpha = (0.18 + 0.12 * t) * entryOpacity;
+
+          return Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Sombra de contacto que late, detrás del personaje.
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  width: shadowW,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: shadowAlpha),
+                    borderRadius:
+                        const BorderRadius.all(Radius.elliptical(60, 9)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: shadowAlpha),
+                        blurRadius: 7,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Personaje: entrada con rebote + idle (flotar/respirar).
+              Positioned(
+                bottom: shadowBand,
+                child: Opacity(
+                  opacity: entryOpacity,
+                  child: Transform.translate(
+                    offset: Offset(0, idleDy + entryDy),
+                    child: Transform.scale(
+                      scale: idleScale * entryScale,
+                      alignment: Alignment.bottomCenter,
+                      child: child,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        // El preview no depende de la animación → se construye una sola vez.
+        child: CharacterPreview(appearance: widget.appearance, size: size),
+      ),
     );
   }
 }
