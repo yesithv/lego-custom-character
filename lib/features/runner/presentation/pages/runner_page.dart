@@ -1062,6 +1062,14 @@ class _GameOverOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ¿La carrera batió el récord del mundo? Misma condición que la insignia
+    // "🎉 nuevo récord" de abajo. Si hay récord, el personaje celebra con
+    // confeti aunque sea game over.
+    final rankingState = context.watch<RankingBloc>().state;
+    final isNewRecord = rankingState.scores.isNotEmpty &&
+        rankingState.worldId == worldId &&
+        game.score >= rankingState.scores.first.score;
+
     return Container(
       // Ocupa toda la pantalla con un degradado del color del mundo apagado
       // hacia negro: hermano de la pantalla de victoria pero en tono sombrío.
@@ -1111,6 +1119,7 @@ class _GameOverOverlay extends StatelessWidget {
                           _CharacterPedestal(
                             character: character,
                             worldColor: worldColor,
+                            festive: isNewRecord,
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -1235,7 +1244,16 @@ class _CharacterPedestal extends StatelessWidget {
   final Character character;
   final Color worldColor;
 
-  const _CharacterPedestal({required this.character, required this.worldColor});
+  /// Cuando es `true` el personaje celebra con confeti + destellos (victoria, o
+  /// game over con récord nuevo). Cuando es `false` solo hace la entrada con
+  /// polvo al aterrizar + idle (game over normal).
+  final bool festive;
+
+  const _CharacterPedestal({
+    required this.character,
+    required this.worldColor,
+    this.festive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1259,6 +1277,7 @@ class _CharacterPedestal extends StatelessWidget {
           child: _AnimatedCharacter(
             appearance: character.appearance,
             size: 92,
+            festive: festive,
           ),
         ),
         const SizedBox(height: 8),
@@ -1286,16 +1305,25 @@ class _CharacterPedestal extends StatelessWidget {
   }
 }
 
-/// Envuelve el [CharacterPreview] estático y le añade vida en el Game Over,
-/// sin depender de qué piezas tenga el personaje (aplica igual a cualquiera):
+/// Envuelve el [CharacterPreview] estático y le añade vida al terminar la
+/// carrera, sin depender de qué piezas tenga el personaje (aplica igual a
+/// cualquiera):
 ///  - Entrada con rebote al aparecer la pantalla (una sola vez).
+///  - Polvo que salta desde los pies al aterrizar (siempre).
 ///  - Idle continuo: flota y "respira" con una función seno.
 ///  - Sombra elíptica bajo los pies que late sincronizada con la flotación.
+///  - Cuando [festive] es `true` (victoria o game over con récord): confeti
+///    que cae + destellos que titilan alrededor del personaje.
 class _AnimatedCharacter extends StatefulWidget {
   final CharacterAppearance appearance;
   final double size;
+  final bool festive;
 
-  const _AnimatedCharacter({required this.appearance, required this.size});
+  const _AnimatedCharacter({
+    required this.appearance,
+    required this.size,
+    this.festive = false,
+  });
 
   @override
   State<_AnimatedCharacter> createState() => _AnimatedCharacterState();
@@ -1303,10 +1331,18 @@ class _AnimatedCharacter extends StatefulWidget {
 
 class _AnimatedCharacterState extends State<_AnimatedCharacter>
     with TickerProviderStateMixin {
-  // Bucle continuo del idle (flotar + respirar + latido de sombra).
+  // Bucle continuo del idle (flotar + respirar + latido de sombra + confeti).
   late final AnimationController _idle;
   // Entrada con rebote, se ejecuta una sola vez al montar el overlay.
   late final AnimationController _entry;
+  // Estallido de polvo al aterrizar, se dispara una vez cuando el personaje
+  // toca el pedestal.
+  late final AnimationController _dustBurst;
+  bool _dustFired = false;
+
+  late final List<_Confetto> _confetti;
+  late final List<_Sparkle> _sparkles;
+  late final List<_DustMote> _dust;
 
   @override
   void initState() {
@@ -1315,16 +1351,64 @@ class _AnimatedCharacterState extends State<_AnimatedCharacter>
       vsync: this,
       duration: const Duration(milliseconds: 2600),
     )..repeat();
+    _dustBurst = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    );
     _entry = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 620),
-    )..forward();
+    )..addListener(_maybeFireDust);
+    _entry.forward();
+
+    // Partículas generadas una sola vez con semilla fija → estables mientras el
+    // overlay esté montado, pero variadas entre sí.
+    final rnd = Random(7);
+    _confetti = List.generate(16, (_) {
+      return _Confetto(
+        x: rnd.nextDouble(),
+        phase: rnd.nextDouble(),
+        drift: 4 + rnd.nextDouble() * 10,
+        w: 4 + rnd.nextDouble() * 4,
+        h: 6 + rnd.nextDouble() * 5,
+        rot: 0.5 + rnd.nextDouble() * 2,
+        color: _confettiPalette[rnd.nextInt(_confettiPalette.length)],
+      );
+    });
+    _sparkles = List.generate(7, (_) {
+      return _Sparkle(
+        x: 0.10 + rnd.nextDouble() * 0.80,
+        y: 0.06 + rnd.nextDouble() * 0.66,
+        size: 3 + rnd.nextDouble() * 3,
+        phase: rnd.nextDouble() * 2 * pi,
+        speed: 0.6 + rnd.nextDouble() * 0.9,
+        color: rnd.nextBool() ? const Color(0xFFFFF3B0) : Colors.white,
+      );
+    });
+    _dust = List.generate(11, (_) {
+      return _DustMote(
+        dir: rnd.nextBool() ? 1.0 : -1.0,
+        dist: 10 + rnd.nextDouble() * 22,
+        rise: 4 + rnd.nextDouble() * 10,
+        size: 1.5 + rnd.nextDouble() * 2.2,
+        alpha: 0.35 + rnd.nextDouble() * 0.3,
+      );
+    });
+  }
+
+  // Lanza el polvo cuando la entrada ya casi aterrizó (una sola vez).
+  void _maybeFireDust() {
+    if (!_dustFired && _entry.value >= 0.55) {
+      _dustFired = true;
+      _dustBurst.forward();
+    }
   }
 
   @override
   void dispose() {
     _idle.dispose();
     _entry.dispose();
+    _dustBurst.dispose();
     super.dispose();
   }
 
@@ -1340,7 +1424,7 @@ class _AnimatedCharacterState extends State<_AnimatedCharacter>
       width: size,
       height: previewH + shadowBand,
       child: AnimatedBuilder(
-        animation: Listenable.merge([_idle, _entry]),
+        animation: Listenable.merge([_idle, _entry, _dustBurst]),
         builder: (context, child) {
           final phase = _idle.value * 2 * pi;
           final bob = sin(phase); // -1 (arriba) .. 1 (abajo)
@@ -1402,6 +1486,34 @@ class _AnimatedCharacterState extends State<_AnimatedCharacter>
                   ),
                 ),
               ),
+              // Confeti + destellos (solo en modo festivo), por delante del
+              // personaje para que se vean bien.
+              if (widget.festive)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _CelebrationPainter(
+                        loop: _idle.value,
+                        opacity: entryOpacity,
+                        confetti: _confetti,
+                        sparkles: _sparkles,
+                      ),
+                    ),
+                  ),
+                ),
+              // Polvo al aterrizar, delante de los pies.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _DustPainter(
+                      progress: _dustBurst.value,
+                      opacity: entryOpacity,
+                      motes: _dust,
+                      feetY: previewH,
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
@@ -1410,6 +1522,180 @@ class _AnimatedCharacterState extends State<_AnimatedCharacter>
       ),
     );
   }
+}
+
+/// Paleta viva para el confeti de celebración.
+const List<Color> _confettiPalette = [
+  Color(0xFFFF5D5D),
+  Color(0xFFFFC93C),
+  Color(0xFF4ED6A1),
+  Color(0xFF5DA9FF),
+  Color(0xFFB68CFF),
+  Color(0xFFFF8FD0),
+];
+
+/// Un trozo de confeti que cae en bucle y va rotando.
+class _Confetto {
+  final double x; // posición horizontal (0..1 del ancho)
+  final double phase; // desfase vertical para que no caigan todos a la vez
+  final double drift; // amplitud del vaivén lateral
+  final double w, h; // tamaño del rectángulo
+  final double rot; // vueltas por caída
+  final Color color;
+
+  const _Confetto({
+    required this.x,
+    required this.phase,
+    required this.drift,
+    required this.w,
+    required this.h,
+    required this.rot,
+    required this.color,
+  });
+}
+
+/// Un destello que titila en su sitio.
+class _Sparkle {
+  final double x, y; // posición (0..1)
+  final double size;
+  final double phase, speed;
+  final Color color;
+
+  const _Sparkle({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.phase,
+    required this.speed,
+    required this.color,
+  });
+}
+
+/// Una mota de polvo que salta desde los pies al aterrizar.
+class _DustMote {
+  final double dir; // -1 izquierda / +1 derecha
+  final double dist; // distancia horizontal recorrida
+  final double rise; // altura del pequeño arco
+  final double size;
+  final double alpha;
+
+  const _DustMote({
+    required this.dir,
+    required this.dist,
+    required this.rise,
+    required this.size,
+    required this.alpha,
+  });
+}
+
+/// Dibuja el confeti que cae y los destellos que titilan (modo festivo).
+class _CelebrationPainter extends CustomPainter {
+  final double loop; // 0..1 en bucle (del idle)
+  final double opacity; // atenuación de entrada
+  final List<_Confetto> confetti;
+  final List<_Sparkle> sparkles;
+
+  _CelebrationPainter({
+    required this.loop,
+    required this.opacity,
+    required this.confetti,
+    required this.sparkles,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (opacity <= 0.01) return;
+    final paint = Paint();
+
+    // Confeti: cae de arriba a abajo, con vaivén y rotación.
+    for (final c in confetti) {
+      final vp = (loop + c.phase) % 1.0;
+      final y = vp * (size.height + 24) - 12;
+      final x = c.x * size.width + sin(vp * 2 * pi + c.phase * 2 * pi) * c.drift;
+      final fade = sin(vp * pi); // 0 en extremos, 1 en el centro
+      final a = (fade * 0.9 * opacity).clamp(0.0, 1.0);
+      if (a <= 0.02) continue;
+      paint.color = c.color.withValues(alpha: a);
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(vp * c.rot * 2 * pi);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset.zero, width: c.w, height: c.h),
+          const Radius.circular(1),
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+
+    // Destellos: titilan en su sitio.
+    for (final s in sparkles) {
+      final tw = (sin(loop * 2 * pi * s.speed + s.phase) + 1) / 2;
+      final a = (tw * opacity).clamp(0.0, 1.0);
+      if (a <= 0.03) continue;
+      _drawSparkle(
+        canvas,
+        Offset(s.x * size.width, s.y * size.height),
+        s.size * (0.5 + 0.5 * tw),
+        s.color.withValues(alpha: a),
+      );
+    }
+  }
+
+  void _drawSparkle(Canvas canvas, Offset center, double r, Color color) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - r)
+      ..lineTo(center.dx + r * 0.28, center.dy - r * 0.28)
+      ..lineTo(center.dx + r, center.dy)
+      ..lineTo(center.dx + r * 0.28, center.dy + r * 0.28)
+      ..lineTo(center.dx, center.dy + r)
+      ..lineTo(center.dx - r * 0.28, center.dy + r * 0.28)
+      ..lineTo(center.dx - r, center.dy)
+      ..lineTo(center.dx - r * 0.28, center.dy - r * 0.28)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_CelebrationPainter old) =>
+      old.loop != loop || old.opacity != opacity;
+}
+
+/// Dibuja el polvo que salta desde los pies al aterrizar.
+class _DustPainter extends CustomPainter {
+  final double progress; // 0..1 (del estallido), 0 = aún no ha caído
+  final double opacity;
+  final List<_DustMote> motes;
+  final double feetY;
+
+  _DustPainter({
+    required this.progress,
+    required this.opacity,
+    required this.motes,
+    required this.feetY,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0.0 || progress >= 1.0 || opacity <= 0.01) return;
+    final feetX = size.width / 2;
+    final e = Curves.easeOut.transform(progress);
+    final paint = Paint();
+    for (final m in motes) {
+      final x = feetX + m.dir * m.dist * e;
+      final y = feetY - m.rise * sin(progress * pi) * 0.7;
+      final a = (1 - progress) * m.alpha * opacity;
+      if (a <= 0.01) continue;
+      final radius = m.size * (0.7 + 0.5 * (1 - progress));
+      paint.color = const Color(0xFFEDE4D3).withValues(alpha: a);
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DustPainter old) =>
+      old.progress != progress || old.opacity != opacity;
 }
 
 /// Caja de estadística horizontal (icono + etiqueta a la izquierda, valor a la
@@ -1681,6 +1967,7 @@ class _VictoryOverlay extends StatelessWidget {
                           _CharacterPedestal(
                             character: character,
                             worldColor: worldColor,
+                            festive: true,
                           ),
                           const SizedBox(width: 14),
                           Expanded(
