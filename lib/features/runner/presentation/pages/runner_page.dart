@@ -2090,51 +2090,20 @@ class _VictoryOverlay extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(26, 6, 26, 18),
               child: chestClaimed
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _GoldActionButton(
-                          icon: Icons.replay_rounded,
-                          label: context.l10n.tr('play_again'),
-                          onTap: onRestart,
-                        ),
-                        const SizedBox(height: 10),
-                        _DarkActionButton(
-                          icon: Icons.map_rounded,
-                          label: context.l10n.tr('choose_world'),
-                          onTap: onExit,
-                        ),
-                        const SizedBox(height: 10),
-                        // Fila con dos accesos secundarios como botones reales
-                        // (no enlaces de texto): ranking y tienda.
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniActionButton(
-                                icon: Icons.leaderboard_rounded,
-                                label: context.l10n.tr('view_ranking_short'),
-                                onTap: () => context.goNamed(
-                                  'ranking',
-                                  pathParameters: {'worldId': worldId},
-                                  extra: {
-                                    'worldName': worldName,
-                                    'worldEmoji': worldEmoji,
-                                    'worldColor': worldColor,
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _MiniActionButton(
-                                icon: Icons.storefront_rounded,
-                                label: context.l10n.tr('run_shop_cta'),
-                                onTap: () => context.pushNamed('store'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  // Misma estructura que en Game Over (`_RunEndActions`): Play
+                  // again protagonista arriba + fila de tres accesos con icono
+                  // y texto (mundo · ranking · tienda). En Victory el Play again
+                  // ocupa todo el ancho y la fila secundaria queda un poco más
+                  // angosta y centrada.
+                  ? _RunEndActions(
+                      worldId: worldId,
+                      worldName: worldName,
+                      worldEmoji: worldEmoji,
+                      worldColor: worldColor,
+                      onRestart: onRestart,
+                      onChooseWorld: onExit,
+                      playAgainMaxWidth: double.infinity,
+                      secondaryMaxWidth: 300,
                     )
                   : _GoldActionButton(
                       icon: Icons.card_giftcard_rounded,
@@ -2375,109 +2344,6 @@ class _GoldActionButton extends StatelessWidget {
   }
 }
 
-/// Botón secundario compacto para filas de dos: icono sobre etiqueta, con
-/// borde sutil. Pensado para accesos como ranking o tienda.
-class _MiniActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _MiniActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          height: 46,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24, width: 1.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: const Color(0xFFFFD700), size: 18),
-              const SizedBox(width: 6),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Botón secundario oscuro con borde sutil.
-class _DarkActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _DarkActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white24, width: 1.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Barra de acciones al terminar una carrera, en una sola fila estilo Subway
 /// Surfers: cuadros compactos de icono para las acciones secundarias (elegir
 /// mundo · ranking · tienda) + un botón grande y protagonista de "Play again".
@@ -2492,6 +2358,15 @@ class _RunEndActions extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onChooseWorld;
 
+  /// Ancho máximo del botón dorado "Play again". Por defecto `320`; pasa
+  /// `double.infinity` para que ocupe todo el ancho disponible.
+  final double playAgainMaxWidth;
+
+  /// Ancho máximo (centrado) de la fila de tres accesos secundarios. Si es
+  /// `null` la fila ocupa todo el ancho (comportamiento por defecto); pasa un
+  /// valor para dejarla un poco más angosta.
+  final double? secondaryMaxWidth;
+
   const _RunEndActions({
     required this.worldId,
     required this.worldName,
@@ -2499,6 +2374,8 @@ class _RunEndActions extends StatelessWidget {
     required this.worldColor,
     required this.onRestart,
     required this.onChooseWorld,
+    this.playAgainMaxWidth = 320,
+    this.secondaryMaxWidth,
   });
 
   @override
@@ -2511,7 +2388,7 @@ class _RunEndActions extends StatelessWidget {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 320),
+            constraints: BoxConstraints(maxWidth: playAgainMaxWidth),
             child: _GoldActionButton(
               icon: Icons.replay_rounded,
               label: context.l10n.tr('play_again'),
@@ -2520,45 +2397,59 @@ class _RunEndActions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _SquareActionButton(
-                icon: Icons.map_rounded,
-                label: context.l10n.tr('world_short'),
-                tooltip: context.l10n.tr('choose_world'),
-                onTap: onChooseWorld,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SquareActionButton(
-                icon: Icons.emoji_events_rounded,
-                label: context.l10n.tr('ranking_short'),
-                tooltip: context.l10n.tr('view_ranking_short'),
-                onTap: () => context.goNamed(
-                  'ranking',
-                  pathParameters: {'worldId': worldId},
-                  extra: {
-                    'worldName': worldName,
-                    'worldEmoji': worldEmoji,
-                    'worldColor': worldColor,
-                  },
+        _maybeConstrainWidth(
+          Row(
+            children: [
+              Expanded(
+                child: _SquareActionButton(
+                  icon: Icons.map_rounded,
+                  label: context.l10n.tr('world_short'),
+                  tooltip: context.l10n.tr('choose_world'),
+                  onTap: onChooseWorld,
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SquareActionButton(
-                icon: Icons.storefront_rounded,
-                label: context.l10n.tr('store_short'),
-                tooltip: context.l10n.tr('run_shop_cta'),
-                onTap: () => context.pushNamed('store'),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _SquareActionButton(
+                  icon: Icons.emoji_events_rounded,
+                  label: context.l10n.tr('ranking_short'),
+                  tooltip: context.l10n.tr('view_ranking_short'),
+                  onTap: () => context.goNamed(
+                    'ranking',
+                    pathParameters: {'worldId': worldId},
+                    extra: {
+                      'worldName': worldName,
+                      'worldEmoji': worldEmoji,
+                      'worldColor': worldColor,
+                    },
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: _SquareActionButton(
+                  icon: Icons.storefront_rounded,
+                  label: context.l10n.tr('store_short'),
+                  tooltip: context.l10n.tr('run_shop_cta'),
+                  onTap: () => context.pushNamed('store'),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  /// Centra y limita el ancho de la fila secundaria cuando se pide
+  /// [secondaryMaxWidth]; si es `null` la deja ocupar todo el ancho.
+  Widget _maybeConstrainWidth(Widget child) {
+    if (secondaryMaxWidth == null) return child;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: secondaryMaxWidth!),
+        child: child,
+      ),
     );
   }
 }
