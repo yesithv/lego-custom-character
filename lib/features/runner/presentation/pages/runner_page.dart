@@ -2088,13 +2088,12 @@ class _VictoryOverlay extends StatelessWidget {
 
             // Acciones: primero reclamar el cofre; después, navegación.
             Padding(
-              padding: const EdgeInsets.fromLTRB(26, 6, 26, 18),
+              padding: const EdgeInsets.fromLTRB(22, 6, 22, 12),
               child: chestClaimed
-                  // Misma estructura que en Game Over (`_RunEndActions`): Play
-                  // again protagonista arriba + fila de tres accesos con icono
-                  // y texto (mundo · ranking · tienda). En Victory el Play again
-                  // ocupa todo el ancho y la fila secundaria queda un poco más
-                  // angosta y centrada.
+                  // Misma distribución exacta que en Game Over
+                  // (`_RunEndActions` con sus valores por defecto): Play again
+                  // protagonista centrado arriba + fila de tres accesos con
+                  // icono y texto (mundo · ranking · tienda) a todo el ancho.
                   ? _RunEndActions(
                       worldId: worldId,
                       worldName: worldName,
@@ -2102,8 +2101,6 @@ class _VictoryOverlay extends StatelessWidget {
                       worldColor: worldColor,
                       onRestart: onRestart,
                       onChooseWorld: onExit,
-                      playAgainMaxWidth: double.infinity,
-                      secondaryMaxWidth: 300,
                     )
                   : _GoldActionButton(
                       icon: Icons.card_giftcard_rounded,
