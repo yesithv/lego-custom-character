@@ -2623,15 +2623,6 @@ class _RunEndActions extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onChooseWorld;
 
-  /// Ancho máximo del botón dorado "Play again". Por defecto `320`; pasa
-  /// `double.infinity` para que ocupe todo el ancho disponible.
-  final double playAgainMaxWidth;
-
-  /// Ancho máximo (centrado) de la fila de tres accesos secundarios. Si es
-  /// `null` la fila ocupa todo el ancho (comportamiento por defecto); pasa un
-  /// valor para dejarla un poco más angosta.
-  final double? secondaryMaxWidth;
-
   const _RunEndActions({
     required this.worldId,
     required this.worldName,
@@ -2639,8 +2630,6 @@ class _RunEndActions extends StatelessWidget {
     required this.worldColor,
     required this.onRestart,
     required this.onChooseWorld,
-    this.playAgainMaxWidth = 320,
-    this.secondaryMaxWidth,
   });
 
   @override
@@ -2653,7 +2642,7 @@ class _RunEndActions extends StatelessWidget {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: playAgainMaxWidth),
+            constraints: const BoxConstraints(maxWidth: 320),
             child: _GoldActionButton(
               icon: Icons.replay_rounded,
               label: context.l10n.tr('play_again'),
@@ -2662,59 +2651,45 @@ class _RunEndActions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _maybeConstrainWidth(
-          Row(
-            children: [
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.map_rounded,
-                  label: context.l10n.tr('world_short'),
-                  tooltip: context.l10n.tr('choose_world'),
-                  onTap: onChooseWorld,
+        Row(
+          children: [
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.map_rounded,
+                label: context.l10n.tr('world_short'),
+                tooltip: context.l10n.tr('choose_world'),
+                onTap: onChooseWorld,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.emoji_events_rounded,
+                label: context.l10n.tr('ranking_short'),
+                tooltip: context.l10n.tr('view_ranking_short'),
+                onTap: () => context.goNamed(
+                  'ranking',
+                  pathParameters: {'worldId': worldId},
+                  extra: {
+                    'worldName': worldName,
+                    'worldEmoji': worldEmoji,
+                    'worldColor': worldColor,
+                  },
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.emoji_events_rounded,
-                  label: context.l10n.tr('ranking_short'),
-                  tooltip: context.l10n.tr('view_ranking_short'),
-                  onTap: () => context.goNamed(
-                    'ranking',
-                    pathParameters: {'worldId': worldId},
-                    extra: {
-                      'worldName': worldName,
-                      'worldEmoji': worldEmoji,
-                      'worldColor': worldColor,
-                    },
-                  ),
-                ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.storefront_rounded,
+                label: context.l10n.tr('store_short'),
+                tooltip: context.l10n.tr('run_shop_cta'),
+                onTap: () => context.pushNamed('store'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.storefront_rounded,
-                  label: context.l10n.tr('store_short'),
-                  tooltip: context.l10n.tr('run_shop_cta'),
-                  onTap: () => context.pushNamed('store'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
-    );
-  }
-
-  /// Centra y limita el ancho de la fila secundaria cuando se pide
-  /// [secondaryMaxWidth]; si es `null` la deja ocupar todo el ancho.
-  Widget _maybeConstrainWidth(Widget child) {
-    if (secondaryMaxWidth == null) return child;
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: secondaryMaxWidth!),
-        child: child,
-      ),
     );
   }
 }
