@@ -97,11 +97,12 @@ Hay **3 carriles**. `perspectivePos(lane, depth)` interpola entre el punto de fu
 | Swipe abajo | Deslizarse (pasar por debajo de barreras) |
 | Swipe izquierda / derecha | Cambiar de carril |
 
-> **HUD lateral (solo display, `IgnorePointer`).** Para despejar la vista de la
-> parte alta de la pista, el **dock de power-ups** (izquierda) y la **barra de
-> distancia** (derecha) se colocan bien abajo en `runner_page.dart`: el dock en
-> `Align(-1.0, 0.55)` y la barra en `Positioned(top: 230, bottom: 90)`. Así queda
-> despejada la esquina superior por donde entran los obstáculos.
+> **HUD lateral (solo display, `IgnorePointer`).** El **dock de power-ups**
+> (izquierda) y la **barra de distancia** (derecha) se colocan en la franja
+> **superior-media** en `runner_page.dart`: el dock en `Align(-1.0, -0.1)` y la
+> barra en `Positioned(top: 120, bottom: 250)`. Así quedan por encima del
+> corredor (que corre más abajo, `playerBaseY = 0.88`) sin "acosarle" los
+> costados y sin tapar la esquina superior por donde entran los obstáculos.
 
 ### Zonas de dificultad
 
