@@ -6,12 +6,21 @@ import 'package:flutter/material.dart' hide Image;
 import '../../../domain/entities/world_config.dart';
 import '../brix_run_game.dart';
 
-enum ObstacleType { block, barrier, spike }
+/// Tipos de obstáculo:
+/// - [block]/[spike]: de suelo — se libran saltando o cambiando de carril.
+/// - [barrier]: baja y ancha — se libra agachándose (o saltando/carril).
+/// - [overhead]: **colgante alto** — se libra SOLO agachándose (no se puede
+///   saltar). Se usa en el tutorial para enseñar a agacharse de forma
+///   inequívoca.
+enum ObstacleType { block, barrier, spike, overhead }
 
 class ObstacleComponent extends PositionComponent
     with HasGameReference<BrixRunGame> {
   final int lane;
   final ObstacleType type;
+
+  /// Obstáculo de la secuencia guiada del tutorial: nunca es letal (solo enseña).
+  final bool tutorial;
 
   double _depth = 0.0;
   bool _evaded = false;
@@ -24,16 +33,20 @@ class ObstacleComponent extends PositionComponent
   static const _barrierH = 34.0;
   static const _spikeW = 48.0;
   static const _spikeH = 58.0;
+  static const _overheadW = 92.0;
+  static const _overheadH = 96.0;
 
   double get _baseW => switch (type) {
         ObstacleType.barrier => _barrierW,
         ObstacleType.spike => _spikeW,
+        ObstacleType.overhead => _overheadW,
         _ => _blockW,
       };
 
   double get _baseH => switch (type) {
         ObstacleType.barrier => _barrierH,
         ObstacleType.spike => _spikeH,
+        ObstacleType.overhead => _overheadH,
         _ => _blockH,
       };
 
@@ -43,8 +56,11 @@ class ObstacleComponent extends PositionComponent
   bool get collided => _collided;
   set collided(bool v) => _collided = v;
 
-  ObstacleComponent({required this.lane, required this.type})
-      : super(size: Vector2(1, 1), priority: 5);
+  ObstacleComponent({
+    required this.lane,
+    required this.type,
+    this.tutorial = false,
+  }) : super(size: Vector2(1, 1), priority: 5);
 
   @override
   void update(double dt) {
@@ -72,6 +88,65 @@ class ObstacleComponent extends PositionComponent
         _renderBarrier(canvas, colors.obstacleBarrier);
       case ObstacleType.spike:
         _renderSpike(canvas, colors.obstacleSpike);
+      case ObstacleType.overhead:
+        _renderOverhead(canvas, colors.obstacleBarrier);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  OVERHEAD RENDERING (barrera colgante: hay que pasar agachado)
+  // ─────────────────────────────────────────────────────────────────
+  //
+  // El sistema de perspectiva apoya el "suelo" del obstáculo en el piso, así que
+  // se dibuja una viga alta suspendida por dos postes y se deja libre el hueco
+  // inferior por donde el corredor pasa deslizándose.
+  void _renderOverhead(Canvas canvas, Color color) {
+    final w = size.x;
+    final h = size.y;
+    final beamH = h * 0.22;
+    final poleW = w * 0.10;
+    final darker = _darken(color, 0.25);
+    final lighter = _lighten(color, 0.15);
+
+    // Postes laterales que bajan desde la viga hasta el suelo.
+    final polePaint = Paint()..color = darker;
+    canvas.drawRect(Rect.fromLTWH(0, beamH, poleW, h - beamH), polePaint);
+    canvas.drawRect(
+        Rect.fromLTWH(w - poleW, beamH, poleW, h - beamH), polePaint);
+
+    // Viga horizontal superior.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, w, beamH), const Radius.circular(4)),
+      Paint()..color = color,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, w, beamH * 0.35),
+      Paint()..color = lighter,
+    );
+
+    // Rayas de advertencia en la viga.
+    final stripe = Paint()..color = Colors.black.withValues(alpha: 0.35);
+    for (double x = 0; x < w; x += w * 0.2) {
+      final warn = Path()
+        ..moveTo(x, 0)
+        ..lineTo(x + w * 0.1, 0)
+        ..lineTo(x, beamH)
+        ..close();
+      canvas.drawPath(warn, stripe);
+    }
+
+    // Dientes colgantes que remarcan "agáchate por debajo".
+    final tooth = Paint()..color = darker;
+    const teeth = 5;
+    for (int i = 0; i < teeth; i++) {
+      final tx = w * 0.12 + i * (w * 0.76 / (teeth - 1));
+      final tip = Path()
+        ..moveTo(tx - w * 0.05, beamH)
+        ..lineTo(tx + w * 0.05, beamH)
+        ..lineTo(tx, beamH + h * 0.14)
+        ..close();
+      canvas.drawPath(tip, tooth);
     }
   }
 

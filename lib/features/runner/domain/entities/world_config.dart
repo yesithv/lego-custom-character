@@ -139,3 +139,12 @@ const worldTrackMeters = <String, int>{
 };
 
 int trackMetersFor(String worldId) => worldTrackMeters[worldId] ?? 500;
+
+/// Mundos **gratis** (los dos primeros, `WorldStatus.available` en
+/// `world_selection_page.dart`) que arrancan con el tutorial guiado de controles.
+/// Fuente única de verdad, usada por la página y por el motor del juego.
+const freeTutorialWorldIds = <String>{'brix_city', 'medieval'};
+
+/// `true` si el mundo debe arrancar con el tutorial guiado (una de las pistas
+/// gratis / fáciles pensadas para aprender a jugar).
+bool isTutorialWorld(String worldId) => freeTutorialWorldIds.contains(worldId);
