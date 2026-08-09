@@ -71,6 +71,13 @@ class _RunnerPageState extends State<RunnerPage> {
   /// el botón "Reclamar cofre" por las acciones de navegación.
   bool _chestClaimed = false;
 
+  /// Cuántas monedas recogidas en la carrera en curso ya se han **abonado** a la
+  /// billetera. Al morir se abonan las monedas de la carrera para que el jugador
+  /// pueda gastarlas al revivir (y no se pierdan si abandona); este contador
+  /// evita volver a abonarlas al terminar la carrera (sin doble conteo). Se
+  /// reinicia con cada nueva carrera (`restart`).
+  int _coinsBankedThisRun = 0;
+
   @override
   void initState() {
     super.initState();
@@ -143,7 +150,11 @@ class _RunnerPageState extends State<RunnerPage> {
     // La carrera terminó (derrota o victoria): corta la música de fondo de
     // inmediato para que no siga sonando bajo la pantalla de fin de partida.
     AudioService.instance.stopMusic();
-    context.read<WalletBloc>().add(RecordRunEvent(coins));
+    // Solo se acredita el remanente aún no abonado (parte de las monedas de la
+    // carrera pudo abonarse ya en las ofertas de continuar). `RecordRunEvent`
+    // suma el remanente y actualiza la racha una sola vez (aunque sea 0).
+    final unbanked = coins - _coinsBankedThisRun;
+    context.read<WalletBloc>().add(RecordRunEvent(unbanked));
     context.read<MissionBloc>().add(AdvanceMissionsEvent(MissionRunData(
       coins: _game.coins,
       meters: _game.meters,
@@ -185,6 +196,16 @@ class _RunnerPageState extends State<RunnerPage> {
   /// La partida ya quedó pausada con el overlay de continuación; aquí solo se
   /// refresca la UI y se registra el evento de analítica.
   void _onOfferContinue() {
+    // Abona a la billetera las monedas recogidas en la carrera que aún no se
+    // habían abonado, para que cuenten como saldo gastable al revivir (y queden
+    // guardadas si el jugador abandona). El remanente se descuenta al terminar
+    // para no duplicar (ver `_onRunComplete`). No toca `game.coins` (el HUD no
+    // se reinicia).
+    final unbanked = _game.coins - _coinsBankedThisRun;
+    if (unbanked > 0) {
+      context.read<WalletBloc>().add(EarnCoinsEvent(unbanked));
+      _coinsBankedThisRun = _game.coins;
+    }
     final offer = continueOfferFor(_game.continuesUsed);
     sl<AnalyticsService>().track(AnalyticsEvents.continueOffer, params: {
       'world': widget.worldId,
@@ -314,6 +335,7 @@ class _RunnerPageState extends State<RunnerPage> {
                             _showChest = false;
                             _chestClaimed = false;
                             _isPaused = false;
+                            _coinsBankedThisRun = 0;
                           });
                           game.restart();
                           // La música se cortó al terminar la carrera anterior:
@@ -345,6 +367,7 @@ class _RunnerPageState extends State<RunnerPage> {
                             _showChest = false;
                             _chestClaimed = false;
                             _isPaused = false;
+                            _coinsBankedThisRun = 0;
                           });
                           game.restart();
                           // La música se cortó al terminar la carrera anterior:
