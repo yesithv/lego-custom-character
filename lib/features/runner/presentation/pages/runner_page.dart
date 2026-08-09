@@ -73,6 +73,13 @@ class _RunnerPageState extends State<RunnerPage> {
   /// el botón "Reclamar cofre" por las acciones de navegación.
   bool _chestClaimed = false;
 
+  /// Cuántas monedas recogidas en la carrera en curso ya se han **abonado** a la
+  /// billetera. Al morir se abonan las monedas de la carrera para que el jugador
+  /// pueda gastarlas al revivir (y no se pierdan si abandona); este contador
+  /// evita volver a abonarlas al terminar la carrera (sin doble conteo). Se
+  /// reinicia con cada nueva carrera (`restart`).
+  int _coinsBankedThisRun = 0;
+
   @override
   void initState() {
     super.initState();
@@ -153,7 +160,11 @@ class _RunnerPageState extends State<RunnerPage> {
     // La carrera terminó (derrota o victoria): corta la música de fondo de
     // inmediato para que no siga sonando bajo la pantalla de fin de partida.
     AudioService.instance.stopMusic();
-    context.read<WalletBloc>().add(RecordRunEvent(coins));
+    // Solo se acredita el remanente aún no abonado (parte de las monedas de la
+    // carrera pudo abonarse ya en las ofertas de continuar). `RecordRunEvent`
+    // suma el remanente y actualiza la racha una sola vez (aunque sea 0).
+    final unbanked = coins - _coinsBankedThisRun;
+    context.read<WalletBloc>().add(RecordRunEvent(unbanked));
     context.read<MissionBloc>().add(AdvanceMissionsEvent(MissionRunData(
       coins: _game.coins,
       meters: _game.meters,
@@ -195,6 +206,16 @@ class _RunnerPageState extends State<RunnerPage> {
   /// La partida ya quedó pausada con el overlay de continuación; aquí solo se
   /// refresca la UI y se registra el evento de analítica.
   void _onOfferContinue() {
+    // Abona a la billetera las monedas recogidas en la carrera que aún no se
+    // habían abonado, para que cuenten como saldo gastable al revivir (y queden
+    // guardadas si el jugador abandona). El remanente se descuenta al terminar
+    // para no duplicar (ver `_onRunComplete`). No toca `game.coins` (el HUD no
+    // se reinicia).
+    final unbanked = _game.coins - _coinsBankedThisRun;
+    if (unbanked > 0) {
+      context.read<WalletBloc>().add(EarnCoinsEvent(unbanked));
+      _coinsBankedThisRun = _game.coins;
+    }
     final offer = continueOfferFor(_game.continuesUsed);
     sl<AnalyticsService>().track(AnalyticsEvents.continueOffer, params: {
       'world': widget.worldId,
@@ -390,6 +411,7 @@ class _RunnerPageState extends State<RunnerPage> {
                             _showChest = false;
                             _chestClaimed = false;
                             _isPaused = false;
+                            _coinsBankedThisRun = 0;
                           });
                           game.restart();
                           // La música se cortó al terminar la carrera anterior:
@@ -421,6 +443,7 @@ class _RunnerPageState extends State<RunnerPage> {
                             _showChest = false;
                             _chestClaimed = false;
                             _isPaused = false;
+                            _coinsBankedThisRun = 0;
                           });
                           game.restart();
                           // La música se cortó al terminar la carrera anterior:
@@ -2699,15 +2722,6 @@ class _RunEndActions extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onChooseWorld;
 
-  /// Ancho máximo del botón dorado "Play again". Por defecto `320`; pasa
-  /// `double.infinity` para que ocupe todo el ancho disponible.
-  final double playAgainMaxWidth;
-
-  /// Ancho máximo (centrado) de la fila de tres accesos secundarios. Si es
-  /// `null` la fila ocupa todo el ancho (comportamiento por defecto); pasa un
-  /// valor para dejarla un poco más angosta.
-  final double? secondaryMaxWidth;
-
   const _RunEndActions({
     required this.worldId,
     required this.worldName,
@@ -2715,8 +2729,6 @@ class _RunEndActions extends StatelessWidget {
     required this.worldColor,
     required this.onRestart,
     required this.onChooseWorld,
-    this.playAgainMaxWidth = 320,
-    this.secondaryMaxWidth,
   });
 
   @override
@@ -2729,7 +2741,7 @@ class _RunEndActions extends StatelessWidget {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: playAgainMaxWidth),
+            constraints: const BoxConstraints(maxWidth: 320),
             child: _GoldActionButton(
               icon: Icons.replay_rounded,
               label: context.l10n.tr('play_again'),
@@ -2738,59 +2750,45 @@ class _RunEndActions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _maybeConstrainWidth(
-          Row(
-            children: [
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.map_rounded,
-                  label: context.l10n.tr('world_short'),
-                  tooltip: context.l10n.tr('choose_world'),
-                  onTap: onChooseWorld,
+        Row(
+          children: [
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.map_rounded,
+                label: context.l10n.tr('world_short'),
+                tooltip: context.l10n.tr('choose_world'),
+                onTap: onChooseWorld,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.emoji_events_rounded,
+                label: context.l10n.tr('ranking_short'),
+                tooltip: context.l10n.tr('view_ranking_short'),
+                onTap: () => context.goNamed(
+                  'ranking',
+                  pathParameters: {'worldId': worldId},
+                  extra: {
+                    'worldName': worldName,
+                    'worldEmoji': worldEmoji,
+                    'worldColor': worldColor,
+                  },
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.emoji_events_rounded,
-                  label: context.l10n.tr('ranking_short'),
-                  tooltip: context.l10n.tr('view_ranking_short'),
-                  onTap: () => context.goNamed(
-                    'ranking',
-                    pathParameters: {'worldId': worldId},
-                    extra: {
-                      'worldName': worldName,
-                      'worldEmoji': worldEmoji,
-                      'worldColor': worldColor,
-                    },
-                  ),
-                ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SquareActionButton(
+                icon: Icons.storefront_rounded,
+                label: context.l10n.tr('store_short'),
+                tooltip: context.l10n.tr('run_shop_cta'),
+                onTap: () => context.pushNamed('store'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _SquareActionButton(
-                  icon: Icons.storefront_rounded,
-                  label: context.l10n.tr('store_short'),
-                  tooltip: context.l10n.tr('run_shop_cta'),
-                  onTap: () => context.pushNamed('store'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
-    );
-  }
-
-  /// Centra y limita el ancho de la fila secundaria cuando se pide
-  /// [secondaryMaxWidth]; si es `null` la deja ocupar todo el ancho.
-  Widget _maybeConstrainWidth(Widget child) {
-    if (secondaryMaxWidth == null) return child;
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: secondaryMaxWidth!),
-        child: child,
-      ),
     );
   }
 }
