@@ -36,6 +36,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   final void Function(int coins)? onRunComplete;
   final VoidCallback? onHit;
 
+  /// Se dispara cuando un golpe mortal ofrece **retomar la carrera** (revive):
+  /// la partida queda pausada esperando que el jugador pague o rechace. La
+  /// página lo usa para hacer `setState` y pintar el overlay de continuación.
+  final VoidCallback? onOfferContinue;
+
   /// Multiplicador de monedas ganadas (VIP: 1.5; normal: 1.0). Se aplica de
   /// forma suave con un acumulador fraccionario para no dar saltos raros.
   final double coinMultiplier;
@@ -52,6 +57,16 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   int jumpCount = 0;
   double elapsedSeconds = 0.0;
   bool isAlive = true;
+
+  /// Cuántas veces se ha retomado ya la carrera pagando en esta partida. Sube
+  /// con cada [continueRun]; determina el coste de la siguiente continuación
+  /// (ver `continueOfferFor` en `domain/entities/continue_cost.dart`). Efímero:
+  /// se reinicia en cada [restart], no se persiste.
+  int continuesUsed = 0;
+
+  /// `true` mientras la partida está pausada tras un golpe mortal, esperando a
+  /// que el jugador decida si paga por continuar o se rinde. Lo lee la UI.
+  bool awaitingContinue = false;
 
   // Boss fight state — read by HUD
   GamePhase phase = GamePhase.running;
@@ -205,6 +220,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   static const String _overlayHud = 'hud';
   static const String _overlayGameOver = 'gameOver';
   static const String _overlayVictory = 'victory';
+  static const String _overlayContinue = 'continue';
+
+  /// Segundos de invulnerabilidad que se conceden al retomar la carrera, para
+  /// que el jugador no muera de inmediato por el mismo obstáculo. Reutiliza el
+  /// escudo de power-up como mecanismo de "absorber un golpe".
+  static const double _reviveShieldDuration = 1.5;
 
   /// Zona de dificultad según la distancia. Los umbrales se mueven con la
   /// longitud de las pistas (`worldTrackMeters`) para que la progresión
@@ -230,6 +251,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     required this.worldId,
     this.onRunComplete,
     this.onHit,
+    this.onOfferContinue,
     this.coinMultiplier = 1.0,
     int? bossTriggerMeters,
   })  : bossTriggerMeters = bossTriggerMeters ??
@@ -796,10 +818,65 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       return;
     }
 
-    isAlive = false;
+    // Golpe mortal: en vez de ir directo a Game Over, se ofrece retomar la
+    // carrera pagando (revive en el mismo punto). El jugador queda "caído" y la
+    // partida pausada hasta que decida en el overlay de continuación.
+    _enterContinueOffer();
+  }
+
+  /// Congela la partida tras un golpe mortal y muestra la oferta de continuar.
+  /// No pone `isAlive = false` todavía (la carrera aún puede reanudarse), así
+  /// que la lógica que mira `!isAlive` no la trata como terminada.
+  void _enterContinueOffer() {
     _player.kill();
     AudioService.instance.playHit();
     onHit?.call();
+    awaitingContinue = true;
+    overlays.remove(_overlayHud);
+    overlays.add(_overlayContinue);
+    pauseEngine();
+    onOfferContinue?.call();
+    notifyListeners();
+  }
+
+  /// Retoma la carrera **en el mismo punto** tras pagar (revive). A diferencia
+  /// de [restart], NO resetea la partida: se conservan velocidad, distancia,
+  /// metros, score, fase y corazones del jefe. Limpia los obstáculos/ataques en
+  /// pantalla y concede una invulnerabilidad breve para no morir al instante.
+  void continueRun() {
+    if (!awaitingContinue) return;
+    continuesUsed++;
+    awaitingContinue = false;
+
+    _player.revive();
+
+    // Retirar lo que hay en pantalla que podría matar de nuevo de inmediato.
+    children.whereType<ObstacleComponent>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<BossAttackComponent>().toList().forEach((c) => c.removeFromParent());
+
+    // Invulnerabilidad breve reutilizando el escudo de power-up.
+    shieldPowerupActive = true;
+    _shieldTimer = _reviveShieldDuration;
+
+    overlays.remove(_overlayContinue);
+    overlays.add(_overlayHud);
+    resumeEngine();
+    notifyListeners();
+  }
+
+  /// El jugador renuncia a continuar: la carrera termina de verdad y salta al
+  /// Game Over (contabilizando la partida vía [onRunComplete]).
+  void declineContinue() {
+    if (!awaitingContinue) return;
+    awaitingContinue = false;
+    _gameOver();
+  }
+
+  /// Flujo de fin de carrera real: marca la muerte, muestra el Game Over y
+  /// notifica para que la partida se contabilice (RecordRun, misiones, score…).
+  void _gameOver() {
+    isAlive = false;
+    overlays.remove(_overlayContinue);
     overlays.remove(_overlayHud);
     overlays.add(_overlayGameOver);
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -833,6 +910,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     _shieldTimer = 0;
     _boostTimer = 0;
     isAlive = true;
+    continuesUsed = 0;
+    awaitingContinue = false;
 
     phase = GamePhase.running;
     bossHearts = bossMaxHearts;
@@ -857,6 +936,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
 
     overlays.remove(_overlayGameOver);
     overlays.remove(_overlayVictory);
+    overlays.remove(_overlayContinue);
     overlays.add(_overlayHud);
     resumeEngine();
     notifyListeners();

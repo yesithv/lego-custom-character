@@ -5,6 +5,50 @@
 > compuerta parental antes de comprar, sin loot boxes con dinero real, sin
 > pay-to-win.** Todo lo que sigue respeta esas restricciones.
 
+> ## 🔁 Retomar la carrera pagando (revive) — 2026-08-09
+>
+> Nueva feature transversal a **las 8 pistas**: al recibir un golpe mortal, antes
+> del Game Over se ofrece **retomar la carrera en el mismo punto pagando**. Es un
+> sumidero nuevo de monedas y gemas (justo lo que faltaba, ver §2.3/§2.5) y sube
+> el interés al final de la partida sin romper el kid-safe.
+>
+> **Modelo de coste — híbrido y creciente** (`lib/features/runner/domain/entities/continue_cost.dart`,
+> función pura `continueOfferFor(continuesUsed)`):
+>
+> | Continuación | Moneda | Coste |
+> |---|---|---|
+> | 1.ª | 🪙 monedas | 100 |
+> | 2.ª | 🪙 monedas | 250 |
+> | 3.ª | 💎 gemas | 20 |
+> | 4.ª | 💎 gemas | 40 |
+> | 5.ª+ | 💎 gemas | 80, 160, 320 (tope) |
+>
+> Las dos primeras continuaciones se pagan con la moneda blanda (asequible, drena
+> monedas que sobran); a partir de la 3.ª se paga con gemas (crea demanda de
+> moneda dura). **Continuaciones ilimitadas** mientras alcance el saldo; cuando ya
+> no puede pagar o rechaza → Game Over. Importes **tunables** en un único sitio.
+>
+> **Kid-safe:** se paga con moneda **ganable jugando**; el revive no da ninguna
+> ventaja competitiva (no es pay-to-win, solo reanuda la misma carrera); sin azar
+> (no es loot box). No hay dinero real en el flujo, así que **no** interviene la
+> compuerta parental; solo el enlace opcional "Conseguir más gemas" lleva a la
+> Tienda (que ya aplica `ParentalGate`).
+>
+> **Reflejo en la Billetera (automático):** `spendCoins`/`spendGems` bajan el
+> saldo pero **no** tocan `totalCoinsEarned`/`totalGemsEarned`, así que lo pagado
+> por continuar aparece como **"gastado"** en 🪙 y 💎 sin código extra (identidad
+> `gastado = ganado − saldo`, ver §"Identidades verificadas").
+>
+> **Impacto técnico:** aislado en la feature `runner`
+> (`brix_run_game.dart` + `runner_page.dart`) + la constante pura en su `domain/`.
+> Sin nueva caja/typeId Hive (**6 sigue libre**; el contador de continuaciones es
+> per-carrera), sin tocar `injection.dart`, sin backend. Analítica: eventos
+> `continue_offer`/`continue_purchase`/`continue_decline`; `run_death` pasa a
+> dispararse solo en el Game Over real (tras agotar/rechazar continuaciones).
+> Pruebas: `test/continue_cost_test.dart` (política pura),
+> `test/continue_flow_test.dart` (revive en el juego), `test/continue_wallet_test.dart`
+> (reflejo del gasto).
+
 > ## ✅ Estado de implementación (2026-07-30)
 >
 > La economía recomendada en §4 **ya está implementada y mergeada a `main`**

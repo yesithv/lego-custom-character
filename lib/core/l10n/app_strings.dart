@@ -55,6 +55,36 @@ const Map<String, Map<String, String>> kStrings = {
     'es': 'Continuar', 'en': 'Continue', 'pt': 'Continuar',
     'de': 'Weiter', 'ru': 'Продолжить', 'fr': 'Continuer',
   },
+  // ── Retomar la carrera pagando (revive) ───────────────────────────────────
+  'continue_title': {
+    'es': '¿Seguir corriendo?', 'en': 'Keep running?',
+    'pt': 'Continuar correndo?', 'de': 'Weiterlaufen?',
+    'ru': 'Продолжить забег?', 'fr': 'Continuer la course ?',
+  },
+  'continue_subtitle': {
+    'es': 'Retoma la carrera donde ibas.', 'en': 'Pick up right where you were.',
+    'pt': 'Retome de onde você parou.', 'de': 'Mach da weiter, wo du warst.',
+    'ru': 'Продолжи с того же места.', 'fr': 'Reprends où tu en étais.',
+  },
+  'continue_pay': {
+    'es': 'Continuar · {cost}', 'en': 'Continue · {cost}',
+    'pt': 'Continuar · {cost}', 'de': 'Weiter · {cost}',
+    'ru': 'Продолжить · {cost}', 'fr': 'Continuer · {cost}',
+  },
+  'continue_no_thanks': {
+    'es': 'No, gracias', 'en': 'No, thanks', 'pt': 'Não, obrigado',
+    'de': 'Nein, danke', 'ru': 'Нет, спасибо', 'fr': 'Non merci',
+  },
+  'continue_not_enough': {
+    'es': 'No te alcanza para continuar.', 'en': "You can't afford to continue.",
+    'pt': 'Você não tem o suficiente.', 'de': 'Nicht genug, um weiterzumachen.',
+    'ru': 'Не хватает, чтобы продолжить.', 'fr': 'Pas assez pour continuer.',
+  },
+  'continue_get_gems': {
+    'es': 'Conseguir más gemas', 'en': 'Get more gems',
+    'pt': 'Obter mais gemas', 'de': 'Mehr Edelsteine holen',
+    'ru': 'Получить ещё гемы', 'fr': 'Obtenir plus de gemmes',
+  },
   'cancel': {
     'es': 'Cancelar', 'en': 'Cancel', 'pt': 'Cancelar',
     'de': 'Abbrechen', 'ru': 'Отмена', 'fr': 'Annuler',
