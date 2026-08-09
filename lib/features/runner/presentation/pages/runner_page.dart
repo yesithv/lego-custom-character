@@ -531,19 +531,22 @@ class _HudOverlayState extends State<_HudOverlay>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Barra vertical de progreso en la pista (lado derecho)
+          // Barra vertical de progreso en la pista (lado derecho). Se baja
+          // (top mayor, bottom menor) para despejar la esquina superior donde
+          // aparecen los obstáculos y dar más vista de la pista.
           Positioned(
             right: 22,
-            top: 155,
-            bottom: 155,
+            top: 230,
+            bottom: 90,
             child: IgnorePointer(
               child: _TrackProgressBar(progress: g.trackProgress),
             ),
           ),
 
-          // Dock de power-ups (lado izquierdo, algo por debajo del centro)
+          // Dock de power-ups (lado izquierdo, claramente por debajo del
+          // centro para despejar la vista de la parte alta de la pista).
           Align(
-            alignment: const Alignment(-1.0, 0.3),
+            alignment: const Alignment(-1.0, 0.55),
             child: Padding(
               // Misma separación del borde que la barra de progreso de la
               // derecha (right: 22), para que ambos queden simétricos.

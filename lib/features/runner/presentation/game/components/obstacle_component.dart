@@ -22,7 +22,7 @@ class ObstacleComponent extends PositionComponent
   /// Obstáculo de la secuencia guiada del tutorial: nunca es letal (solo enseña).
   final bool tutorial;
 
-  double _depth = 0.0;
+  double _depth;
   bool _evaded = false;
   bool _collided = false;
 
@@ -56,11 +56,16 @@ class ObstacleComponent extends PositionComponent
   bool get collided => _collided;
   set collided(bool v) => _collided = v;
 
+  /// [initialDepth] permite arrancar el obstáculo ya avanzado hacia el corredor
+  /// (0 = horizonte, 1 = plano del jugador). Por defecto nace en el horizonte;
+  /// es útil para pruebas de colisión deterministas sin simular toda la llegada.
   ObstacleComponent({
     required this.lane,
     required this.type,
     this.tutorial = false,
-  }) : super(size: Vector2(1, 1), priority: 5);
+    double initialDepth = 0.0,
+  })  : _depth = initialDepth,
+        super(size: Vector2(1, 1), priority: 5);
 
   @override
   void update(double dt) {

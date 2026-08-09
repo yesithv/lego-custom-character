@@ -201,6 +201,13 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
 - **Efecto de derrota del jefe**: estallido de escombros + ondas + desvanecido.
 - **Sacudida de pantalla** (embestida y K.O.).
 - **Movimiento del jefe en pelea**: respiración, embestida al atacar, inclinación.
+- **Corredor más abajo y vista despejada**: `playerBaseY` bajó de `0.81 → 0.88`
+  (aplica a las 8 pistas) para dejar más recorrido visible por delante y más
+  tiempo de reacción; el dock de power-ups y la barra de distancia se bajaron
+  también. La colisión sigue en `depth == 1.0`, que se dibuja a la altura de
+  `playerBaseY`, así que los obstáculos golpean en la nueva posición del corredor
+  sin tocar la lógica de colisión. Cubierto por `test/player_position_test.dart`.
+  Ver `docs/JUGABILIDAD.md`.
 - **Orientación vertical forzada** (`core/orientation/portrait_lock.dart`): en
   nativo se bloquea con `SystemChrome` + el manifest de Android; en web la PWA
   la declara en `manifest.json` e `index.html` intenta

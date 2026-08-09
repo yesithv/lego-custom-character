@@ -196,7 +196,12 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   // camera (depth 1 = player level).
 
   double get horizonY => size.y * 0.37;
-  double get playerBaseY => size.y * 0.81;
+  // El corredor se sitúa bien abajo en la pista para dejar más recorrido
+  // visible por delante (más tiempo de reacción ante los obstáculos). Como la
+  // colisión se decide en `depth == 1.0` y `perspectivePos(*, 1.0).y` vale
+  // exactamente `playerBaseY`, el punto donde los obstáculos golpean baja junto
+  // con el jugador de forma automática. Aplica a todas las pistas.
+  double get playerBaseY => size.y * 0.88;
   double get vanishX => size.x / 2;
   double get laneSep => size.x * 0.265;
 
