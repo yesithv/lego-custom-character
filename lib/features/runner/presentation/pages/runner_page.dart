@@ -31,7 +31,9 @@ import '../../../ranking/domain/entities/score.dart';
 import '../../../ranking/presentation/bloc/ranking_bloc.dart';
 import '../../../ranking/presentation/bloc/ranking_event.dart';
 import '../../../ranking/presentation/bloc/ranking_state.dart';
+import '../../data/tutorial_prefs.dart';
 import '../../domain/entities/continue_cost.dart';
+import '../../domain/entities/world_config.dart';
 import '../game/brix_run_game.dart';
 import 'world_selection_page.dart';
 
@@ -76,6 +78,9 @@ class _RunnerPageState extends State<RunnerPage> {
     super.initState();
     // Los VIP ganan monedas con un multiplicador (beneficio de suscripción).
     final vip = sl<StoreRepository>().entitlementsSync().subscriptionActive;
+    // Tutorial guiado: solo en las pistas gratis y durante las primeras carreras.
+    final showTutorial =
+        isTutorialWorld(widget.worldId) && TutorialPrefs.shouldShow();
     _game = BrixRunGame(
       appearance: widget.character.appearance,
       characterType: widget.character.type,
@@ -84,7 +89,12 @@ class _RunnerPageState extends State<RunnerPage> {
       onHit: _onHit,
       onOfferContinue: _onOfferContinue,
       coinMultiplier: vip ? VipPerks.coinMultiplier : 1.0,
+      showTutorial: showTutorial,
     );
+    if (showTutorial) {
+      // Cuenta esta exposición del tutorial (a las 3 deja de aparecer).
+      TutorialPrefs.incrementSeen();
+    }
     sl<AnalyticsService>()
         .track(AnalyticsEvents.runStart, params: {'world': widget.worldId});
     // Pre-load ranking for this world to show personal best in game over
@@ -242,21 +252,85 @@ class _RunnerPageState extends State<RunnerPage> {
     super.dispose();
   }
 
+  // Origen y último punto del arrastre en curso: el swipe se decide por
+  // DESPLAZAMIENTO, no por velocidad. Un arrastre lento (muy común en niños)
+  // acababa con velocidad ≈ 0 y no registraba nada en el móvil.
+  Offset? _panStart;
+  Offset _panLast = Offset.zero;
+
+  /// Desplazamiento mínimo (px) para tratar un arrastre como swipe.
+  static const double _swipeMinDistance = 24.0;
+
+  void _handlePanStart(DragStartDetails d) {
+    _panStart = d.localPosition;
+    _panLast = d.localPosition;
+  }
+
+  void _handlePanUpdate(DragUpdateDetails d) {
+    _panLast = d.localPosition;
+  }
+
   void _handleSwipe(DragEndDetails d) {
+    final start = _panStart;
+    _panStart = null;
     if (_isPaused) return;
+
+    // 1) Por desplazamiento total del dedo (fiable con arrastres lentos).
+    if (start != null) {
+      final delta = _panLast - start;
+      if (delta.distance >= _swipeMinDistance) {
+        if (delta.dx.abs() > delta.dy.abs()) {
+          if (delta.dx > 0) {
+            _game.onSwipeRight();
+          } else {
+            _game.onSwipeLeft();
+          }
+        } else {
+          if (delta.dy < 0) {
+            _game.onSwipeUp();
+          } else {
+            _game.onSwipeDown();
+          }
+        }
+        return;
+      }
+    }
+
+    // 2) Fallback por velocidad (flicks rápidos y muy cortos).
     final v = d.velocity.pixelsPerSecond;
     if (v.dx.abs() > v.dy.abs()) {
-      if (v.dx > _swipeThreshold) _game.onSwipeRight();
-      else if (v.dx < -_swipeThreshold) _game.onSwipeLeft();
+      if (v.dx > _swipeThreshold) {
+        _game.onSwipeRight();
+      } else if (v.dx < -_swipeThreshold) {
+        _game.onSwipeLeft();
+      }
     } else {
-      if (v.dy < -_swipeThreshold) _game.onSwipeUp();
-      else if (v.dy > _swipeThreshold) _game.onSwipeDown();
+      if (v.dy < -_swipeThreshold) {
+        _game.onSwipeUp();
+      } else if (v.dy > _swipeThreshold) {
+        _game.onSwipeDown();
+      }
     }
   }
 
-  void _handleTap() {
+  /// Toque por zonas de la pantalla (además del swipe): tercio izquierdo →
+  /// izquierda, tercio derecho → derecha, centro-arriba → saltar, centro-abajo
+  /// → agacharse. El `GestureDetector` ocupa toda la pantalla, así que
+  /// `localPosition` y el tamaño de pantalla coinciden.
+  void _handleTapUp(TapUpDetails d) {
     if (_isPaused) return;
-    _game.onTap();
+    final size = MediaQuery.sizeOf(context);
+    final dx = d.localPosition.dx;
+    final third = size.width / 3;
+    if (dx < third) {
+      _game.onSwipeLeft();
+    } else if (dx > third * 2) {
+      _game.onSwipeRight();
+    } else if (d.localPosition.dy < size.height / 2) {
+      _game.onSwipeUp();
+    } else {
+      _game.onSwipeDown();
+    }
   }
 
   void _togglePause() {
@@ -290,8 +364,10 @@ class _RunnerPageState extends State<RunnerPage> {
           ),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
+            onPanStart: _handlePanStart,
+            onPanUpdate: _handlePanUpdate,
             onPanEnd: _handleSwipe,
-            onTap: _handleTap,
+            onTapUp: _handleTapUp,
             child: GameWidget<BrixRunGame>(
               game: _game,
               overlayBuilderMap: {

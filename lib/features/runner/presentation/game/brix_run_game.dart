@@ -22,6 +22,7 @@ import 'components/powerup_component.dart';
 import 'components/powerup_effects.dart';
 import 'components/scenery_component.dart';
 import 'components/score_popup_component.dart';
+import 'components/tutorial_hint_component.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
 
@@ -45,6 +46,10 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   /// forma suave con un acumulador fraccionario para no dar saltos raros.
   final double coinMultiplier;
   double _coinFraction = 0;
+
+  /// Si esta carrera arranca con el **tutorial guiado** de controles (solo en
+  /// las pistas gratis y durante las primeras carreras). Lo decide la página.
+  final bool showTutorial;
 
   // Runtime state — read by HUD
   double speed = 220.0;
@@ -156,6 +161,21 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   late PlayerComponent _player;
   final Random _rng = Random();
 
+  // ── Tutorial guiado ─────────────────────────────────────────────────────────
+  // Secuencia scripted al inicio de las pistas gratis: 4 obstáculos "de frente",
+  // uno por control (izquierda, derecha, saltar, agacharse), cada uno con su
+  // flecha. Fuerza la acción y nunca es letal (ver `_checkDepthCollisions`).
+  bool _tutorialActive = false;
+  int _tutorialStep = 0;
+  bool _tutorialStepSpawned = false;
+  double _tutorialGap = 0;
+  final List<ObstacleComponent> _tutorialObstacles = [];
+  TutorialHintComponent? _tutorialHint;
+
+  static const int _tutorialStepCount = 4;
+  static const double _tutorialStartDelay = 1.0; // respiro antes del 1.er paso
+  static const double _tutorialStepGap = 0.7; // pausa entre pasos
+
   // ── Screen shake ────────────────────────────────────────────────────────────
   double _shakeTimer = 0;
   double _shakeDuration = 0;
@@ -253,6 +273,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     this.onHit,
     this.onOfferContinue,
     this.coinMultiplier = 1.0,
+    this.showTutorial = false,
     int? bossTriggerMeters,
   })  : bossTriggerMeters = bossTriggerMeters ??
             (TestMode.instance.isOn
@@ -280,6 +301,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     }
 
     overlays.add(_overlayHud);
+    _tutorialActive = showTutorial;
   }
 
   @override
@@ -302,12 +324,25 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     final effectiveSpeed = speed + _zoneSpeedBonus;
 
     if (phase == GamePhase.running) {
-      // Obstacle spawning
-      _obstacleTimer += dt;
-      final spawnInterval = (2.2 - effectiveSpeed / 900).clamp(0.65, 2.2);
-      if (_obstacleTimer >= spawnInterval) {
-        _spawnObstacle();
-        _obstacleTimer = 0;
+      if (_tutorialActive) {
+        // Durante el tutorial guiado se sustituye el spawn aleatorio de
+        // obstáculos/power-ups por la secuencia scripted (las monedas siguen).
+        _advanceTutorial(dt);
+      } else {
+        // Obstacle spawning
+        _obstacleTimer += dt;
+        final spawnInterval = (2.2 - effectiveSpeed / 900).clamp(0.65, 2.2);
+        if (_obstacleTimer >= spawnInterval) {
+          _spawnObstacle();
+          _obstacleTimer = 0;
+        }
+
+        // Power-up spawning
+        _powerupTimer += dt;
+        if (_powerupTimer >= _powerupSpawnInterval) {
+          _spawnPowerup();
+          _powerupTimer = 0;
+        }
       }
 
       // Coin spawning
@@ -315,13 +350,6 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       if (_coinTimer >= 0.9) {
         _spawnCoin();
         _coinTimer = 0;
-      }
-
-      // Power-up spawning
-      _powerupTimer += dt;
-      if (_powerupTimer >= _powerupSpawnInterval) {
-        _spawnPowerup();
-        _powerupTimer = 0;
       }
     }
 
@@ -571,6 +599,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       if (obs.collided || obs.evaded) continue;
       if (obs.depth < _collisionDepth) continue; // aún no llega al corredor
 
+      // Obstáculos del tutorial: nunca son letales (solo enseñan). Se retiran
+      // sin muerte ni racha, hayan sido "esquivados" o no.
+      if (obs.tutorial) {
+        obs.evaded = true;
+        continue;
+      }
+
       // Otro carril: pasa de largo, cuenta como esquivado.
       if (obs.lane != playerLane) {
         obs.evaded = true;
@@ -579,11 +614,15 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       }
 
       // Mismo carril: ¿lo está librando el jugador en este instante?
+      // Las barreras colgantes (overhead) NO se pueden saltar: solo agacharse.
       final jumpingClear = _player.isJumping &&
           _player.jumpProgress > 0.10 &&
-          _player.jumpProgress < 0.90;
-      // Deslizarse pasa por debajo de las barreras.
-      final slidingClear = _player.isSliding && obs.type == ObstacleType.barrier;
+          _player.jumpProgress < 0.90 &&
+          obs.type != ObstacleType.overhead;
+      // Deslizarse pasa por debajo de las barreras (bajas o colgantes).
+      final slidingClear = _player.isSliding &&
+          (obs.type == ObstacleType.barrier ||
+              obs.type == ObstacleType.overhead);
       // El turbo arrasa con cualquier obstáculo sin recibir daño.
       if (jumpingClear || slidingClear || boostActive) {
         obs.evaded = true;
@@ -668,6 +707,94 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
         _spawnScenery(startDepth: (d + 0.08).clamp(0.0, 1.0));
       }
     }
+  }
+
+  // ── Tutorial guiado ──────────────────────────────────────────────────────
+
+  /// Conduce la secuencia scripted del tutorial: lanza cada paso, espera a que
+  /// sus obstáculos salgan de escena y pasa al siguiente hasta terminar.
+  void _advanceTutorial(double dt) {
+    if (!_tutorialStepSpawned) {
+      // Cuenta atrás antes de lanzar el paso actual (más larga la primera vez).
+      _tutorialGap += dt;
+      final delay = _tutorialStep == 0 ? _tutorialStartDelay : _tutorialStepGap;
+      if (_tutorialGap >= delay) {
+        _tutorialGap = 0;
+        _spawnTutorialStep(_tutorialStep);
+        _tutorialStepSpawned = true;
+      }
+      return;
+    }
+
+    // Paso lanzado: avanzar cuando todos sus obstáculos ya cruzaron al corredor.
+    if (_tutorialObstacles.every((o) => !o.isMounted)) {
+      _tutorialHint?.removeFromParent();
+      _tutorialHint = null;
+      _tutorialObstacles.clear();
+      _tutorialStepSpawned = false;
+      _tutorialStep++;
+      if (_tutorialStep >= _tutorialStepCount) {
+        _tutorialActive = false; // se reanuda la carrera normal
+      }
+    }
+  }
+
+  /// Lanza los obstáculos y la flecha de un paso del tutorial. El corredor
+  /// arranca en el carril central (1). Cada paso **fuerza** su acción con un
+  /// solo movimiento siguiendo el recorrido esperado (centro → izquierda →
+  /// centro):
+  /// - 0: muros en los carriles 1 y 2, hueco a la izquierda → mover ← (1→0).
+  /// - 1: muros en los carriles 0 y 2, hueco en el centro → mover → (0→1).
+  /// - 2: bloques de suelo en los 3 carriles (no se agachan) → saltar ↑.
+  /// - 3: barreras colgantes en los 3 carriles (no se saltan) → agacharse ↓.
+  void _spawnTutorialStep(int step) {
+    // Un "muro" (bloque + colgante en el mismo carril) no se salta ni se agacha:
+    // obliga a cambiar de carril.
+    void wall(int lane) {
+      _addTutorialObstacle(lane, ObstacleType.block);
+      _addTutorialObstacle(lane, ObstacleType.overhead);
+    }
+
+    final HintDirection dir;
+    switch (step) {
+      case 0:
+        wall(1);
+        wall(2);
+        dir = HintDirection.left;
+      case 1:
+        wall(0);
+        wall(2);
+        dir = HintDirection.right;
+      case 2:
+        for (var l = 0; l < 3; l++) {
+          _addTutorialObstacle(l, ObstacleType.block);
+        }
+        dir = HintDirection.up;
+      default:
+        for (var l = 0; l < 3; l++) {
+          _addTutorialObstacle(l, ObstacleType.overhead);
+        }
+        dir = HintDirection.down;
+    }
+
+    _tutorialHint = TutorialHintComponent(direction: dir);
+    add(_tutorialHint!);
+  }
+
+  void _addTutorialObstacle(int lane, ObstacleType type) {
+    final obs = ObstacleComponent(lane: lane, type: type, tutorial: true);
+    _tutorialObstacles.add(obs);
+    add(obs);
+  }
+
+  void _resetTutorial() {
+    _tutorialActive = showTutorial;
+    _tutorialStep = 0;
+    _tutorialStepSpawned = false;
+    _tutorialGap = 0;
+    _tutorialObstacles.clear();
+    _tutorialHint?.removeFromParent();
+    _tutorialHint = null;
   }
 
   // ── Input ──────────────────────────────────────────────────────────────────
@@ -929,6 +1056,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     children.whereType<SceneryComponent>().toList().forEach((c) => c.removeFromParent());
     children.whereType<BossAttackComponent>().toList().forEach((c) => c.removeFromParent());
     _seedScenery();
+    _resetTutorial();
 
     _player.removeFromParent();
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
