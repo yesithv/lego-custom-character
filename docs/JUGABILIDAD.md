@@ -72,13 +72,22 @@ El runner simula 3D con matemática de perspectiva (estilo Subway Surfers). Los 
 | Concepto | Valor / fórmula |
 |----------|-----------------|
 | Línea de horizonte | `horizonY = size.y * 0.37` |
-| Nivel del jugador | `playerBaseY = size.y * 0.81` |
+| Nivel del jugador | `playerBaseY = size.y * 0.88` |
 | Punto de fuga (X) | `vanishX = size.x / 2` |
 | Separación de carriles | `laneSep = size.x * 0.265` |
 | Escala por profundidad | `0.07 + 0.93 * depth` (diminuto en el horizonte, tamaño real junto al jugador) |
 | Avance de profundidad | `depthRate = 0.42 * (speed / 220)` unidades/seg |
 
 Hay **3 carriles**. `perspectivePos(lane, depth)` interpola entre el punto de fuga y la posición del carril al nivel del jugador.
+
+> **Posición del corredor (global a todas las pistas).** `playerBaseY` es la
+> **única** fuente de verdad de la altura del corredor: no depende del `worldId`,
+> así que el corredor se sitúa igual en las 8 pistas. Se bajó de `0.81 → 0.88`
+> para dejar más recorrido visible por delante (más tiempo de reacción ante los
+> obstáculos). **Invariante clave:** como la colisión se decide en `depth == 1.0`
+> y `perspectivePos(*, 1.0).y` vale exactamente `playerBaseY`, al mover al
+> corredor el punto donde los obstáculos lo golpean baja **junto con él**, sin
+> tocar la lógica de colisión. Cubierto por `test/player_position_test.dart`.
 
 ### Controles
 
@@ -87,6 +96,12 @@ Hay **3 carriles**. `perspectivePos(lane, depth)` interpola entre el punto de fu
 | Swipe arriba / tap | Saltar |
 | Swipe abajo | Deslizarse (pasar por debajo de barreras) |
 | Swipe izquierda / derecha | Cambiar de carril |
+
+> **HUD lateral (solo display, `IgnorePointer`).** Para despejar la vista de la
+> parte alta de la pista, el **dock de power-ups** (izquierda) y la **barra de
+> distancia** (derecha) se colocan bien abajo en `runner_page.dart`: el dock en
+> `Align(-1.0, 0.55)` y la barra en `Positioned(top: 230, bottom: 90)`. Así queda
+> despejada la esquina superior por donde entran los obstáculos.
 
 ### Zonas de dificultad
 
@@ -118,7 +133,8 @@ La dificultad aumenta según los metros recorridos (`meters`):
 
 Detección manual por proximidad de profundidad (`_checkDepthCollisions`), no por hitboxes:
 
-- Ventana de impacto: `depth ∈ [0.87, 1.11]` **y** mismo carril que el jugador.
+- El obstáculo se resuelve al cruzar el **plano del corredor** (`_collisionDepth = 1.0`), que se dibuja justo a la altura de `playerBaseY` (ver invariante en [Perspectiva pseudo-3D](#perspectiva-pseudo-3d)): el golpe ocurre donde está el personaje, no en un punto fijo de la pantalla.
+- Ventana de impacto de monedas/power-ups: `depth ∈ [0.87, 1.11]` **y** mismo carril que el jugador.
 - Un obstáculo se marca como **evadido** al superar `depth ≥ 1.16` sin colisión.
 - **Salto:** con `jumpProgress ∈ (0.10, 0.90)` se libran **todos** los obstáculos.
 - **Deslizamiento:** solo libra las **barreras** (`ObstacleType.barrier`).
