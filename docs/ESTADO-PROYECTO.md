@@ -114,6 +114,19 @@ backend, sin API, sin red) **con pagos reales** vía Google Play Billing. La web
   **cosméticos exclusivos** (piezas `premium`, no comprables con monedas) y
   paquetes de monedas; entregados sobre el wallet existente.
 
+### Retomar la carrera pagando (revive) — ver `docs/ECONOMIA.md`
+- **Continuar tras morir** en las 8 pistas: al recibir un golpe mortal aparece un
+  overlay "¿Seguir corriendo?" **antes** del Game Over; pagar retoma la carrera en
+  el mismo punto (con invulnerabilidad breve). Coste **híbrido creciente**: 1.ª/2.ª
+  con monedas (100/250 🪙), 3.ª+ con gemas (20/40/80…💎, con tope). Continuaciones
+  ilimitadas mientras alcance el saldo; si no puede/ rechaza → Game Over.
+  Kid-safe (moneda ganable jugando, no pay-to-win, sin azar). Sumidero nuevo de
+  monedas y gemas; el gasto se refleja solo en la Billetera. Política pura en
+  `features/runner/domain/entities/continue_cost.dart`; lógica en
+  `brix_run_game.dart` (`continueRun`/`declineContinue`) y overlay en
+  `runner_page.dart`. **No** añade typeId Hive (contador per-carrera; **6 sigue
+  libre**). Eventos de analítica `continue_offer/purchase/decline`.
+
 ### Revisión de economía + Billetera (última sesión — ver `docs/ECONOMIA.md`)
 - **Misiones ahora pagan de verdad**: al completarse acreditan sus monedas
   (`EarnCoinsEvent`) y regalan **+1 💎** (faucet gratuito). Antes se mostraban

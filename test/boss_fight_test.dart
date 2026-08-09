@@ -29,6 +29,7 @@ Future<BrixRunGame> startGame(
           'hud': (_, __) => const SizedBox(),
           'gameOver': (_, __) => const SizedBox(),
           'victory': (_, __) => const SizedBox(),
+          'continue': (_, __) => const SizedBox(),
         },
       ),
     ),
@@ -139,7 +140,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
   });
 
-  testWidgets('un ataque que golpea sin escudo termina la carrera',
+  testWidgets(
+      'un ataque que golpea sin escudo ofrece continuar; al rechazar termina',
       (tester) async {
     final game = await startGame(tester);
     await pumpUntil(tester, () => game.phase == GamePhase.bossFight);
@@ -152,6 +154,13 @@ void main() {
       depth: 0.95,
     ));
     await simulate(tester, 0.3);
+    // El golpe mortal ya no termina la carrera: primero ofrece continuar.
+    expect(game.awaitingContinue, isTrue);
+    expect(game.isAlive, isTrue);
+
+    // Al rechazar la oferta, la carrera sí termina.
+    game.declineContinue();
+    await tester.pump();
     expect(game.isAlive, isFalse);
     // Deja disparar el Future.delayed del game over antes de cerrar el test
     await tester.pump(const Duration(milliseconds: 600));

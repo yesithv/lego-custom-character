@@ -109,6 +109,20 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
 
   void kill() => _state = PlayerState.dead;
 
+  /// Revive al jugador para retomar la carrera (tras pagar por continuar).
+  /// Restaura la postura de carrera y el tamaño/posición normales (por si murió
+  /// deslizándose, que reduce la altura), en el carril central.
+  void revive() {
+    _state = PlayerState.running;
+    _jumpProgress = 0;
+    _slideTimer = 0;
+    _dashTimer = 0;
+    size = Vector2(_w, _h);
+    currentLane = 1;
+    _targetX = game.laneXPositions[currentLane];
+    position = Vector2(_targetX - _w / 2, game.playerBaseY - _h);
+  }
+
   /// Embestida contra el jefe: ráfaga visual breve de velocidad.
   void dash() => _dashTimer = 0.5;
 

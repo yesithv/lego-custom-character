@@ -31,6 +31,7 @@ import '../../../ranking/domain/entities/score.dart';
 import '../../../ranking/presentation/bloc/ranking_bloc.dart';
 import '../../../ranking/presentation/bloc/ranking_event.dart';
 import '../../../ranking/presentation/bloc/ranking_state.dart';
+import '../../domain/entities/continue_cost.dart';
 import '../game/brix_run_game.dart';
 import 'world_selection_page.dart';
 
@@ -81,6 +82,7 @@ class _RunnerPageState extends State<RunnerPage> {
       worldId: widget.worldId,
       onRunComplete: _onRunComplete,
       onHit: _onHit,
+      onOfferContinue: _onOfferContinue,
       coinMultiplier: vip ? VipPerks.coinMultiplier : 1.0,
     );
     sl<AnalyticsService>()
@@ -113,10 +115,10 @@ class _RunnerPageState extends State<RunnerPage> {
       AudioService.instance.pauseMusic();
       return;
     }
-    // Al volver a vertical solo se reanuda si la partida sigue viva y el
-    // jugador no la había pausado a mano.
+    // Al volver a vertical solo se reanuda si la partida sigue viva, el jugador
+    // no la había pausado a mano y no está decidiendo si paga por continuar.
     final runOver = !_game.isAlive || _game.phase == GamePhase.victory;
-    if (!_isPaused && !runOver) {
+    if (!_isPaused && !runOver && !_game.awaitingContinue) {
       _game.resumeEngine();
       AudioService.instance.resumeMusic();
     }
@@ -177,6 +179,59 @@ class _RunnerPageState extends State<RunnerPage> {
 
   void _onHit() {
     HapticFeedback.heavyImpact();
+  }
+
+  /// El juego avisa de un golpe mortal y ofrece retomar la carrera pagando.
+  /// La partida ya quedó pausada con el overlay de continuación; aquí solo se
+  /// refresca la UI y se registra el evento de analítica.
+  void _onOfferContinue() {
+    final offer = continueOfferFor(_game.continuesUsed);
+    sl<AnalyticsService>().track(AnalyticsEvents.continueOffer, params: {
+      'world': widget.worldId,
+      'index': _game.continuesUsed,
+      'currency': offer.currency.name,
+      'amount': offer.amount,
+    });
+    // La música se atenúa mientras se decide (no se corta: la carrera sigue viva).
+    AudioService.instance.pauseMusic();
+    if (mounted) setState(() => _isPaused = false);
+  }
+
+  /// Cobra el coste de la continuación con la moneda que toque y, si el pago
+  /// prospera, retoma la carrera en el mismo punto. Devuelve `false` si no se
+  /// pudo pagar (saldo insuficiente), para que el overlay muestre el aviso.
+  Future<bool> _payAndContinue() async {
+    final offer = continueOfferFor(_game.continuesUsed);
+    if (offer.isCoins) {
+      final coins = context.read<WalletBloc>().state.wallet.coins;
+      if (coins < offer.amount) return false;
+      context.read<WalletBloc>().add(SpendCoinsEvent(offer.amount));
+    } else {
+      final gems = sl<StoreRepository>().entitlementsSync().gems;
+      if (gems < offer.amount) return false;
+      final result = await sl<StoreRepository>().spendGems(offer.amount);
+      if (!result.success) return false;
+    }
+    sl<AnalyticsService>().track(AnalyticsEvents.continuePurchase, params: {
+      'world': widget.worldId,
+      'index': _game.continuesUsed,
+      'currency': offer.currency.name,
+      'amount': offer.amount,
+    });
+    AudioService.instance.resumeMusic();
+    _game.continueRun();
+    if (mounted) setState(() {});
+    return true;
+  }
+
+  /// El jugador renuncia a continuar: la carrera termina y va al Game Over.
+  void _declineContinue() {
+    sl<AnalyticsService>().track(AnalyticsEvents.continueDecline, params: {
+      'world': widget.worldId,
+      'index': _game.continuesUsed,
+    });
+    _game.declineContinue();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -297,6 +352,18 @@ class _RunnerPageState extends State<RunnerPage> {
                           _startMusic();
                         },
                         onExit: () => context.goNamed('worlds'),
+                      ),
+                    ),
+                // Oferta de retomar la carrera pagando, antes del Game Over.
+                'continue': (context, game) =>
+                    BlocBuilder<WalletBloc, WalletState>(
+                      builder: (context, walletState) => _ContinueOverlay(
+                        offer: continueOfferFor(game.continuesUsed),
+                        coins: walletState.wallet.coins,
+                        gems: sl<StoreRepository>().entitlementsSync().gems,
+                        onPay: _payAndContinue,
+                        onDecline: _declineContinue,
+                        onGetGems: () => context.pushNamed('store'),
                       ),
                     ),
               },
@@ -1029,6 +1096,207 @@ class _PauseOverlay extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Continue Overlay ──────────────────────────────────────────────────────────
+
+/// Oferta de retomar la carrera pagando, mostrada tras un golpe mortal y antes
+/// del Game Over. Paga con la moneda que indique la [offer] (monedas o gemas) y
+/// solo habilita el botón si el jugador tiene saldo. Si rechaza o no le alcanza,
+/// la carrera termina.
+class _ContinueOverlay extends StatefulWidget {
+  final ContinueOffer offer;
+  final int coins;
+  final int gems;
+
+  /// Cobra e intenta continuar; devuelve `false` si no se pudo pagar.
+  final Future<bool> Function() onPay;
+  final VoidCallback onDecline;
+  final VoidCallback onGetGems;
+
+  const _ContinueOverlay({
+    required this.offer,
+    required this.coins,
+    required this.gems,
+    required this.onPay,
+    required this.onDecline,
+    required this.onGetGems,
+  });
+
+  @override
+  State<_ContinueOverlay> createState() => _ContinueOverlayState();
+}
+
+class _ContinueOverlayState extends State<_ContinueOverlay> {
+  bool _busy = false;
+  bool _showNotEnough = false;
+
+  bool get _affordable => widget.offer.isCoins
+      ? widget.coins >= widget.offer.amount
+      : widget.gems >= widget.offer.amount;
+
+  String get _costLabel {
+    final emoji = widget.offer.isCoins ? '🪙' : '💎';
+    return '${widget.offer.amount} $emoji';
+  }
+
+  Future<void> _handlePay() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _showNotEnough = false;
+    });
+    final ok = await widget.onPay();
+    if (!ok && mounted) {
+      setState(() {
+        _busy = false;
+        _showNotEnough = true;
+      });
+    }
+    // Si `ok`, el juego se reanuda y este overlay se retira; no hace falta más.
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canPay = _affordable && !_busy;
+    final notEnough = _showNotEnough || !_affordable;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {}, // absorbe toques del fondo para que no lleguen al juego
+      child: Container(
+      color: Colors.black.withValues(alpha: 0.78),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2E),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFFFD700), width: 2),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '🏃 ${context.l10n.tr('continue_title')}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 22,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.tr('continue_subtitle'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const SizedBox(height: 18),
+              // Saldos actuales del jugador.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _balanceChip('🪙', widget.coins),
+                  const SizedBox(width: 12),
+                  _balanceChip('💎', widget.gems),
+                ],
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: Colors.black87,
+                    disabledBackgroundColor: Colors.white24,
+                    disabledForegroundColor: Colors.white38,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: canPay ? _handlePay : null,
+                  child: _busy
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.black54,
+                          ),
+                        )
+                      : Text(
+                          context.l10n.trp('continue_pay', {'cost': _costLabel}),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                ),
+              ),
+              if (notEnough) ...[
+                const SizedBox(height: 12),
+                Text(
+                  context.l10n.tr('continue_not_enough'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFFFF8A80), fontSize: 13),
+                ),
+                // Puente kid-safe a la Tienda (que aplica la compuerta parental)
+                // solo cuando falta la moneda dura.
+                if (widget.offer.isGems) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: widget.onGetGems,
+                    child: Text(
+                      '💎 ${context.l10n.tr('continue_get_gems')}',
+                      style: const TextStyle(
+                        color: Color(0xFF80D8FF),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: const BorderSide(color: Colors.white30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: _busy ? null : widget.onDecline,
+                  child: Text(context.l10n.tr('continue_no_thanks')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _balanceChip(String emoji, int amount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$emoji $amount',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
         ),
       ),
     );

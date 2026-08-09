@@ -20,6 +20,9 @@ class AnalyticsEvents {
   static const runStart = 'run_start';
   static const runVictory = 'run_victory';
   static const runDeath = 'run_death';
+  static const continueOffer = 'continue_offer';
+  static const continuePurchase = 'continue_purchase';
+  static const continueDecline = 'continue_decline';
   static const rouletteSpin = 'roulette_spin';
   static const storeOpen = 'store_open';
   static const gemStoreOpen = 'gem_store_open';
