@@ -536,17 +536,17 @@ class _HudOverlayState extends State<_HudOverlay>
           // (que ahora corre más abajo) y no "acosar" sus costados.
           Positioned(
             right: 22,
-            top: 120,
-            bottom: 250,
+            top: 110,
+            bottom: 330,
             child: IgnorePointer(
               child: _TrackProgressBar(progress: g.trackProgress),
             ),
           ),
 
-          // Dock de power-ups (lado izquierdo, en la franja superior-media
+          // Dock de power-ups (lado izquierdo, en la franja superior
           // para despejar los costados del corredor, que corre más abajo).
           Align(
-            alignment: const Alignment(-1.0, -0.1),
+            alignment: const Alignment(-1.0, -0.35),
             child: Padding(
               // Misma separación del borde que la barra de progreso de la
               // derecha (right: 22), para que ambos queden simétricos.
