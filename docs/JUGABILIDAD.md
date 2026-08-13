@@ -99,10 +99,11 @@ Hay **3 carriles**. `perspectivePos(lane, depth)` interpola entre el punto de fu
 
 > **HUD lateral (solo display, `IgnorePointer`).** El **dock de power-ups**
 > (izquierda) y la **barra de distancia** (derecha) se colocan en la franja
-> **superior-media** en `runner_page.dart`: el dock en `Align(-1.0, -0.1)` y la
-> barra en `Positioned(top: 120, bottom: 250)`. Así quedan por encima del
-> corredor (que corre más abajo, `playerBaseY = 0.88`) sin "acosarle" los
-> costados y sin tapar la esquina superior por donde entran los obstáculos.
+> **superior** en `runner_page.dart`: el dock en `Align(-1.0, -0.35)` y la
+> barra en `Positioned(top: 110, bottom: 330)`. Así quedan bien por encima del
+> corredor (que corre más abajo, `playerBaseY = 0.88`), dejándole los costados y
+> la parte baja de la pista despejados para ver mejor, y sin tapar la esquina
+> superior por donde entran los obstáculos.
 
 ### Zonas de dificultad
 
