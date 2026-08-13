@@ -537,7 +537,9 @@ class _HudOverlayState extends State<_HudOverlay>
           Positioned(
             right: 22,
             top: 110,
-            bottom: 330,
+            // Se mantiene el borde superior y se estira ~15% hacia abajo
+            // (bottom 330 -> 275): la barra es delgada y no estorba la vista.
+            bottom: 275,
             child: IgnorePointer(
               child: _TrackProgressBar(progress: g.trackProgress),
             ),
