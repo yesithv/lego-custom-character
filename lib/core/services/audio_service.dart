@@ -32,6 +32,32 @@ class AudioService {
     _musicPlayer?.setVolume(musicMuted ? 0.0 : _musicVolume);
   }
 
+  // Todos los efectos de sonido, para precargarlos (evitar el hitch la primera
+  // vez que cada uno suena en pleno juego). La música se carga aparte al correr.
+  static const List<String> _sfxAssets = [
+    'audio/jump.wav',
+    'audio/coin.wav',
+    'audio/slide.wav',
+    'audio/hit.wav',
+    'audio/powerup.wav',
+    'audio/unlock.wav',
+    'audio/roulette_spin.wav',
+    'audio/chest_open.wav',
+  ];
+
+  /// Precarga los efectos en la caché de audio compartida para que la primera
+  /// reproducción de cada uno no decodifique el asset durante la partida (lo que
+  /// provocaba un micro-tirón). Se llama al arrancar; es idempotente y silencia
+  /// cualquier fallo (p. ej. la web antes del primer gesto del usuario).
+  Future<void> preload() async {
+    if (muteAll) return;
+    try {
+      await AudioCache.instance.loadAll(_sfxAssets);
+    } catch (_) {
+      // Ignora fallos de precarga: los efectos se cargarán al usarse.
+    }
+  }
+
   void playJump() => _play('jump.wav');
   void playCoin() => _play('coin.wav');
   void playSlide() => _play('slide.wav');
