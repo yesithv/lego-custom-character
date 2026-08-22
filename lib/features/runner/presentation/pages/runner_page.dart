@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -35,6 +34,7 @@ import '../../data/tutorial_prefs.dart';
 import '../../domain/entities/continue_cost.dart';
 import '../../domain/entities/world_config.dart';
 import '../game/brix_run_game.dart';
+import '../game/hud_data.dart';
 import 'world_selection_page.dart';
 
 class RunnerPage extends StatefulWidget {
@@ -504,26 +504,21 @@ class _HudOverlay extends StatefulWidget {
   State<_HudOverlay> createState() => _HudOverlayState();
 }
 
-class _HudOverlayState extends State<_HudOverlay>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker((_) {
-      if (mounted) setState(() {});
-    })..start();
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
+class _HudOverlayState extends State<_HudOverlay> {
   @override
   Widget build(BuildContext context) {
+    // Antes: un Ticker llamaba setState(() {}) CADA frame y reconstruía todo el
+    // HUD 60 veces/s aunque nada cambiara. Ahora el HUD escucha la instantánea
+    // discreta del juego (`hudData`) y solo se reconstruye cuando algún valor
+    // cambia de verdad (unas pocas veces por segundo). Se envuelve en un
+    // RepaintBoundary para que sus repintados no afecten a la capa del juego.
+    return ValueListenableBuilder<HudData>(
+      valueListenable: widget.game.hudData,
+      builder: (context, _, __) => RepaintBoundary(child: _buildHud(context)),
+    );
+  }
+
+  Widget _buildHud(BuildContext context) {
     final g = widget.game;
     final musicMuted = AudioService.instance.musicMuted;
 

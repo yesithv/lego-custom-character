@@ -23,6 +23,7 @@ import 'components/powerup_effects.dart';
 import 'components/scenery_component.dart';
 import 'components/score_popup_component.dart';
 import 'components/tutorial_hint_component.dart';
+import 'hud_data.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
 
@@ -50,6 +51,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   /// Si esta carrera arranca con el **tutorial guiado** de controles (solo en
   /// las pistas gratis y durante las primeras carreras). Lo decide la página.
   final bool showTutorial;
+
+  /// Instantánea discreta del estado del HUD. El HUD la escucha con un
+  /// `ValueListenableBuilder`, así que solo se reconstruye cuando algún valor
+  /// cambia de verdad (unas pocas veces por segundo), no en cada frame. Se
+  /// publica al final de cada `update` con [_publishHud]; como `ValueNotifier`
+  /// compara con `==`, publicar un valor igual no dispara reconstrucción.
+  final ValueNotifier<HudData> hudData = ValueNotifier(HudData.initial);
 
   // Runtime state — read by HUD
   double speed = 220.0;
@@ -381,7 +389,36 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     }
 
     _checkDepthCollisions();
-    notifyListeners();
+    _publishHud();
+  }
+
+  /// Publica la instantánea del HUD. Se llama cada frame, pero `ValueNotifier`
+  /// solo notifica cuando el valor cambia (`==` sobre campos discretos), así que
+  /// el HUD no se reconstruye salvo que algo cambie de verdad.
+  void _publishHud() {
+    hudData.value = HudData(
+      coins: coins,
+      streak: obstacleStreak,
+      multiplier: multiplier,
+      phase: phase,
+      hasShield: hasShield,
+      shieldActive: shieldPowerupActive,
+      heroShieldReady: _heroShieldActive,
+      shieldSeconds: shieldPowerupActive ? _shieldTimer.ceil() : 0,
+      magnetActive: magnetActive,
+      magnetSeconds: magnetActive ? _magnetTimer.ceil() : 0,
+      boostActive: boostActive,
+      boostSeconds: boostActive ? _boostTimer.ceil() : 0,
+      dashChargePercent: (dashCharge * 100).round(),
+      bossHearts: bossHearts,
+      trackPermille: (trackProgress * 1000).round(),
+    );
+  }
+
+  @override
+  void dispose() {
+    hudData.dispose();
+    super.dispose();
   }
 
   @override
@@ -455,7 +492,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
           })}',
       spawnPosition: Vector2(size.x / 2, horizonY + 30),
     ));
-    notifyListeners();
+    _publishHud();
   }
 
   void _spawnBossAttack() {
@@ -525,7 +562,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     if (dashCharge >= 1.0) {
       _performDash();
     }
-    notifyListeners();
+    _publishHud();
   }
 
   void _performDash() {
@@ -568,7 +605,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       shake(magnitude: 14, duration: 0.5); // sacudida fuerte del K.O.
       AudioService.instance.playPowerup();
     }
-    notifyListeners();
+    _publishHud();
   }
 
   void _finishVictory() {
@@ -580,7 +617,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     AudioService.instance.playChestOpen();
     overlays.remove(_overlayHud);
     overlays.add(_overlayVictory);
-    notifyListeners();
+    _publishHud();
     Future.delayed(const Duration(milliseconds: 400), () {
       pauseEngine();
       onRunComplete?.call(coins);
@@ -879,7 +916,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       '+$value',
       spawnPosition: Vector2(playerX, playerY - 20),
     ));
-    notifyListeners();
+    _publishHud();
   }
 
   void activatePowerup(PowerupType type) {
@@ -913,7 +950,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
           color: const Color(0xFFB266FF),
         ));
     }
-    notifyListeners();
+    _publishHud();
   }
 
   void evadedObstacle() {
@@ -926,7 +963,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
             : obstacleStreak >= 10
                 ? 2.0
                 : 1.0;
-    notifyListeners();
+    _publishHud();
   }
 
   void hitObstacle() {
@@ -946,7 +983,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       ));
       AudioService.instance.playHit();
       onHit?.call();
-      notifyListeners();
+      _publishHud();
       return;
     }
 
@@ -968,7 +1005,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.add(_overlayContinue);
     pauseEngine();
     onOfferContinue?.call();
-    notifyListeners();
+    _publishHud();
   }
 
   /// Retoma la carrera **en el mismo punto** tras pagar (revive). A diferencia
@@ -993,7 +1030,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.remove(_overlayContinue);
     overlays.add(_overlayHud);
     resumeEngine();
-    notifyListeners();
+    _publishHud();
   }
 
   /// El jugador renuncia a continuar: la carrera termina de verdad y salta al
@@ -1072,6 +1109,6 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.remove(_overlayContinue);
     overlays.add(_overlayHud);
     resumeEngine();
-    notifyListeners();
+    _publishHud();
   }
 }
