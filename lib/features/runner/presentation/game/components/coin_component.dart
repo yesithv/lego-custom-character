@@ -89,6 +89,24 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
     priority = (200 * _depth).floor() + 4;
   }
 
+  // Paints reutilizados entre frames y entre instancias (todas las monedas se
+  // pintan igual). Antes se creaban ~7 Paint() por moneda por frame. El render
+  // es secuencial en el hilo de UI, así que reutilizar y ajustar propiedades
+  // antes de cada draw es seguro.
+  static final Paint _magnetGlowPaint = Paint();
+  static final Paint _glowPaint = Paint();
+  static final Paint _bodyPaint = Paint()..color = const Color(0xFFFFD700);
+  static final Paint _shinePaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.38);
+  static final Paint _borderPaint = Paint()
+    ..color = const Color(0xFFB8860B)
+    ..style = PaintingStyle.stroke;
+  static final Paint _studPaint = Paint()..color = const Color(0xFF8B6914);
+  static final Paint _studStrokePaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.25)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0;
+
   @override
   void render(Canvas canvas) {
     final r = size.x / 2;
@@ -96,56 +114,30 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
 
     // Estela naranja del imán mientras la moneda es atraída.
     if (_magnetized) {
-      canvas.drawCircle(
-        Offset(r, r),
-        r + 9 * pulse,
-        Paint()
-          ..color = const Color(0xFFFF6B35).withValues(alpha: 0.35 * pulse),
-      );
+      _magnetGlowPaint.color =
+          const Color(0xFFFF6B35).withValues(alpha: 0.35 * pulse);
+      canvas.drawCircle(Offset(r, r), r + 9 * pulse, _magnetGlowPaint);
     }
 
     // Glow
-    canvas.drawCircle(
-      Offset(r, r),
-      r + 4 * pulse,
-      Paint()..color = const Color(0xFFFFD700).withValues(alpha: 0.22 * pulse),
-    );
+    _glowPaint.color = const Color(0xFFFFD700).withValues(alpha: 0.22 * pulse);
+    canvas.drawCircle(Offset(r, r), r + 4 * pulse, _glowPaint);
 
     // Coin body
-    canvas.drawCircle(Offset(r, r), r, Paint()..color = const Color(0xFFFFD700));
+    canvas.drawCircle(Offset(r, r), r, _bodyPaint);
 
     // Inner shine
     canvas.drawCircle(
-      Offset(r - r * 0.22, r - r * 0.22),
-      r * 0.42,
-      Paint()..color = Colors.white.withValues(alpha: 0.38),
-    );
+        Offset(r - r * 0.22, r - r * 0.22), r * 0.42, _shinePaint);
 
     // Border
-    canvas.drawCircle(
-      Offset(r, r),
-      r,
-      Paint()
-        ..color = const Color(0xFFB8860B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.0, r * 0.14),
-    );
+    _borderPaint.strokeWidth = max(1.0, r * 0.14);
+    canvas.drawCircle(Offset(r, r), r, _borderPaint);
 
     // Brix stud on coin face
     if (r > 6) {
-      canvas.drawCircle(
-        Offset(r, r),
-        r * 0.32,
-        Paint()..color = const Color(0xFF8B6914),
-      );
-      canvas.drawCircle(
-        Offset(r, r),
-        r * 0.32,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.25)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0,
-      );
+      canvas.drawCircle(Offset(r, r), r * 0.32, _studPaint);
+      canvas.drawCircle(Offset(r, r), r * 0.32, _studStrokePaint);
     }
   }
 }

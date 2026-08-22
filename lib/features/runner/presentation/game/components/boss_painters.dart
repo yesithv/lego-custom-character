@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../../character_editor/presentation/widgets/appearance_colors.dart';
 import '../../../domain/entities/boss_config.dart';
 
 /// Pintores puros de los jefes y sus ataques. Funciones standalone (sin
@@ -87,15 +88,11 @@ void _rrect(Canvas canvas, Rect rect, Color color, double radius) {
       Paint()..color = color);
 }
 
-Color _darker(Color c, double amount) {
-  final hsl = HSLColor.fromColor(c);
-  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
-}
+// Delegan en los helpers memoizados compartidos (appearance_colors.dart) para
+// no repetir round-trips HSL por frame durante la pelea contra el jefe.
+Color _darker(Color c, double amount) => darkenColor(c, amount);
 
-Color _lighter(Color c, double amount) {
-  final hsl = HSLColor.fromColor(c);
-  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
-}
+Color _lighter(Color c, double amount) => lightenColor(c, amount);
 
 // ── brix_city: Capataz Demoledor ────────────────────────────────────────────
 

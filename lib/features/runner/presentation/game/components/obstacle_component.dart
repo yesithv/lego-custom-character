@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' hide Image;
 
+import '../../../../character_editor/presentation/widgets/appearance_colors.dart';
 import '../../../domain/entities/world_config.dart';
 import '../brix_run_game.dart';
 
@@ -1125,13 +1126,9 @@ class ObstacleComponent extends PositionComponent
     );
   }
 
-  Color _lighten(Color c, double amount) {
-    final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
-  }
+  // Delegan en los helpers memoizados compartidos (ver appearance_colors.dart):
+  // se llamaban por frame por obstáculo con round-trips HSL repetidos.
+  Color _lighten(Color c, double amount) => lightenColor(c, amount);
 
-  Color _darken(Color c, double amount) {
-    final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
-  }
+  Color _darken(Color c, double amount) => darkenColor(c, amount);
 }
