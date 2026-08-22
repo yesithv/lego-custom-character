@@ -276,9 +276,10 @@ vía `StoreRepository.entitlementsSync()`).
   instalar el SDK: `storage.googleapis.com` está permitido). **El Android SDK NO
   se puede instalar** ahí: `dl.google.com` está bloqueado → la build de Android
   se verifica siempre en local. Objetivo: `analyze` en 0 issues.
-- El proyecto **no tiene `analysis_options.yaml`** a propósito: añadir
-  `flutter_lints` saca 28 avisos cosméticos (`prefer_const`, llaves en `if`).
-  Si se añade, limpiarlos en un cambio aparte.
+- El proyecto **tiene `analysis_options.yaml`** con el set recomendado de
+  `flutter_lints` (rama de auditoría de performance). Objetivo firme:
+  mantener `flutter analyze` en **0 issues**. El CI lo verifica en cada push/PR
+  (job `test`: `flutter analyze` + `flutter test`).
 - **Rama de desarrollo:** las correcciones pre-despliegue y la economía se
   mergearon a `main` (PR #39). La documentación se actualiza en
   `claude/docs-economia-billetera` (PR → `main`).
