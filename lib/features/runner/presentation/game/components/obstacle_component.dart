@@ -24,8 +24,8 @@ class ObstacleComponent extends PositionComponent
   final bool tutorial;
 
   double _depth;
-  bool _evaded = false;
-  bool _collided = false;
+  bool evaded = false;
+  bool collided = false;
 
   // Base dimensions at full scale (depth = 1)
   static const _blockW = 52.0;
@@ -52,10 +52,6 @@ class ObstacleComponent extends PositionComponent
       };
 
   double get depth => _depth;
-  bool get evaded => _evaded;
-  set evaded(bool v) => _evaded = v;
-  bool get collided => _collided;
-  set collided(bool v) => _collided = v;
 
   /// [initialDepth] permite arrancar el obstáculo ya avanzado hacia el corredor
   /// (0 = horizonte, 1 = plano del jugador). Por defecto nace en el horizonte;

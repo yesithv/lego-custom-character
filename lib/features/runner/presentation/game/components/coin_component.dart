@@ -9,7 +9,7 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
   final int lane;
 
   double _depth = 0.0;
-  bool _collected = false;
+  bool collected = false;
   double _age = 0.0;
 
   /// Cuando el imán está activo y la moneda está cerca, deja de avanzar por
@@ -22,8 +22,6 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
   static const _magnetPullDepth = 0.5;
 
   double get depth => _depth;
-  bool get collected => _collected;
-  set collected(bool v) => _collected = v;
 
   /// El juego omite estas monedas en su detección de colisión: se recogen solas
   /// al llegar al jugador.
@@ -77,7 +75,7 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
     final dist = toTarget.length;
 
     if (dist < 16) {
-      _collected = true;
+      collected = true;
       game.collectCoin();
       removeFromParent();
       return;

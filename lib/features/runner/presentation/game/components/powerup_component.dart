@@ -12,14 +12,12 @@ class PowerupComponent extends PositionComponent with HasGameReference<BrixRunGa
   final PowerupType type;
 
   double _depth = 0.0;
-  bool _collected = false;
+  bool collected = false;
   double _age = 0.0;
 
   static const _baseRadius = 20.0;
 
   double get depth => _depth;
-  bool get collected => _collected;
-  set collected(bool v) => _collected = v;
 
   PowerupComponent({required this.lane, required this.type})
       : super(size: Vector2(_baseRadius * 2, _baseRadius * 2), priority: 4);

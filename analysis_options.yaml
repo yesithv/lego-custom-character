@@ -1,0 +1,15 @@
+# Reglas de análisis estático para Run For Win.
+# Se adopta el set recomendado de flutter_lints. Ver docs/DESARROLLO.md.
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+include: package:flutter_lints/flutter.yaml
+
+# Sin reglas personalizadas por ahora: el objetivo es mantener `flutter analyze`
+# en 0 issues con el set recomendado.
