@@ -169,6 +169,17 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   late PlayerComponent _player;
   final Random _rng = Random();
 
+  // ── Spawnables activos ───────────────────────────────────────────────────────
+  // Listas tipadas de los componentes que la detección de colisión recorre CADA
+  // frame. Antes cada frame hacía `children.whereType<X>().toList()` (recorre
+  // todo el árbol + materializa una lista nueva) 3-4 veces. Los componentes se
+  // registran/desregistran solos en su `onMount`/`onRemove`, así que las listas
+  // están siempre al día sin importar cómo se añadieron (spawn normal o un test).
+  final List<ObstacleComponent> activeObstacles = [];
+  final List<CoinComponent> activeCoins = [];
+  final List<PowerupComponent> activePowerups = [];
+  final List<BossAttackComponent> activeBossAttacks = [];
+
   // ── Tutorial guiado ─────────────────────────────────────────────────────────
   // Secuencia scripted al inicio de las pistas gratis: 4 obstáculos "de frente",
   // uno por control (izquierda, derecha, saltar, agacharse), cada uno con su
@@ -524,7 +535,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     // ventana ancha. Así saltar/deslizarse justo cuando llega el ataque basta
     // para librarlo. La carga de la embestida sigue disparándose al pasar de
     // largo (pastPlayer).
-    for (final atk in children.whereType<BossAttackComponent>().toList()) {
+    for (final atk in activeBossAttacks) {
       if (atk.collided) continue;
 
       if (!atk.resolved && atk.depth >= _collisionDepth) {
@@ -637,7 +648,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     // ancha [0.87, 1.11]; como el obstáculo tarda más en cruzarla que lo que
     // dura el salto en el aire, era imposible librarlo aunque saltaras a tiempo
     // (y el golpe se veía con el obstáculo aún por delante del corredor).
-    for (final obs in children.whereType<ObstacleComponent>().toList()) {
+    for (final obs in activeObstacles) {
       if (obs.collided || obs.evaded) continue;
       if (obs.depth < _collisionDepth) continue; // aún no llega al corredor
 
@@ -678,7 +689,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       return;
     }
 
-    for (final coin in children.whereType<CoinComponent>().toList()) {
+    for (final coin in activeCoins) {
       // Las monedas atraídas por el imán vuelan solas y se recogen al llegar.
       if (coin.collected || coin.magnetized) continue;
       // Magnet grabs adjacent lanes too
@@ -693,7 +704,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       }
     }
 
-    for (final pu in children.whereType<PowerupComponent>().toList()) {
+    for (final pu in activePowerups) {
       if (pu.collected) continue;
       if (pu.lane == playerLane && pu.depth >= hitMin && pu.depth <= hitMax) {
         pu.collected = true;

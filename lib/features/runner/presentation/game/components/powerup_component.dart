@@ -25,6 +25,18 @@ class PowerupComponent extends PositionComponent with HasGameReference<BrixRunGa
       : super(size: Vector2(_baseRadius * 2, _baseRadius * 2), priority: 4);
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activePowerups.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activePowerups.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     _depth += game.depthRate * dt;
     _age += dt;

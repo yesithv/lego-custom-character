@@ -33,6 +33,18 @@ class CoinComponent extends PositionComponent with HasGameReference<BrixRunGame>
       : super(size: Vector2(_baseRadius * 2, _baseRadius * 2), priority: 4);
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeCoins.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeCoins.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     _age += dt;
 

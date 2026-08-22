@@ -69,6 +69,18 @@ class ObstacleComponent extends PositionComponent
         super(size: Vector2(1, 1), priority: 5);
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeObstacles.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeObstacles.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     _depth += game.depthRate * dt;
     _syncTransform();
