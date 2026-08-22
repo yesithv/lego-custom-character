@@ -28,6 +28,7 @@ import 'hud_data.dart';
 part 'systems/boss_fight_controller.dart';
 part 'systems/spawn_system.dart';
 part 'systems/tutorial_director.dart';
+part 'systems/collision_system.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
 
@@ -177,6 +178,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   late final BossFightController _bossFight = BossFightController(this);
   late final SpawnSystem _spawn = SpawnSystem(this);
   late final TutorialDirector _tutorial = TutorialDirector(this);
+  late final CollisionSystem _collision = CollisionSystem(this);
 
   // ── Spawnables activos ───────────────────────────────────────────────────────
   // Listas tipadas de los componentes que la detección de colisión recorre CADA
@@ -192,7 +194,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   // ── Tutorial guiado ─────────────────────────────────────────────────────────
   // Secuencia scripted al inicio de las pistas gratis: 4 obstáculos "de frente",
   // uno por control (izquierda, derecha, saltar, agacharse), cada uno con su
-  // flecha. Fuerza la acción y nunca es letal (ver `_checkDepthCollisions`).
+  // flecha. Fuerza la acción y nunca es letal (ver CollisionSystem).
   bool _tutorialActive = false;
   int _tutorialStep = 0;
   bool _tutorialStepSpawned = false;
@@ -408,7 +410,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       if (_boostTimer <= 0) boostActive = false;
     }
 
-    _checkDepthCollisions();
+    _collision.check();
     _publishHud();
   }
 
@@ -476,86 +478,6 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   /// llama la UI/los tests; delega en el controlador de la pelea.
   void onAttackDodged() => _bossFight.onAttackDodged();
 
-  // Manual collision detection based on depth proximity and lane matching.
-  void _checkDepthCollisions() {
-    const hitMin = 0.87;
-    const hitMax = 1.11;
-    const pastPlayer = 1.16;
-    final playerLane = _player.currentLane;
-
-    // Cada obstáculo se resuelve UNA sola vez, en el momento en que cruza el
-    // plano del jugador (depth ≈ 1.0, donde el personaje está de verdad). Antes
-    // se exigía que el jugador estuviera a salvo en *cada* frame de una ventana
-    // ancha [0.87, 1.11]; como el obstáculo tarda más en cruzarla que lo que
-    // dura el salto en el aire, era imposible librarlo aunque saltaras a tiempo
-    // (y el golpe se veía con el obstáculo aún por delante del corredor).
-    for (final obs in activeObstacles) {
-      if (obs.collided || obs.evaded) continue;
-      if (obs.depth < _collisionDepth) continue; // aún no llega al corredor
-
-      // Obstáculos del tutorial: nunca son letales (solo enseñan). Se retiran
-      // sin muerte ni racha, hayan sido "esquivados" o no.
-      if (obs.tutorial) {
-        obs.evaded = true;
-        continue;
-      }
-
-      // Otro carril: pasa de largo, cuenta como esquivado.
-      if (obs.lane != playerLane) {
-        obs.evaded = true;
-        evadedObstacle();
-        continue;
-      }
-
-      // Mismo carril: ¿lo está librando el jugador en este instante?
-      // Las barreras colgantes (overhead) NO se pueden saltar: solo agacharse.
-      final jumpingClear = _player.isJumping &&
-          _player.jumpProgress > 0.10 &&
-          _player.jumpProgress < 0.90 &&
-          obs.type != ObstacleType.overhead;
-      // Deslizarse pasa por debajo de las barreras (bajas o colgantes).
-      final slidingClear = _player.isSliding &&
-          (obs.type == ObstacleType.barrier ||
-              obs.type == ObstacleType.overhead);
-      // El turbo arrasa con cualquier obstáculo sin recibir daño.
-      if (jumpingClear || slidingClear || boostActive) {
-        obs.evaded = true;
-        if (boostActive) obs.collided = true; // efecto de arrasado
-        evadedObstacle();
-        continue;
-      }
-
-      obs.collided = true;
-      hitObstacle();
-      return;
-    }
-
-    for (final coin in activeCoins) {
-      // Las monedas atraídas por el imán vuelan solas y se recogen al llegar.
-      if (coin.collected || coin.magnetized) continue;
-      // Magnet grabs adjacent lanes too
-      final inRange = coin.lane == playerLane ||
-          (magnetActive && (coin.lane - playerLane).abs() == 1);
-      if (inRange && coin.depth >= hitMin && coin.depth <= hitMax) {
-        coin.collected = true;
-        coin.removeFromParent();
-        collectCoin();
-      } else if (coin.depth >= pastPlayer) {
-        coin.removeFromParent();
-      }
-    }
-
-    for (final pu in activePowerups) {
-      if (pu.collected) continue;
-      if (pu.lane == playerLane && pu.depth >= hitMin && pu.depth <= hitMax) {
-        pu.collected = true;
-        pu.removeFromParent();
-        activatePowerup(pu.type);
-      } else if (pu.depth >= pastPlayer) {
-        pu.removeFromParent();
-      }
-    }
-  }
 
 
 
