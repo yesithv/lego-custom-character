@@ -342,19 +342,33 @@ void paintLegPattern(Canvas canvas, Rect rect, LegDesign design) {
 // como plástico ABS brillante: degradado de luz cenital, reflejo especular y
 // contorno tonal (una versión oscura del propio color, nunca negro plano).
 
-Color lightenColor(Color c, double amount) {
-  final hsl = HSLColor.fromColor(c);
-  return hsl
-      .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
-      .toColor();
-}
+// Los tonos aclarado/oscurecido se piden por frame desde los `render()` del
+// jugador y los obstáculos, y cada llamada hacía un round-trip HSL
+// (fromColor → withLightness → toColor), caro y repetido con los MISMOS
+// argumentos. Se memoizan: las claves están acotadas (colores de paletas const
+// × cantidades fijas), así que el mapa se mantiene pequeño y estable.
+final Map<(Color, double), Color> _lightenCache = {};
+final Map<(Color, double), Color> _darkenCache = {};
 
-Color darkenColor(Color c, double amount) {
-  final hsl = HSLColor.fromColor(c);
-  return hsl
-      .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
-      .toColor();
-}
+Color lightenColor(Color c, double amount) => _lightenCache.putIfAbsent(
+      (c, amount),
+      () {
+        final hsl = HSLColor.fromColor(c);
+        return hsl
+            .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+            .toColor();
+      },
+    );
+
+Color darkenColor(Color c, double amount) => _darkenCache.putIfAbsent(
+      (c, amount),
+      () {
+        final hsl = HSLColor.fromColor(c);
+        return hsl
+            .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+            .toColor();
+      },
+    );
 
 /// Contorno tonal: oscuro y saturado en piezas claras, sutil en oscuras.
 Paint outlinePaintFor(Color color, {double width = 1.4}) => Paint()

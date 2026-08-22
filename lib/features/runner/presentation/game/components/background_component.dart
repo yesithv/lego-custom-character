@@ -15,6 +15,23 @@ class BackgroundComponent extends PositionComponent
 
   late List<_Building> _buildings;
 
+  // Estrellas del cielo de galaxy, generadas una sola vez (ver _drawSkyDecorations).
+  List<_Star>? _galaxyStars;
+  final Paint _starPaint = Paint();
+
+  List<_Star> _buildGalaxyStars() {
+    final rng = Random(77);
+    // Mismo orden de consumo del RNG que la versión previa por-frame (fx, fy,
+    // r, alpha) para que las estrellas queden en idénticas posiciones.
+    return List.generate(60, (_) {
+      final fx = rng.nextDouble();
+      final fy = rng.nextDouble();
+      final r = rng.nextDouble() * 1.6 + 0.4;
+      final alpha = rng.nextDouble() * 0.5 + 0.4;
+      return _Star(fx: fx, fy: fy, r: r, alpha: alpha);
+    });
+  }
+
   BackgroundComponent({required this.worldId})
       : super(position: Vector2.zero(), priority: -10);
 
@@ -166,13 +183,13 @@ class BackgroundComponent extends PositionComponent
       Canvas canvas, double w, double h, double hy, WorldColors c) {
     switch (worldId) {
       case 'galaxy':
-        final rng = Random(77);
-        for (int i = 0; i < 60; i++) {
-          final sx = rng.nextDouble() * w;
-          final sy = rng.nextDouble() * hy * 0.95;
-          final sr = rng.nextDouble() * 1.6 + 0.4;
-          canvas.drawCircle(Offset(sx, sy), sr,
-              Paint()..color = Colors.white.withValues(alpha: rng.nextDouble() * 0.5 + 0.4));
+        // Antes se creaba un Random(77) y 60 círculos CADA frame. Las estrellas
+        // son fijas: se generan una sola vez (mismo orden de RNG → idéntico) en
+        // fracciones independientes de la resolución y se reutiliza un Paint.
+        final stars = _galaxyStars ??= _buildGalaxyStars();
+        for (final s in stars) {
+          _starPaint.color = Colors.white.withValues(alpha: s.alpha);
+          canvas.drawCircle(Offset(s.fx * w, s.fy * hy * 0.95), s.r, _starPaint);
         }
       case 'dark_city':
         canvas.drawCircle(
@@ -286,6 +303,21 @@ class BackgroundComponent extends PositionComponent
       );
     }
   }
+}
+
+/// Estrella fija del cielo de galaxy en fracciones de pantalla (0–1) para ser
+/// independiente de la resolución; se genera una sola vez.
+class _Star {
+  final double fx;
+  final double fy;
+  final double r;
+  final double alpha;
+  const _Star({
+    required this.fx,
+    required this.fy,
+    required this.r,
+    required this.alpha,
+  });
 }
 
 class _Building {

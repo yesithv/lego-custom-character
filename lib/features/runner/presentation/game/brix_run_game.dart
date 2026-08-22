@@ -23,6 +23,12 @@ import 'components/powerup_effects.dart';
 import 'components/scenery_component.dart';
 import 'components/score_popup_component.dart';
 import 'components/tutorial_hint_component.dart';
+import 'hud_data.dart';
+
+part 'systems/boss_fight_controller.dart';
+part 'systems/spawn_system.dart';
+part 'systems/tutorial_director.dart';
+part 'systems/collision_system.dart';
 
 enum RunnerZone { inicio, nucleo, caos }
 
@@ -50,6 +56,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   /// Si esta carrera arranca con el **tutorial guiado** de controles (solo en
   /// las pistas gratis y durante las primeras carreras). Lo decide la página.
   final bool showTutorial;
+
+  /// Instantánea discreta del estado del HUD. El HUD la escucha con un
+  /// `ValueListenableBuilder`, así que solo se reconstruye cuando algún valor
+  /// cambia de verdad (unas pocas veces por segundo), no en cada frame. Se
+  /// publica al final de cada `update` con [_publishHud]; como `ValueNotifier`
+  /// compara con `==`, publicar un valor igual no dispara reconstrucción.
+  final ValueNotifier<HudData> hudData = ValueNotifier(HudData.initial);
 
   // Runtime state — read by HUD
   double speed = 220.0;
@@ -161,10 +174,27 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   late PlayerComponent _player;
   final Random _rng = Random();
 
+  /// Controlador de la pelea contra el jefe (systems/boss_fight_controller.dart).
+  late final BossFightController _bossFight = BossFightController(this);
+  late final SpawnSystem _spawn = SpawnSystem(this);
+  late final TutorialDirector _tutorial = TutorialDirector(this);
+  late final CollisionSystem _collision = CollisionSystem(this);
+
+  // ── Spawnables activos ───────────────────────────────────────────────────────
+  // Listas tipadas de los componentes que la detección de colisión recorre CADA
+  // frame. Antes cada frame hacía `children.whereType<X>().toList()` (recorre
+  // todo el árbol + materializa una lista nueva) 3-4 veces. Los componentes se
+  // registran/desregistran solos en su `onMount`/`onRemove`, así que las listas
+  // están siempre al día sin importar cómo se añadieron (spawn normal o un test).
+  final List<ObstacleComponent> activeObstacles = [];
+  final List<CoinComponent> activeCoins = [];
+  final List<PowerupComponent> activePowerups = [];
+  final List<BossAttackComponent> activeBossAttacks = [];
+
   // ── Tutorial guiado ─────────────────────────────────────────────────────────
   // Secuencia scripted al inicio de las pistas gratis: 4 obstáculos "de frente",
   // uno por control (izquierda, derecha, saltar, agacharse), cada uno con su
-  // flecha. Fuerza la acción y nunca es letal (ver `_checkDepthCollisions`).
+  // flecha. Fuerza la acción y nunca es letal (ver CollisionSystem).
   bool _tutorialActive = false;
   int _tutorialStep = 0;
   bool _tutorialStepSpawned = false;
@@ -291,7 +321,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   @override
   Future<void> onLoad() async {
     add(BackgroundComponent(worldId: worldId));
-    _seedScenery();
+    _spawn.seedScenery();
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
     add(_player);
 
@@ -332,20 +362,20 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       if (_tutorialActive) {
         // Durante el tutorial guiado se sustituye el spawn aleatorio de
         // obstáculos/power-ups por la secuencia scripted (las monedas siguen).
-        _advanceTutorial(dt);
+        _tutorial.advance(dt);
       } else {
         // Obstacle spawning
         _obstacleTimer += dt;
         final spawnInterval = (2.2 - effectiveSpeed / 900).clamp(0.65, 2.2);
         if (_obstacleTimer >= spawnInterval) {
-          _spawnObstacle();
+          _spawn.obstacle();
           _obstacleTimer = 0;
         }
 
         // Power-up spawning
         _powerupTimer += dt;
         if (_powerupTimer >= _powerupSpawnInterval) {
-          _spawnPowerup();
+          _spawn.powerup();
           _powerupTimer = 0;
         }
       }
@@ -353,7 +383,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       // Coin spawning
       _coinTimer += dt;
       if (_coinTimer >= 0.9) {
-        _spawnCoin();
+        _spawn.coin();
         _coinTimer = 0;
       }
     }
@@ -361,11 +391,11 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     // Trackside scenery spawning (el mundo sigue moviéndose durante la pelea)
     _sceneryTimer += dt;
     if (_sceneryTimer >= _scenerySpawnInterval) {
-      _spawnScenery();
+      _spawn.scenery();
       _sceneryTimer = 0;
     }
 
-    _updateBossPhase(dt);
+    _bossFight.updatePhase(dt);
 
     if (magnetActive) {
       _magnetTimer -= dt;
@@ -380,8 +410,37 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       if (_boostTimer <= 0) boostActive = false;
     }
 
-    _checkDepthCollisions();
-    notifyListeners();
+    _collision.check();
+    _publishHud();
+  }
+
+  /// Publica la instantánea del HUD. Se llama cada frame, pero `ValueNotifier`
+  /// solo notifica cuando el valor cambia (`==` sobre campos discretos), así que
+  /// el HUD no se reconstruye salvo que algo cambie de verdad.
+  void _publishHud() {
+    hudData.value = HudData(
+      coins: coins,
+      streak: obstacleStreak,
+      multiplier: multiplier,
+      phase: phase,
+      hasShield: hasShield,
+      shieldActive: shieldPowerupActive,
+      heroShieldReady: _heroShieldActive,
+      shieldSeconds: shieldPowerupActive ? _shieldTimer.ceil() : 0,
+      magnetActive: magnetActive,
+      magnetSeconds: magnetActive ? _magnetTimer.ceil() : 0,
+      boostActive: boostActive,
+      boostSeconds: boostActive ? _boostTimer.ceil() : 0,
+      dashChargePercent: (dashCharge * 100).round(),
+      bossHearts: bossHearts,
+      trackPermille: (trackProgress * 1000).round(),
+    );
+  }
+
+  @override
+  void dispose() {
+    hudData.dispose();
+    super.dispose();
   }
 
   @override
@@ -413,394 +472,14 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   }
 
   // ── Boss fight ─────────────────────────────────────────────────────────────
+  // La máquina de fases del jefe vive en BossFightController (systems/).
 
-  void _updateBossPhase(double dt) {
-    switch (phase) {
-      case GamePhase.running:
-        if (meters >= bossTriggerMeters) _startBossIntro();
-      case GamePhase.bossIntro:
-        if (_boss?.introDone ?? false) {
-          phase = GamePhase.bossFight;
-          _attackTimer = 0;
-        }
-      case GamePhase.bossFight:
-        _attackTimer += dt;
-        if (_attackTimer >= _attackInterval) {
-          _spawnBossAttack();
-          _attackTimer = 0;
-        }
-        _checkBossAttacks();
-      case GamePhase.bossDefeated:
-        _defeatTimer += dt;
-        if (_defeatTimer >= 1.5) _finishVictory();
-      case GamePhase.victory:
-        break;
-    }
-  }
+  /// Un ataque del jefe pasó de largo sin golpear: carga la embestida. La
+  /// llama la UI/los tests; delega en el controlador de la pelea.
+  void onAttackDodged() => _bossFight.onAttackDodged();
 
-  /// Intervalo entre ataques: se acorta cuando el jefe se enfurece.
-  double get _attackInterval {
-    final enrage = (bossMaxHearts - bossHearts).clamp(0, 2);
-    return const [1.15, 0.90, 0.70][enrage];
-  }
 
-  void _startBossIntro() {
-    phase = GamePhase.bossIntro;
-    _boss = BossComponent();
-    add(_boss!);
-    AudioService.instance.playPowerup();
-    add(ScorePopupComponent(
-      '${bossConfig.emoji} ${L10n.tp('boss_intro', {
-            'name': L10n.t('boss_$worldId'),
-          })}',
-      spawnPosition: Vector2(size.x / 2, horizonY + 30),
-    ));
-    notifyListeners();
-  }
 
-  void _spawnBossAttack() {
-    final kind = bossConfig.attackForRoll(_rng.nextDouble());
-    final lane = _rng.nextInt(3);
-    final startDepth = _boss?.depth ?? BossComponent.fightDepth;
-    _boss?.lunge(); // el jefe se lanza al atacar → pelea con más movimiento
-    add(BossAttackComponent(kind: kind, lane: lane, depth: startDepth));
-
-    // Enfurecido lanza a veces un segundo proyectil en otro carril
-    if (bossHearts < bossMaxHearts &&
-        kind == BossAttackKind.projectile &&
-        _rng.nextDouble() < 0.35) {
-      final otherLane = (lane + 1 + _rng.nextInt(2)) % 3;
-      add(BossAttackComponent(
-        kind: BossAttackKind.projectile,
-        lane: otherLane,
-        depth: startDepth,
-      ));
-    }
-  }
-
-  void _checkBossAttacks() {
-    const pastPlayer = 1.16;
-    final playerLane = _player.currentLane;
-
-    // Mismo criterio que los obstáculos: el golpe se decide en un único punto
-    // (cuando el ataque cruza el plano del jugador, depth ≈ 1.0), no en una
-    // ventana ancha. Así saltar/deslizarse justo cuando llega el ataque basta
-    // para librarlo. La carga de la embestida sigue disparándose al pasar de
-    // largo (pastPlayer).
-    for (final atk in children.whereType<BossAttackComponent>().toList()) {
-      if (atk.collided) continue;
-
-      if (!atk.resolved && atk.depth >= _collisionDepth) {
-        atk.resolved = true;
-        final jumping = _player.isJumping &&
-            _player.jumpProgress > 0.10 &&
-            _player.jumpProgress < 0.90;
-        final bool hits = switch (atk.kind) {
-          // Proyectil: golpea en su carril salvo que estés en el aire
-          BossAttackKind.projectile => atk.lane == playerLane && !jumping,
-          // Onda de choque: cubre toda la pista — hay que saltarla
-          BossAttackKind.shockwave => !jumping,
-          // Barrido alto: cubre toda la pista — hay que deslizarse
-          BossAttackKind.sweep => !_player.isSliding,
-        };
-        if (hits) {
-          atk.collided = true;
-          hitObstacle();
-          return;
-        }
-      }
-
-      // Ataque evitado que ya pasó de largo: carga la embestida.
-      if (!atk.dodged && atk.depth >= pastPlayer) {
-        atk.dodged = true;
-        onAttackDodged();
-      }
-    }
-  }
-
-  /// Un ataque pasó de largo sin golpear: carga la embestida.
-  void onAttackDodged() {
-    if (phase != GamePhase.bossFight || !isAlive) return;
-    dashCharge = (dashCharge + _chargePerDodge).clamp(0.0, 1.0);
-    if (dashCharge >= 1.0) {
-      _performDash();
-    }
-    notifyListeners();
-  }
-
-  void _performDash() {
-    dashCharge = 0;
-    bossHearts = (bossHearts - 1).clamp(0, bossMaxHearts);
-    bossBonusScore += _dashScoreBonus;
-    _recomputeScore();
-    _player.dash();
-    _boss?.onDashHit();
-    shake(magnitude: 7, duration: 0.28);
-    AudioService.instance.playHit();
-    add(ScorePopupComponent(
-      '${L10n.t('dash_ready')} 💥',
-      spawnPosition: Vector2(playerX, playerY - 30),
-    ));
-    // Limpia los ataques en vuelo para dar una pausa justa tras el golpe
-    children
-        .whereType<BossAttackComponent>()
-        .toList()
-        .forEach((a) => a.removeFromParent());
-
-    if (bossHearts <= 0) {
-      phase = GamePhase.bossDefeated;
-      _defeatTimer = 0;
-      final b = _boss;
-      b?.startDefeat();
-      if (b != null) {
-        // Estallido de escombros en el centro del jefe.
-        add(BossDefeatEffect(
-          center: b.position + b.size / 2,
-          primary: bossConfig.primary,
-          secondary: bossConfig.secondary,
-          baseSize: b.size.x,
-        ));
-      }
-      add(ScorePopupComponent(
-        '💥 ${L10n.t('defeated')} 💥',
-        spawnPosition: Vector2(size.x / 2, horizonY + 60),
-      ));
-      shake(magnitude: 14, duration: 0.5); // sacudida fuerte del K.O.
-      AudioService.instance.playPowerup();
-    }
-    notifyListeners();
-  }
-
-  void _finishVictory() {
-    if (phase == GamePhase.victory) return;
-    phase = GamePhase.victory;
-    coins += victoryCoinBonus;
-    bossBonusScore += _victoryScoreBonus;
-    _recomputeScore();
-    AudioService.instance.playChestOpen();
-    overlays.remove(_overlayHud);
-    overlays.add(_overlayVictory);
-    notifyListeners();
-    Future.delayed(const Duration(milliseconds: 400), () {
-      pauseEngine();
-      onRunComplete?.call(coins);
-    });
-  }
-
-  // Manual collision detection based on depth proximity and lane matching.
-  void _checkDepthCollisions() {
-    const hitMin = 0.87;
-    const hitMax = 1.11;
-    const pastPlayer = 1.16;
-    final playerLane = _player.currentLane;
-
-    // Cada obstáculo se resuelve UNA sola vez, en el momento en que cruza el
-    // plano del jugador (depth ≈ 1.0, donde el personaje está de verdad). Antes
-    // se exigía que el jugador estuviera a salvo en *cada* frame de una ventana
-    // ancha [0.87, 1.11]; como el obstáculo tarda más en cruzarla que lo que
-    // dura el salto en el aire, era imposible librarlo aunque saltaras a tiempo
-    // (y el golpe se veía con el obstáculo aún por delante del corredor).
-    for (final obs in children.whereType<ObstacleComponent>().toList()) {
-      if (obs.collided || obs.evaded) continue;
-      if (obs.depth < _collisionDepth) continue; // aún no llega al corredor
-
-      // Obstáculos del tutorial: nunca son letales (solo enseñan). Se retiran
-      // sin muerte ni racha, hayan sido "esquivados" o no.
-      if (obs.tutorial) {
-        obs.evaded = true;
-        continue;
-      }
-
-      // Otro carril: pasa de largo, cuenta como esquivado.
-      if (obs.lane != playerLane) {
-        obs.evaded = true;
-        evadedObstacle();
-        continue;
-      }
-
-      // Mismo carril: ¿lo está librando el jugador en este instante?
-      // Las barreras colgantes (overhead) NO se pueden saltar: solo agacharse.
-      final jumpingClear = _player.isJumping &&
-          _player.jumpProgress > 0.10 &&
-          _player.jumpProgress < 0.90 &&
-          obs.type != ObstacleType.overhead;
-      // Deslizarse pasa por debajo de las barreras (bajas o colgantes).
-      final slidingClear = _player.isSliding &&
-          (obs.type == ObstacleType.barrier ||
-              obs.type == ObstacleType.overhead);
-      // El turbo arrasa con cualquier obstáculo sin recibir daño.
-      if (jumpingClear || slidingClear || boostActive) {
-        obs.evaded = true;
-        if (boostActive) obs.collided = true; // efecto de arrasado
-        evadedObstacle();
-        continue;
-      }
-
-      obs.collided = true;
-      hitObstacle();
-      return;
-    }
-
-    for (final coin in children.whereType<CoinComponent>().toList()) {
-      // Las monedas atraídas por el imán vuelan solas y se recogen al llegar.
-      if (coin.collected || coin.magnetized) continue;
-      // Magnet grabs adjacent lanes too
-      final inRange = coin.lane == playerLane ||
-          (magnetActive && (coin.lane - playerLane).abs() == 1);
-      if (inRange && coin.depth >= hitMin && coin.depth <= hitMax) {
-        coin.collected = true;
-        coin.removeFromParent();
-        collectCoin();
-      } else if (coin.depth >= pastPlayer) {
-        coin.removeFromParent();
-      }
-    }
-
-    for (final pu in children.whereType<PowerupComponent>().toList()) {
-      if (pu.collected) continue;
-      if (pu.lane == playerLane && pu.depth >= hitMin && pu.depth <= hitMax) {
-        pu.collected = true;
-        pu.removeFromParent();
-        activatePowerup(pu.type);
-      } else if (pu.depth >= pastPlayer) {
-        pu.removeFromParent();
-      }
-    }
-  }
-
-  void _spawnObstacle() {
-    final lane = _rng.nextInt(3);
-    final roll = _rng.nextDouble();
-    final type = roll < 0.20
-        ? ObstacleType.barrier
-        : roll < 0.35
-            ? ObstacleType.spike
-            : ObstacleType.block;
-    add(ObstacleComponent(lane: lane, type: type));
-
-    // Caos zone: 20% chance of a second obstacle in a different lane
-    if (currentZone == RunnerZone.caos && _rng.nextDouble() < 0.20) {
-      final otherLane = (lane + 1 + _rng.nextInt(2)) % 3;
-      final t2 = _rng.nextDouble() < 0.3 ? ObstacleType.barrier : ObstacleType.block;
-      add(ObstacleComponent(lane: otherLane, type: t2));
-    }
-  }
-
-  void _spawnCoin() {
-    add(CoinComponent(lane: _rng.nextInt(3)));
-  }
-
-  void _spawnPowerup() {
-    final type = PowerupType.values[_rng.nextInt(PowerupType.values.length)];
-    add(PowerupComponent(lane: _rng.nextInt(3), type: type));
-  }
-
-  void _spawnScenery({double startDepth = 0.0}) {
-    add(SceneryComponent(
-      side: _rng.nextBool() ? -1 : 1,
-      variant: _rng.nextInt(3),
-      lateral: 2.0 + _rng.nextDouble() * 1.1,
-      startDepth: startDepth,
-    ));
-  }
-
-  // Pre-populate both sides of the track so the world isn't empty on start.
-  void _seedScenery() {
-    for (double d = 0.12; d <= 1.0; d += 0.16) {
-      _spawnScenery(startDepth: d);
-      if (_rng.nextDouble() < 0.6) {
-        _spawnScenery(startDepth: (d + 0.08).clamp(0.0, 1.0));
-      }
-    }
-  }
-
-  // ── Tutorial guiado ──────────────────────────────────────────────────────
-
-  /// Conduce la secuencia scripted del tutorial: lanza cada paso, espera a que
-  /// sus obstáculos salgan de escena y pasa al siguiente hasta terminar.
-  void _advanceTutorial(double dt) {
-    if (!_tutorialStepSpawned) {
-      // Cuenta atrás antes de lanzar el paso actual (más larga la primera vez).
-      _tutorialGap += dt;
-      final delay = _tutorialStep == 0 ? _tutorialStartDelay : _tutorialStepGap;
-      if (_tutorialGap >= delay) {
-        _tutorialGap = 0;
-        _spawnTutorialStep(_tutorialStep);
-        _tutorialStepSpawned = true;
-      }
-      return;
-    }
-
-    // Paso lanzado: avanzar cuando todos sus obstáculos ya cruzaron al corredor.
-    if (_tutorialObstacles.every((o) => !o.isMounted)) {
-      _tutorialHint?.removeFromParent();
-      _tutorialHint = null;
-      _tutorialObstacles.clear();
-      _tutorialStepSpawned = false;
-      _tutorialStep++;
-      if (_tutorialStep >= _tutorialStepCount) {
-        _tutorialActive = false; // se reanuda la carrera normal
-      }
-    }
-  }
-
-  /// Lanza los obstáculos y la flecha de un paso del tutorial. El corredor
-  /// arranca en el carril central (1). Cada paso **fuerza** su acción con un
-  /// solo movimiento siguiendo el recorrido esperado (centro → izquierda →
-  /// centro):
-  /// - 0: muros en los carriles 1 y 2, hueco a la izquierda → mover ← (1→0).
-  /// - 1: muros en los carriles 0 y 2, hueco en el centro → mover → (0→1).
-  /// - 2: bloques de suelo en los 3 carriles (no se agachan) → saltar ↑.
-  /// - 3: barreras colgantes en los 3 carriles (no se saltan) → agacharse ↓.
-  void _spawnTutorialStep(int step) {
-    // Un "muro" (bloque + colgante en el mismo carril) no se salta ni se agacha:
-    // obliga a cambiar de carril.
-    void wall(int lane) {
-      _addTutorialObstacle(lane, ObstacleType.block);
-      _addTutorialObstacle(lane, ObstacleType.overhead);
-    }
-
-    final HintDirection dir;
-    switch (step) {
-      case 0:
-        wall(1);
-        wall(2);
-        dir = HintDirection.left;
-      case 1:
-        wall(0);
-        wall(2);
-        dir = HintDirection.right;
-      case 2:
-        for (var l = 0; l < 3; l++) {
-          _addTutorialObstacle(l, ObstacleType.block);
-        }
-        dir = HintDirection.up;
-      default:
-        for (var l = 0; l < 3; l++) {
-          _addTutorialObstacle(l, ObstacleType.overhead);
-        }
-        dir = HintDirection.down;
-    }
-
-    _tutorialHint = TutorialHintComponent(direction: dir);
-    add(_tutorialHint!);
-  }
-
-  void _addTutorialObstacle(int lane, ObstacleType type) {
-    final obs = ObstacleComponent(lane: lane, type: type, tutorial: true);
-    _tutorialObstacles.add(obs);
-    add(obs);
-  }
-
-  void _resetTutorial() {
-    _tutorialActive = showTutorial;
-    _tutorialStep = 0;
-    _tutorialStepSpawned = false;
-    _tutorialGap = 0;
-    _tutorialObstacles.clear();
-    _tutorialHint?.removeFromParent();
-    _tutorialHint = null;
-  }
 
   // ── Input ──────────────────────────────────────────────────────────────────
 
@@ -879,7 +558,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       '+$value',
       spawnPosition: Vector2(playerX, playerY - 20),
     ));
-    notifyListeners();
+    _publishHud();
   }
 
   void activatePowerup(PowerupType type) {
@@ -913,7 +592,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
           color: const Color(0xFFB266FF),
         ));
     }
-    notifyListeners();
+    _publishHud();
   }
 
   void evadedObstacle() {
@@ -926,7 +605,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
             : obstacleStreak >= 10
                 ? 2.0
                 : 1.0;
-    notifyListeners();
+    _publishHud();
   }
 
   void hitObstacle() {
@@ -946,7 +625,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       ));
       AudioService.instance.playHit();
       onHit?.call();
-      notifyListeners();
+      _publishHud();
       return;
     }
 
@@ -968,7 +647,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.add(_overlayContinue);
     pauseEngine();
     onOfferContinue?.call();
-    notifyListeners();
+    _publishHud();
   }
 
   /// Retoma la carrera **en el mismo punto** tras pagar (revive). A diferencia
@@ -993,7 +672,7 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.remove(_overlayContinue);
     overlays.add(_overlayHud);
     resumeEngine();
-    notifyListeners();
+    _publishHud();
   }
 
   /// El jugador renuncia a continuar: la carrera termina de verdad y salta al
@@ -1060,8 +739,8 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     children.whereType<ScorePopupComponent>().toList().forEach((c) => c.removeFromParent());
     children.whereType<SceneryComponent>().toList().forEach((c) => c.removeFromParent());
     children.whereType<BossAttackComponent>().toList().forEach((c) => c.removeFromParent());
-    _seedScenery();
-    _resetTutorial();
+    _spawn.seedScenery();
+    _tutorial.reset();
 
     _player.removeFromParent();
     _player = PlayerComponent(appearance: appearance, initialLane: 1);
@@ -1072,6 +751,6 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
     overlays.remove(_overlayContinue);
     overlays.add(_overlayHud);
     resumeEngine();
-    notifyListeners();
+    _publishHud();
   }
 }

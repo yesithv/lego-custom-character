@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/di/injection.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/orientation/portrait_lock.dart';
+import 'core/services/audio_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/analytics/domain/analytics_service.dart';
@@ -22,6 +23,9 @@ void main() async {
   await initDependencies();
   // Registra el arranque (sesión + primer uso + día activo).
   sl<AnalyticsService>().startSession();
+  // Precarga los efectos de sonido en segundo plano (sin bloquear el arranque)
+  // para que la primera reproducción de cada uno no cause un micro-tirón.
+  AudioService.instance.preload();
   runApp(const BrixRunApp());
 }
 

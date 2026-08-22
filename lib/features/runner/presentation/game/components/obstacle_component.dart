@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' hide Image;
 
+import '../../../../character_editor/presentation/widgets/appearance_colors.dart';
 import '../../../domain/entities/world_config.dart';
 import '../brix_run_game.dart';
 
@@ -23,8 +24,8 @@ class ObstacleComponent extends PositionComponent
   final bool tutorial;
 
   double _depth;
-  bool _evaded = false;
-  bool _collided = false;
+  bool evaded = false;
+  bool collided = false;
 
   // Base dimensions at full scale (depth = 1)
   static const _blockW = 52.0;
@@ -51,10 +52,6 @@ class ObstacleComponent extends PositionComponent
       };
 
   double get depth => _depth;
-  bool get evaded => _evaded;
-  set evaded(bool v) => _evaded = v;
-  bool get collided => _collided;
-  set collided(bool v) => _collided = v;
 
   /// [initialDepth] permite arrancar el obstáculo ya avanzado hacia el corredor
   /// (0 = horizonte, 1 = plano del jugador). Por defecto nace en el horizonte;
@@ -66,6 +63,18 @@ class ObstacleComponent extends PositionComponent
     double initialDepth = 0.0,
   })  : _depth = initialDepth,
         super(size: Vector2(1, 1), priority: 5);
+
+  @override
+  void onMount() {
+    super.onMount();
+    game.activeObstacles.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeObstacles.remove(this);
+    super.onRemove();
+  }
 
   @override
   void update(double dt) {
@@ -1125,13 +1134,9 @@ class ObstacleComponent extends PositionComponent
     );
   }
 
-  Color _lighten(Color c, double amount) {
-    final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
-  }
+  // Delegan en los helpers memoizados compartidos (ver appearance_colors.dart):
+  // se llamaban por frame por obstáculo con round-trips HSL repetidos.
+  Color _lighten(Color c, double amount) => lightenColor(c, amount);
 
-  Color _darken(Color c, double amount) {
-    final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
-  }
+  Color _darken(Color c, double amount) => darkenColor(c, amount);
 }

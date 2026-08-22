@@ -316,6 +316,18 @@ class BossAttackComponent extends PositionComponent
   }) : super(size: Vector2(1, 1), priority: 40);
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeBossAttacks.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeBossAttacks.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     _animT += dt;
     final enrage = (game.bossMaxHearts - game.bossHearts).clamp(0, 2);

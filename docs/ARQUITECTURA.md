@@ -223,7 +223,18 @@ coincide, cae a inglés.
 
 El corazón del runner es `lib/features/runner/presentation/game/brix_run_game.dart` (`BrixRunGame`). Ver [`JUGABILIDAD.md`](JUGABILIDAD.md) para las mecánicas; aquí solo la arquitectura:
 
-- **`BrixRunGame extends FlameGame with ChangeNotifier`** — orquesta el bucle de juego (`update(dt)`), el spawning, las colisiones y la máquina de estados de la pelea contra el jefe.
+- **`BrixRunGame extends FlameGame with ChangeNotifier`** — coordina el bucle de
+  juego (`update(dt)`) y delega en **sistemas** colaboradores (en
+  `game/systems/`, declarados como `part` de la misma librería para operar sobre
+  el estado del juego vía una referencia sin ampliar la API pública):
+  `BossFightController` (máquina de fases del jefe), `SpawnSystem` (fábrica de
+  spawnables), `TutorialDirector` (secuencia guiada) y `CollisionSystem`
+  (colisiones por profundidad). El estado que lee el HUD se publica como
+  instantánea discreta (`hud_data.dart` → `ValueNotifier<HudData>`), así el HUD
+  se reconstruye solo cuando algo cambia, no cada frame.
+- **HUD y overlays del runner** viven en archivos `part` propios
+  (`runner_hud.dart`, `runner_overlays.dart`); `runner_page.dart` queda como
+  orquestador delgado.
 - **Componentes** (`game/components/`): `PlayerComponent`, `ObstacleComponent`, `CoinComponent`, `PowerupComponent`, `BackgroundComponent`, `SceneryComponent` (escenografía lateral), `ScorePopupComponent`, `BossComponent` y `BossAttackComponent` (con sus `boss_painters`). Cada uno es un `Component`/`PositionComponent` de Flame que se dibuja por código.
 - **Máquina de fases** (`GamePhase`): `running → bossIntro → bossFight → bossDefeated → victory`, gestionada en `_updateBossPhase(dt)`. Durante la pelea se dejan de generar obstáculos/monedas/power-ups, pero la escenografía sigue avanzando.
 - **Overlays de Flame** para el HUD (`hud`), la pantalla de fin de partida (`gameOver`) y la de victoria (`victory`), gestionados con `overlays.add/remove`.
