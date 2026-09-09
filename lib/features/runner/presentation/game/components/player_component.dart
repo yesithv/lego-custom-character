@@ -16,9 +16,29 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
   PlayerState _state = PlayerState.running;
   double _jumpProgress = 0;
   double _slideTimer = 0;
-  double _targetX = 0;
   double _runAnimTimer = 0;
   double _dashTimer = 0;
+
+  // ── Cambio de carril ───────────────────────────────────────────────────────
+  // El desplazamiento entre carriles es un tween de DURACIÓN FIJA con ease-out,
+  // no un suavizado exponencial (`x += (destino - x) * k * dt`). Aquel tenía
+  // dos defectos que se notaban como "lag" al cambiar de carril:
+  //
+  //  1. Dependía de la tasa de refresco: con el mismo `k`, a 30 fps el corredor
+  //     llegaba visiblemente más tarde que a 120 fps.
+  //  2. Nunca terminaba de llegar (se acerca al destino asintóticamente), así
+  //     que el último tramo se arrastraba y el jugador no tenía un instante
+  //     claro de "ya estoy en el carril".
+  //
+  // Con el tween el corredor sale de inmediato, frena al final y aterriza
+  // EXACTAMENTE sobre el carril en [_laneChangeDuration] segundos, sea cual sea
+  // el frame rate.
+  /// Origen del tween en curso (centro X del corredor al empezar el cambio).
+  double _laneFromX = 0;
+
+  /// Progreso del tween de carril, 0→1. En 1 el corredor está quieto en su
+  /// carril y la posición se fija directamente (sin interpolar).
+  double _laneT = 1.0;
 
   static const double _w = 58.0;
   static const double _h = 86.0;
@@ -26,7 +46,13 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
   static const double _jumpHeight = 95.0;
   static const double _jumpDuration = 0.62;
   static const double _slideDuration = 0.50;
-  static const double _laneSpeed = 14.0;
+
+  /// Lo que tarda el corredor en pasar de un carril al de al lado. Es el número
+  /// que gobierna la sensación del control: por debajo de ~0.10 s el cambio se
+  /// ve como un teletransporte y cuesta seguir al personaje con la vista; por
+  /// encima de ~0.20 s se siente pesado y se pierden obstáculos por llegar
+  /// tarde. 0.13 s deja el movimiento legible y aun así inmediato.
+  static const double _laneChangeDuration = 0.13;
 
   bool get isJumping => _state == PlayerState.jumping;
   bool get isSliding => _state == PlayerState.sliding;
@@ -38,8 +64,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
 
   @override
   Future<void> onLoad() async {
-    _targetX = game.laneXPositions[currentLane];
-    position = Vector2(_targetX - _w / 2, game.playerBaseY - _h);
+    position = Vector2(game.laneX(currentLane) - _w / 2, game.playerBaseY - _h);
   }
 
   @override
@@ -47,9 +72,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
     _runAnimTimer += dt;
     if (_dashTimer > 0) _dashTimer -= dt;
 
-    // Smooth lane slide
-    final absTargetX = _targetX - size.x / 2;
-    position.x += (absTargetX - position.x) * _laneSpeed * dt;
+    _updateLaneSlide(dt);
 
     switch (_state) {
       case PlayerState.running:
@@ -100,11 +123,43 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
     return true;
   }
 
-  void changeLane(int direction, List<double> laneXPositions) {
+  /// Avanza el desplazamiento lateral hacia el carril actual.
+  ///
+  /// El destino se relee del juego en cada frame (en vez de cachearse al pedir
+  /// el cambio) para que un giro de pantalla o un cambio de tamaño de ventana
+  /// recoloque al corredor sobre su carril sin saltos ni desalineación.
+  void _updateLaneSlide(double dt) {
+    final toX = game.laneX(currentLane);
+
+    // Caso común: quieto en su carril. Se fija la posición y se sale.
+    if (_laneT >= 1.0) {
+      position.x = toX - size.x / 2;
+      return;
+    }
+
+    _laneT = min(1.0, _laneT + dt / _laneChangeDuration);
+    // Ease-out cúbico: arranca rápido (respuesta inmediata al dedo) y frena al
+    // llegar (el aterrizaje sobre el carril se lee bien).
+    final k = 1 - _laneT;
+    final eased = 1 - k * k * k;
+    position.x = _laneFromX + (toX - _laneFromX) * eased - size.x / 2;
+  }
+
+  /// Pide un cambio de carril de [direction] (-1 izquierda, +1 derecha).
+  /// Devuelve `true` solo si el carril cambia de verdad (en los extremos de la
+  /// pista no hay a dónde ir), para que quien llama pueda dar retorno al
+  /// jugador únicamente cuando el movimiento ocurre.
+  bool changeLane(int direction) {
     final next = (currentLane + direction).clamp(0, 2);
-    if (next == currentLane) return;
+    if (next == currentLane) return false;
+
+    // El tween arranca desde donde el corredor está AHORA, que puede ser a
+    // mitad de un cambio anterior: encadenar dos carriles seguidos sale como un
+    // barrido continuo, sin el tirón de reiniciar desde el centro del carril.
+    _laneFromX = position.x + size.x / 2;
+    _laneT = 0.0;
     currentLane = next;
-    _targetX = laneXPositions[currentLane];
+    return true;
   }
 
   void kill() => _state = PlayerState.dead;
@@ -119,8 +174,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<BrixRunGam
     _dashTimer = 0;
     size = Vector2(_w, _h);
     currentLane = 1;
-    _targetX = game.laneXPositions[currentLane];
-    position = Vector2(_targetX - _w / 2, game.playerBaseY - _h);
+    // Revivir reubica al corredor de golpe en el carril central: no hay tween
+    // pendiente que arrastre desde donde murió.
+    _laneT = 1.0;
+    position = Vector2(game.laneX(currentLane) - _w / 2, game.playerBaseY - _h);
   }
 
   /// Embestida contra el jefe: ráfaga visual breve de velocidad.
