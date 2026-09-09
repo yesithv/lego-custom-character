@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' hide Image;
 
 import '../../../../character_editor/presentation/widgets/appearance_colors.dart';
 import '../../../domain/entities/world_config.dart';
+import '../../../../../core/rendering/glow.dart';
 import '../brix_run_game.dart';
 
 /// Tipos de obstáculo:
@@ -915,14 +916,11 @@ class ObstacleComponent extends PositionComponent
       ..lineTo(w * 0.85, h * 0.50)
       ..close();
     
-    // Pulse aura glow
+    // Aura que late. Antes era el mismo rombo relleno y DESENFOCADO
+    // (`MaskFilter.blur`): un desenfoque por obstáculo y por frame, y en galaxy
+    // hay varios en pantalla a la vez. Ver `core/rendering/glow.dart`.
     final pulse = 0.6 + 0.4 * sin(game.elapsedSeconds * 7);
-    canvas.drawPath(
-      body,
-      Paint()
-        ..color = color.withValues(alpha: 0.3 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
+    drawGlowPath(canvas, body, color, strength: pulse);
 
     canvas.drawPath(body, Paint()..color = color);
 
@@ -975,11 +973,9 @@ class ObstacleComponent extends PositionComponent
       ..close();
     canvas.drawPath(body, Paint()..color = color);
 
-    // Glowing tip
-    final glowPaint = Paint()
-      ..color = const Color(0xFFE94560)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawCircle(Offset(half, h * 0.10), 6, glowPaint);
+    // Punta luminosa. Igual que en el cristal de galaxy: el desenfoque se
+    // sustituye por capas concéntricas (ver `core/rendering/glow.dart`).
+    drawGlowDot(canvas, Offset(half, h * 0.10), 6, const Color(0xFFE94560));
   }
 
   // 5. Sea Urchin (ocean)

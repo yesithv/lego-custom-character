@@ -24,11 +24,26 @@ class CharacterPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: headOnly ? size : size * 1.6,
-      child: CustomPaint(
-        painter: _CharacterPainter(appearance, headOnly: headOnly),
+    // `RepaintBoundary` porque este painter es CARO —cientos de operaciones de
+    // dibujo por figura— y casi siempre está quieto mientras su alrededor se
+    // mueve. Sin él, cuando un hermano se repinta (el confeti y el polvo de la
+    // pantalla de fin de partida, la ruleta girando en el inicio) Flutter sube
+    // hasta el límite de repintado más cercano y vuelve a ejecutar el `paint`
+    // de TODO el subárbol: el minifigure se redibujaba entero a 60 fps aunque
+    // no hubiera cambiado un píxel. Con el límite propio, esa capa se reutiliza
+    // tal cual.
+    return RepaintBoundary(
+      child: SizedBox(
+        width: size,
+        height: headOnly ? size : size * 1.6,
+        child: CustomPaint(
+          // El painter no cambia por su cuenta (ver `shouldRepaint`): solo lo
+          // hace si cambia la apariencia, así que la caché de rasterizado puede
+          // conservar el resultado entre frames.
+          isComplex: true,
+          willChange: false,
+          painter: _CharacterPainter(appearance, headOnly: headOnly),
+        ),
       ),
     );
   }
