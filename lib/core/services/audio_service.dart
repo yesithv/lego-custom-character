@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
+import 'sfx_player.dart';
 
 class AudioService {
   static final AudioService instance = AudioService._();
@@ -14,12 +19,39 @@ class AudioService {
   /// plataforma de audioplayers.
   bool muteAll = false;
 
-  // Un pool rotatorio de reproductores por sonido: permite que varias copias
-  // del mismo efecto suenen solapadas (p. ej. la ráfaga de monedas del imán)
+  // ── Efectos de sonido ──────────────────────────────────────────────────────
+  //
+  // Cada efecto tiene un pool rotatorio de reproductores: permite que varias
+  // copias del MISMO sonido suenen solapadas (la ráfaga de monedas del imán)
   // sin que cada nueva reproducción corte la anterior.
-  final _pools = <String, List<AudioPlayer>>{};
+
+  /// Los efectos y cuántas copias simultáneas necesita cada uno.
+  ///
+  /// Más allá de lo que el sonido pide, un reproductor de más solo es memoria
+  /// nativa ocupada: las monedas sí llegan en ráfaga con el imán, pero el cofre
+  /// y la ruleta no se solapan nunca consigo mismos.
+  static const Map<String, int> _sfx = {
+    'coin.wav': 4,
+    'jump.wav': 2,
+    'slide.wav': 2,
+    'hit.wav': 2,
+    'powerup.wav': 2,
+    'unlock.wav': 2,
+    'roulette_spin.wav': 1,
+    'chest_open.wav': 1,
+  };
+
+  /// Pools listos o **en preparación**, por nombre de efecto. Guardar el
+  /// `Future` (y no solo la lista) evita que una reproducción que llegue antes
+  /// de que termine el precargado use reproductores a medio preparar, y que dos
+  /// llamadas seguidas construyan el pool dos veces.
+  final _pools = <String, Future<List<SfxPlayer>>>{};
   final _poolIndex = <String, int>{};
-  static const int _poolSize = 4;
+
+  /// Fábrica de reproductores de efectos. Los tests la sustituyen por un doble
+  /// para verificar la política del pool sin canales de plataforma.
+  @visibleForTesting
+  SfxPlayer Function() sfxPlayerFactory = AudioplayersSfxPlayer.new;
 
   // Dedicated looping player for background music
   AudioPlayer? _musicPlayer;
@@ -32,30 +64,41 @@ class AudioService {
     _musicPlayer?.setVolume(musicMuted ? 0.0 : _musicVolume);
   }
 
-  // Todos los efectos de sonido, para precargarlos (evitar el hitch la primera
-  // vez que cada uno suena en pleno juego). La música se carga aparte al correr.
-  static const List<String> _sfxAssets = [
-    'audio/jump.wav',
-    'audio/coin.wav',
-    'audio/slide.wav',
-    'audio/hit.wav',
-    'audio/powerup.wav',
-    'audio/unlock.wav',
-    'audio/roulette_spin.wav',
-    'audio/chest_open.wav',
-  ];
-
-  /// Precarga los efectos en la caché de audio compartida para que la primera
-  /// reproducción de cada uno no decodifique el asset durante la partida (lo que
-  /// provocaba un micro-tirón). Se llama al arrancar; es idempotente y silencia
-  /// cualquier fallo (p. ej. la web antes del primer gesto del usuario).
+  /// Deja todos los efectos **listos para sonar sin latencia**.
+  ///
+  /// Se llama al arrancar, sin `await`: no bloquea el primer frame y los pools
+  /// se van armando de fondo. Es idempotente y traga cualquier fallo (un efecto
+  /// que no se pueda preparar se preparará al usarse).
+  ///
+  /// Los pools se arman **uno detrás de otro, no todos a la vez**: son 16
+  /// reproductores nativos y lanzarlos en paralelo concentraría el trabajo en
+  /// un par de frames del menú. En serie se reparte solo.
   Future<void> preload() async {
     if (muteAll) return;
-    try {
-      await AudioCache.instance.loadAll(_sfxAssets);
-    } catch (_) {
-      // Ignora fallos de precarga: los efectos se cargarán al usarse.
+    for (final name in _sfx.keys) {
+      try {
+        await _pool(name);
+      } catch (_) {
+        // Un efecto que falle al prepararse no debe abortar el resto.
+        _pools.remove(name);
+      }
     }
+  }
+
+  /// Devuelve el pool de [name], creándolo si hace falta.
+  Future<List<SfxPlayer>> _pool(String name) =>
+      _pools[name] ??= _buildPool(name);
+
+  /// Construye el pool de [name] y deja sus reproductores preparados. El porqué
+  /// de cada ajuste está en [AudioplayersSfxPlayer.prepare]: ahí es donde se
+  /// arregla el micro-tirón.
+  Future<List<SfxPlayer>> _buildPool(String name) async {
+    final pool = List.generate(_sfx[name] ?? 1, (_) => sfxPlayerFactory());
+    for (final player in pool) {
+      await player.prepare('audio/$name');
+    }
+    _poolIndex[name] = 0;
+    return pool;
   }
 
   void playJump() => _play('jump.wav');
@@ -124,14 +167,19 @@ class AudioService {
     }
   }
 
-  void dispose() {
-    for (final pool in _pools.values) {
-      for (final p in pool) {
-        p.dispose();
-      }
-    }
+  Future<void> dispose() async {
+    // Los pools pueden estar aún armándose: se espera a cada uno antes de
+    // soltarlo, para no dejar reproductores nativos huérfanos.
+    final pools = _pools.values.toList();
     _pools.clear();
     _poolIndex.clear();
+    for (final pending in pools) {
+      try {
+        for (final p in await pending) {
+          await p.release();
+        }
+      } catch (_) {}
+    }
     _musicPlayer?.dispose();
     _musicPlayer = null;
     _currentMusicAsset = null;
@@ -141,17 +189,20 @@ class AudioService {
     // Los efectos siempre suenan salvo el corte global de audio (tests): el
     // botón de silencio del juego solo apaga la música.
     if (muteAll) return;
-    final pool = _pools.putIfAbsent(
-      name,
-      () => List.generate(_poolSize, (_) => AudioPlayer()),
-    );
-    // Rota al siguiente reproductor libre para no cortar el que ya suena.
-    final idx = _poolIndex[name] ?? 0;
-    _poolIndex[name] = (idx + 1) % _poolSize;
-    final player = pool[idx];
-    // Reproducimos directo (sin `stop()` previo): en un reproductor recién
-    // creado ese stop podía no resolver en algunas plataformas y dejar el
-    // efecto sin sonar. `play()` ya reinicia la pista desde el principio.
-    player.play(AssetSource('audio/$name')).catchError((_) {});
+    unawaited(_playSfx(name));
+  }
+
+  /// Lanza un efecto. Dispara y olvida: nunca se espera desde el bucle de
+  /// juego, y cualquier fallo se traga (el audio no puede tumbar la partida).
+  Future<void> _playSfx(String name) async {
+    try {
+      final pool = await _pool(name);
+      // Rota al siguiente reproductor para no cortar el que ya suena.
+      final idx = _poolIndex[name] ?? 0;
+      _poolIndex[name] = (idx + 1) % pool.length;
+      await pool[idx].restart();
+    } catch (_) {
+      // Silencio antes que un crash.
+    }
   }
 }
