@@ -51,14 +51,29 @@ Future<void> initDependencies() async {
   Hive.registerAdapter(EntitlementsModelAdapter());
   Hive.registerAdapter(AnalyticsEventModelAdapter());
 
-  // Open boxes
-  await Hive.openBox<CharacterModel>('characters');
-  await Hive.openBox<WalletModel>('wallet');
-  await Hive.openBox<String>('missions');
-  await Hive.openBox<ScoreModel>('scores');
-  await Hive.openBox<EntitlementsModel>('entitlements');
-  await Hive.openBox<AnalyticsEventModel>('analytics_events');
-  await Hive.openBox<dynamic>('analytics_meta');
+  // Las cajas se abren EN PARALELO, no una detrás de otra.
+  //
+  // Cada `openBox` lee su archivo de disco y deserializa el contenido.
+  // Encadenarlas con `await` sumaba las siete latencias; en paralelo se paga
+  // solo la de la más lenta, porque la E/S de Dart va a su propio pool de
+  // hilos. Es tiempo que el jugador ve como pantalla en negro antes del primer
+  // frame, así que cuenta.
+  //
+  // Se abren todas aquí a propósito, sin diferir ninguna: los datasources
+  // resuelven su caja con `Hive.box(...)` al construirse, y eso lanza si la
+  // caja aún no está abierta. Abrirlas más tarde obligaría a que cada
+  // registro perezoso supiera esperar, y el ahorro no lo justifica: son
+  // archivos pequeños y acotados (ver la poda de `scores` y de
+  // `analytics_events`).
+  await Future.wait([
+    Hive.openBox<CharacterModel>('characters'),
+    Hive.openBox<WalletModel>('wallet'),
+    Hive.openBox<String>('missions'),
+    Hive.openBox<ScoreModel>('scores'),
+    Hive.openBox<EntitlementsModel>('entitlements'),
+    Hive.openBox<AnalyticsEventModel>('analytics_events'),
+    Hive.openBox<dynamic>('analytics_meta'),
+  ]);
 
   // ── Character ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<CharacterLocalDatasource>(
