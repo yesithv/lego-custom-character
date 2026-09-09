@@ -50,6 +50,20 @@ class InAppPurchaseStoreRepository implements StoreRepository {
   /// Compras iniciadas por nosotros, esperando confirmación del stream.
   final Map<String, Completer<PurchaseResult>> _pending = {};
 
+  // ── Caché de precios ────────────────────────────────────────────────────────
+  // Consultar precios a la tienda es un viaje a Google Play / StoreKit que
+  // tarda entre uno y tres segundos. Los precios no cambian mientras la app
+  // está abierta, así que se preguntan UNA vez por sesión: la segunda apertura
+  // de la Tienda (o la vuelta desde la pantalla de gemas) los tiene ya puestos.
+
+  /// Precios ya resueltos por la tienda, por id de producto.
+  final Map<String, String> _priceCache = {};
+
+  /// Ids ya preguntados a la tienda, **respondiera o no**. Un producto que no
+  /// esté dado de alta en la consola no va a aparecer por reintentar, y
+  /// reintentarlo costaría el viaje completo en cada apertura.
+  final Set<String> _priceQueried = {};
+
   InAppPurchaseStoreRepository(this._ds, {InAppPurchase? iap})
       : _iap = iap ?? InAppPurchase.instance {
     _sub = _iap.purchaseStream.listen(
@@ -108,10 +122,21 @@ class InAppPurchaseStoreRepository implements StoreRepository {
 
   @override
   Future<Map<String, String>> loadPrices(Set<String> ids) async {
-    if (!await _iap.isAvailable()) return const {};
-    final response = await _iap.queryProductDetails(ids);
+    final pending = ids.difference(_priceQueried);
+    if (pending.isNotEmpty && await _iap.isAvailable()) {
+      final response = await _iap.queryProductDetails(pending);
+      for (final d in response.productDetails) {
+        _priceCache[d.id] = d.price;
+      }
+      // Se marca todo lo preguntado, no solo lo que respondió (ver
+      // [_priceQueried]). Si la tienda NO estaba disponible no se marca nada:
+      // puede ser falta de red o que aún esté inicializando, y ahí sí conviene
+      // reintentar en la siguiente apertura.
+      _priceQueried.addAll(pending);
+    }
     return {
-      for (final d in response.productDetails) d.id: d.price,
+      for (final id in ids)
+        if (_priceCache.containsKey(id)) id: _priceCache[id]!,
     };
   }
 

@@ -29,24 +29,22 @@ class _GemStorePageState extends State<GemStorePage> {
   final StoreRepository _store = sl<StoreRepository>();
   final AnalyticsService _analytics = sl<AnalyticsService>();
 
-  Entitlements _ent = const Entitlements();
-  bool _loading = true;
+  /// Saldo de gemas y desbloqueos. Lectura local síncrona: la pantalla se
+  /// pinta entera en su primer frame. Antes se esperaba a `getEntitlements()`
+  /// —que es exactamente la misma lectura, envuelta en un `Future`— detrás de
+  /// un spinner, y eso metía un parpadeo de un frame al abrir.
+  late Entitlements _ent = _store.entitlementsSync();
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
     _analytics.track(AnalyticsEvents.gemStoreOpen);
-    _load();
   }
 
-  Future<void> _load() async {
-    final e = await _store.getEntitlements();
-    if (!mounted) return;
-    setState(() {
-      _ent = e;
-      _loading = false;
-    });
+  /// Relee el saldo desde local tras un canje.
+  void _refreshEntitlements() {
+    setState(() => _ent = _store.entitlementsSync());
   }
 
   /// Un cosmético ya está en poder del jugador si todas sus piezas están
@@ -163,7 +161,7 @@ class _GemStorePageState extends State<GemStorePage> {
   /// consigo gemas → compro".
   Future<void> _goToStore() async {
     await context.pushNamed('store');
-    if (mounted) _load();
+    if (mounted) _refreshEntitlements();
   }
 
   /// Aviso de saldo insuficiente que ofrece ir a la Tienda a por gemas.
@@ -205,32 +203,29 @@ class _GemStorePageState extends State<GemStorePage> {
         ),
         child: SafeArea(
           top: false,
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white54))
-              : BlocBuilder<WalletBloc, WalletState>(
-                  builder: (context, walletState) {
-                    // Se listan de menor a mayor precio en gemas.
-                    final products = [...gemStoreCatalog]
-                      ..sort((a, b) => a.gemPrice.compareTo(b.gemPrice));
-                    return ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      children: [
-                        _GemBalance(gems: _ent.gems),
-                        const SizedBox(height: 12),
-                        _GetMoreGemsCard(onTap: _goToStore),
-                        const SizedBox(height: 12),
-                        ...products.map((p) => _GemProductCard(
-                              product: p,
-                              affordable: _ent.gems >= p.gemPrice,
-                              owned: _alreadyOwned(p, walletState.wallet),
-                              busy: _busy,
-                              onRedeem: () => _redeem(p),
-                            )),
-                      ],
-                    );
-                  },
-                ),
+          child: BlocBuilder<WalletBloc, WalletState>(
+              builder: (context, walletState) {
+                // Se listan de menor a mayor precio en gemas.
+                final products = [...gemStoreCatalog]
+                  ..sort((a, b) => a.gemPrice.compareTo(b.gemPrice));
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  children: [
+                    _GemBalance(gems: _ent.gems),
+                    const SizedBox(height: 12),
+                    _GetMoreGemsCard(onTap: _goToStore),
+                    const SizedBox(height: 12),
+                    ...products.map((p) => _GemProductCard(
+                          product: p,
+                          affordable: _ent.gems >= p.gemPrice,
+                          owned: _alreadyOwned(p, walletState.wallet),
+                          busy: _busy,
+                          onRedeem: () => _redeem(p),
+                        )),
+                  ],
+                );
+              },
+            ),
         ),
       ),
     );

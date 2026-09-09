@@ -1,5 +1,3 @@
-import 'dart:ui' show Offset;
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:run_for_win/features/runner/presentation/input/swipe_detector.dart';
 
