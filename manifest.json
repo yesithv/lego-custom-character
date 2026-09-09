@@ -1,0 +1,12 @@
+{
+    "name": "Run For Win",
+    "short_name": "Run For Win",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#FFD700",
+    "description": "Crea tu personaje de bloques Brix y corre sin parar",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": []
+}
