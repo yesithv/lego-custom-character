@@ -1,6 +1,8 @@
 ﻿import 'dart:math';
 
 import 'package:flutter/material.dart';
+
+import '../../../../core/rendering/glow.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -485,13 +487,10 @@ class _RotatingRaysPainter extends CustomPainter {
         paint2,
       );
     }
-    canvas.drawCircle(
-      center,
-      maxR * 0.28,
-      Paint()
-        ..color = color.withValues(alpha: 0.18 * intensity)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
-    );
+    // Núcleo luminoso. Antes era un círculo con `MaskFilter.blur(18)`, y este
+    // painter repinta en cada frame de la animación: un desenfoque por frame
+    // justo en el momento de la recompensa, que es donde peor se ve un tirón.
+    drawGlowDot(canvas, center, maxR * 0.28, color, strength: intensity * 0.4);
   }
 
   @override

@@ -370,6 +370,18 @@ Color darkenColor(Color c, double amount) => _darkenCache.putIfAbsent(
       },
     );
 
+// Reflejos y sombras de color FIJO. El corredor se redibuja en cada frame y
+// llama a estos ayudantes una decena de veces por figura, así que crearlos
+// dentro era rehacer siempre los mismos objetos. Los degradados de más abajo no
+// se pueden compartir igual: su shader depende del rectángulo, que cambia al
+// animarse las extremidades.
+final Paint _sheenPaint = Paint()
+  ..color = Colors.white.withValues(alpha: 0.20);
+final Paint _highlightPaint = Paint()
+  ..color = Colors.white.withValues(alpha: 0.55);
+final Paint _contactShadowPaint = Paint()
+  ..color = Colors.black.withValues(alpha: 0.12);
+
 /// Contorno tonal: oscuro y saturado en piezas claras, sutil en oscuras.
 Paint outlinePaintFor(Color color, {double width = 1.4}) => Paint()
   ..color = darkenColor(color, 0.28).withValues(alpha: 0.85)
@@ -401,7 +413,7 @@ void drawPlasticRect(Canvas canvas, Rect rect, Color color, double radius,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(sheenRect, Radius.circular(radius * 0.8)),
-      Paint()..color = Colors.white.withValues(alpha: 0.20),
+      _sheenPaint,
     );
   }
 
@@ -425,7 +437,7 @@ void drawPlasticSphere(Canvas canvas, Offset center, double r, Color color) {
   canvas.drawCircle(
     Offset(center.dx - r * 0.30, center.dy - r * 0.36),
     r * 0.24,
-    Paint()..color = Colors.white.withValues(alpha: 0.55),
+    _highlightPaint,
   );
   canvas.drawCircle(
       center, r, outlinePaintFor(color, width: (r * 0.14).clamp(0.8, 1.4)));
@@ -463,8 +475,7 @@ Paint metalPaint(Rect rect) => Paint()
 
 /// Sombra de contacto suave entre piezas (oclusión ambiental barata).
 void drawContactShadow(Canvas canvas, Rect rect) {
-  canvas.drawOval(
-      rect, Paint()..color = Colors.black.withValues(alpha: 0.12));
+  canvas.drawOval(rect, _contactShadowPaint);
 }
 
 /// Estrella de 4 puntas.
