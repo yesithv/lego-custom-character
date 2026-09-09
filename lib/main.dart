@@ -17,10 +17,17 @@ import 'features/ranking/presentation/bloc/ranking_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Las dos tareas de arranque son independientes, así que corren a la vez en
+  // vez de una detrás de otra: fijar la orientación es una llamada al canal de
+  // plataforma y preparar las dependencias es leer disco. Ambas terminan antes
+  // de `runApp`, que es lo único que importa del orden.
+  //
   // El juego se juega en vertical: si el teléfono está en horizontal al abrir,
   // la pantalla se fuerza a vertical antes de mostrar el primer frame.
-  await lockPortraitOrientation();
-  await initDependencies();
+  await Future.wait([
+    lockPortraitOrientation(),
+    initDependencies(),
+  ]);
   // Registra el arranque (sesión + primer uso + día activo).
   sl<AnalyticsService>().startSession();
   // Precarga los efectos de sonido en segundo plano (sin bloquear el arranque)

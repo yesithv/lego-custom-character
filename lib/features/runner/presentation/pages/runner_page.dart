@@ -35,6 +35,7 @@ import '../../domain/entities/continue_cost.dart';
 import '../../domain/entities/world_config.dart';
 import '../game/brix_run_game.dart';
 import '../game/hud_data.dart';
+import '../input/swipe_detector.dart';
 import 'world_selection_page.dart';
 
 part 'runner_hud.dart';
@@ -276,65 +277,48 @@ class _RunnerPageState extends State<RunnerPage> {
     super.dispose();
   }
 
-  // Origen y último punto del arrastre en curso: el swipe se decide por
-  // DESPLAZAMIENTO, no por velocidad. Un arrastre lento (muy común en niños)
-  // acababa con velocidad ≈ 0 y no registraba nada en el móvil.
-  Offset? _panStart;
-  Offset _panLast = Offset.zero;
+  // ── Swipe ───────────────────────────────────────────────────────────────────
+  // La política del gesto vive en [SwipeDetector] (presentation/input/), que la
+  // resuelve MIENTRAS el dedo se mueve en vez de al levantarlo. Aquí solo se
+  // cablea y se traduce la acción a los controles del juego.
 
-  /// Desplazamiento mínimo (px) para tratar un arrastre como swipe.
-  static const double _swipeMinDistance = 24.0;
+  final SwipeDetector _swipes = SwipeDetector(flickVelocity: _swipeThreshold);
 
-  void _handlePanStart(DragStartDetails d) {
-    _panStart = d.localPosition;
-    _panLast = d.localPosition;
-  }
+  void _handlePanStart(DragStartDetails d) => _swipes.start(d.localPosition);
 
   void _handlePanUpdate(DragUpdateDetails d) {
-    _panLast = d.localPosition;
+    if (_isPaused) return;
+    _apply(_swipes.update(d.localPosition));
   }
 
-  void _handleSwipe(DragEndDetails d) {
-    final start = _panStart;
-    _panStart = null;
+  void _handlePanEnd(DragEndDetails d) {
+    final action = _swipes.end(d.velocity.pixelsPerSecond);
     if (_isPaused) return;
+    _apply(action);
+  }
 
-    // 1) Por desplazamiento total del dedo (fiable con arrastres lentos).
-    if (start != null) {
-      final delta = _panLast - start;
-      if (delta.distance >= _swipeMinDistance) {
-        if (delta.dx.abs() > delta.dy.abs()) {
-          if (delta.dx > 0) {
-            _game.onSwipeRight();
-          } else {
-            _game.onSwipeLeft();
-          }
-        } else {
-          if (delta.dy < 0) {
-            _game.onSwipeUp();
-          } else {
-            _game.onSwipeDown();
-          }
-        }
+  /// Ejecuta la acción de un gesto sobre el juego. `null` = el gesto aún no ha
+  /// producido nada.
+  void _apply(SwipeAction? action) {
+    switch (action) {
+      case null:
         return;
-      }
-    }
-
-    // 2) Fallback por velocidad (flicks rápidos y muy cortos).
-    final v = d.velocity.pixelsPerSecond;
-    if (v.dx.abs() > v.dy.abs()) {
-      if (v.dx > _swipeThreshold) {
-        _game.onSwipeRight();
-      } else if (v.dx < -_swipeThreshold) {
-        _game.onSwipeLeft();
-      }
-    } else {
-      if (v.dy < -_swipeThreshold) {
+      case SwipeAction.left:
+        _moveLane(_game.onSwipeLeft());
+      case SwipeAction.right:
+        _moveLane(_game.onSwipeRight());
+      case SwipeAction.up:
         _game.onSwipeUp();
-      } else if (v.dy > _swipeThreshold) {
+      case SwipeAction.down:
         _game.onSwipeDown();
-      }
     }
+  }
+
+  /// Golpecito seco solo cuando el corredor cambia de carril de verdad: en los
+  /// bordes de la pista no hay a dónde ir, y vibrar ahí le diría al jugador que
+  /// se movió cuando no lo hizo.
+  void _moveLane(bool moved) {
+    if (moved) HapticFeedback.selectionClick();
   }
 
   /// Toque por zonas de la pantalla (además del swipe): tercio izquierdo →
@@ -347,9 +331,9 @@ class _RunnerPageState extends State<RunnerPage> {
     final dx = d.localPosition.dx;
     final third = size.width / 3;
     if (dx < third) {
-      _game.onSwipeLeft();
+      if (_game.onSwipeLeft()) HapticFeedback.selectionClick();
     } else if (dx > third * 2) {
-      _game.onSwipeRight();
+      if (_game.onSwipeRight()) HapticFeedback.selectionClick();
     } else if (d.localPosition.dy < size.height / 2) {
       _game.onSwipeUp();
     } else {
@@ -390,7 +374,7 @@ class _RunnerPageState extends State<RunnerPage> {
             behavior: HitTestBehavior.opaque,
             onPanStart: _handlePanStart,
             onPanUpdate: _handlePanUpdate,
-            onPanEnd: _handleSwipe,
+            onPanEnd: _handlePanEnd,
             onTapUp: _handleTapUp,
             child: GameWidget<BrixRunGame>(
               game: _game,

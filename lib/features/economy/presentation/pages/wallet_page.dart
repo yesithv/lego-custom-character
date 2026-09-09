@@ -27,19 +27,10 @@ class WalletPage extends StatefulWidget {
 
 class _WalletPageState extends State<WalletPage> {
   final StoreRepository _store = sl<StoreRepository>();
-  Entitlements _ent = const Entitlements();
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final e = await _store.getEntitlements();
-    if (!mounted) return;
-    setState(() => _ent = e);
-  }
+  /// Desbloqueos del jugador. Lectura local síncrona: la billetera se pinta
+  /// completa en su primer frame, sin el frame intermedio con el saldo a cero
+  /// que dejaba esperar a `getEntitlements()` (la misma lectura en un `Future`).
+  late final Entitlements _ent = _store.entitlementsSync();
 
   @override
   Widget build(BuildContext context) {

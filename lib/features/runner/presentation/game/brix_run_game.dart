@@ -235,17 +235,21 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
   double get vanishX => size.x / 2;
   double get laneSep => size.x * 0.265;
 
+  /// X del centro del carril [lane] (0–2) a la altura del corredor.
+  ///
+  /// Es la vía rápida: la consultan `perspectivePos` y el corredor en CADA
+  /// frame, una vez por objeto vivo en la pista, así que no debe construir
+  /// nada. [laneXPositions] sigue existiendo para quien necesite los tres
+  /// valores juntos (tests, depuración), pero el bucle de juego usa esto.
+  double laneX(int lane) => vanishX + (lane - 1) * laneSep;
+
   /// X positions of the 3 lanes at player level (bottom of screen).
-  List<double> get laneXPositions => [
-        vanishX - laneSep,
-        vanishX,
-        vanishX + laneSep,
-      ];
+  List<double> get laneXPositions => [laneX(0), laneX(1), laneX(2)];
 
   /// Screen position for a lane+depth combination.
   /// depth 0 = horizon, depth 1 = player level.
   Vector2 perspectivePos(int lane, double depth) {
-    final lx = laneXPositions[lane];
+    final lx = laneX(lane);
     return Vector2(
       vanishX + (lx - vanishX) * depth,
       horizonY + (playerBaseY - horizonY) * depth,
@@ -499,8 +503,13 @@ class BrixRunGame extends FlameGame with ChangeNotifier, KeyboardEvents {
       add(SlideDustEffect(center: Vector2(playerX, playerBaseY - 6)));
     }
   }
-  void onSwipeLeft() => _player.changeLane(-1, laneXPositions);
-  void onSwipeRight() => _player.changeLane(1, laneXPositions);
+  /// Mueve al corredor un carril a la izquierda. Devuelve `true` solo si el
+  /// carril cambia de verdad (en el borde de la pista no hay a dónde ir); la
+  /// página lo usa para dar retorno háptico únicamente cuando hay movimiento.
+  bool onSwipeLeft() => _player.changeLane(-1);
+
+  /// Mueve al corredor un carril a la derecha. Ver [onSwipeLeft].
+  bool onSwipeRight() => _player.changeLane(1);
 
   void onTap() {
     _player.jump();

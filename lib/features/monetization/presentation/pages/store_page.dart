@@ -32,31 +32,44 @@ class _StorePageState extends State<StorePage> {
   final StoreRepository _store = sl<StoreRepository>();
   final AnalyticsService _analytics = sl<AnalyticsService>();
 
-  Entitlements _ent = const Entitlements();
+  /// Estado de desbloqueos. Se lee de local (Hive) de forma **síncrona**, así
+  /// que la Tienda tiene todo lo que necesita para pintarse ya en su primer
+  /// frame: no hay nada que esperar.
+  late Entitlements _ent = _store.entitlementsSync();
 
-  /// Precios reales localizados por id (moneda del usuario). Vacío en web o si
-  /// la tienda no responde: se cae al `priceLabel` de relleno del catálogo.
+  /// Precios reales localizados por id (moneda del usuario). Vacío en web o
+  /// mientras la tienda todavía no ha respondido: se cae al `priceLabel` de
+  /// relleno del catálogo (ver [_priceLabel]).
   Map<String, String> _prices = {};
-  bool _loading = true;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
     _analytics.track(AnalyticsEvents.storeOpen);
-    _load();
+    _loadPrices();
   }
 
-  Future<void> _load() async {
-    final e = await _store.getEntitlements();
+  /// Pide a la tienda los precios reales **en segundo plano**.
+  ///
+  /// Antes la pantalla entera esperaba a esta consulta detrás de un spinner, y
+  /// es un viaje a Google Play / StoreKit de uno a tres segundos. El precio
+  /// real es un adorno —hay etiqueta de relleno para cada producto—, así que no
+  /// tiene por qué bloquear nada: el catálogo se pinta al instante y las
+  /// etiquetas se sustituyen cuando la tienda contesta. El repositorio cachea
+  /// la respuesta, de modo que las siguientes aperturas ya la tienen.
+  Future<void> _loadPrices() async {
     final prices =
         await _store.loadPrices(storeCatalog.map((p) => p.id).toSet());
-    if (!mounted) return;
-    setState(() {
-      _ent = e;
-      _prices = prices;
-      _loading = false;
-    });
+    if (!mounted || prices.isEmpty) return;
+    setState(() => _prices = prices);
+  }
+
+  /// Relee el estado de desbloqueos desde local. Se usa al volver de la
+  /// pantalla de gemas, que puede haber cambiado el saldo. Es síncrono: no
+  /// merece ni spinner ni `await`.
+  void _refreshEntitlements() {
+    setState(() => _ent = _store.entitlementsSync());
   }
 
   /// Precio a mostrar: el real de la tienda si está disponible, si no el de
@@ -181,46 +194,43 @@ class _StorePageState extends State<StorePage> {
         ),
         child: SafeArea(
           top: false,
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white54))
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  children: [
-                    _StatusHeader(ent: _ent),
-                    const SizedBox(height: 10),
-                    _RedeemGemsButton(
-                      onTap: () async {
-                        await context.pushNamed('gems');
-                        // Al volver, refresca el saldo de gemas.
-                        if (mounted) _load();
-                      },
-                    ),
-                    if (_ent.subscriptionActive) ...[
-                      const SizedBox(height: 10),
-                      _VipDailyCard(
-                        available: _ent.canClaimVipDaily,
-                        busy: _busy,
-                        onClaim: _claimVipDaily,
-                      ),
-                    ],
-                    // El aviso de "compras simuladas" solo aplica a la demo web
-                    // (stub). En móvil el pago es real: mostrarlo confundiría.
-                    if (kIsWeb) ...[
-                      const SizedBox(height: 12),
-                      const _StubBanner(),
-                    ],
-                    const SizedBox(height: 12),
-                    ...storeCatalog.map((p) => _ProductCard(
-                          product: p,
-                          priceLabel: _priceLabel(p),
-                          owned: p.type != ProductType.consumable &&
-                              _ent.owns(p.id),
-                          busy: _busy,
-                          onBuy: () => _buy(p),
-                        )),
-                  ],
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              _StatusHeader(ent: _ent),
+              const SizedBox(height: 10),
+              _RedeemGemsButton(
+                onTap: () async {
+                  await context.pushNamed('gems');
+                  // Al volver, refresca el saldo de gemas.
+                  if (mounted) _refreshEntitlements();
+                },
+              ),
+              if (_ent.subscriptionActive) ...[
+                const SizedBox(height: 10),
+                _VipDailyCard(
+                  available: _ent.canClaimVipDaily,
+                  busy: _busy,
+                  onClaim: _claimVipDaily,
                 ),
+              ],
+              // El aviso de "compras simuladas" solo aplica a la demo web
+              // (stub). En móvil el pago es real: mostrarlo confundiría.
+              if (kIsWeb) ...[
+                const SizedBox(height: 12),
+                const _StubBanner(),
+              ],
+              const SizedBox(height: 12),
+              ...storeCatalog.map((p) => _ProductCard(
+                    product: p,
+                    priceLabel: _priceLabel(p),
+                    owned: p.type != ProductType.consumable &&
+                        _ent.owns(p.id),
+                    busy: _busy,
+                    onBuy: () => _buy(p),
+                  )),
+            ],
+          ),
         ),
       ),
     );
